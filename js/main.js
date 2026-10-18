@@ -1,6 +1,8 @@
 // App shell: hash router, nav bar, first-run redirect.
 import { h, clear } from './ui.js';
-import { getState } from './store.js';
+import { getState, takeNotices } from './store.js';
+import { mountSlip, slipHidden } from './slip.js';
+import { toast } from './ui.js';
 import { TABS } from './leagues.js';
 import { settleAll } from './settle.js';
 
@@ -50,6 +52,7 @@ export async function route() {
   const navId = typeof found.r.nav === 'function' ? found.r.nav(found.m) : found.r.nav;
   drawNav(nav, navId);
   document.body.classList.toggle('onboarding', navId === 'none');
+  slipHidden(navId === 'none');
   document.body.removeAttribute('style');
   document.documentElement.removeAttribute('style');
 
@@ -77,8 +80,18 @@ function drawNav(nav, active) {
 
 export function start() {
   window.addEventListener('hashchange', route);
+  const slip = document.getElementById('slip');
+  if (slip) mountSlip(slip);
   route();
-  try { settleAll().catch(() => {}); } catch (e) { /* ignore */ }
+  try {
+    settleAll().then(() => {
+      for (const n of takeNotices()) {
+        if (n.status === 'won') toast(`You won! ${n.title}: +${(n.payout - n.stake).toLocaleString()} coins`);
+        else if (n.status === 'lost') toast(`Lost: ${n.title}`);
+        else toast(`Refunded: ${n.title}`);
+      }
+    }).catch(() => {});
+  } catch (e) { /* ignore */ }
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }

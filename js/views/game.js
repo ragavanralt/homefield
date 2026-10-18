@@ -4,7 +4,9 @@ import { CONFIG } from '../config.js';
 import { getState, myTeamIn, markWatched, isWatched, askLeft, useAsk } from '../store.js';
 import { LEAGUES, groupOf, isSoccer, leagueLabel } from '../leagues.js';
 import { getSummary, rememberGame, recallGame } from '../espn.js';
-import { statusInfo, watchBlock, pickPanel } from '../components.js';
+import { statusInfo, watchBlock } from '../components.js';
+import { moneylineRow, propsPanel } from '../markets.js';
+import { betCard } from '../bankroll.js';
 import { buildSeries, swings, preGameProbs } from '../winprob.js';
 import { buildRecap, whenLabel } from '../recap.js';
 import { wpChart } from '../chart.js';
@@ -112,13 +114,26 @@ export async function render(root, { league, id }) {
     const g = game;
     const wrap = h('div', { class: 'stack gcols' });
     if (g.state === 'pre') {
-      put(wrap, matchupCard(), card(null, pickPanel(g)), h2hCard(), leadersCard('Team leaders'));
+      put(wrap, matchupCard(), betsCard(), h2hCard(), leadersCard('Team leaders'));
     } else if (g.state === 'in') {
-      put(wrap, watchBlock(g), replayCard(), latestPlaysCard(), leadersCard('Leaders'), h2hCard());
+      put(wrap, watchBlock(g), replayCard(), betsCard(), latestPlaysCard(), leadersCard('Leaders'), h2hCard());
     } else {
-      put(wrap, recapCard(), replayCard(), leadersCard('Leaders'), h2hCard());
+      put(wrap, recapCard(), replayCard(), betsCard(), leadersCard('Leaders'), h2hCard());
     }
     return wrap;
+  }
+
+  function betsCard() {
+    const g = game;
+    const mineBets = Object.values(getState().bets).filter((b) => b.legs.some((l) => l.gameKey === g.key)).sort((a, b) => b.ts - a.ts);
+    const wrap = h('div', { class: 'stack' });
+    if (g.state === 'pre') {
+      const holder = h('div');
+      wrap.append(h('h2', { class: 'card-h' }, 'Bet on this game'), moneylineRow(g),
+        h('div', { class: 'seg' }, h('button', { type: 'button', class: 'btn small', id: 'show-props', onclick: (e) => { e.currentTarget.remove(); holder.append(propsPanel(g)); } }, 'Show player props')), holder);
+    }
+    if (mineBets.length) wrap.append(h('h2', { class: 'card-h' }, 'Your bets on this game'), h('div', { class: 'betgrid' }, mineBets.map(betCard)));
+    return wrap.children.length ? h('section', { class: 'card' }, wrap) : null;
   }
 
   function matchupCard() {

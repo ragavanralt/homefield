@@ -3,7 +3,7 @@ import * as U from '../js/util.js';
 import * as W from '../js/winprob.js';
 import { normEvent, normSummary, normStandings, parseOdds } from '../js/espn.js';
 import { buildRecap, playerOfTheGame } from '../js/recap.js';
-import * as P from '../js/picks.js';
+import * as B from '../js/bets.js';
 import { buildICS, googleUrl, gameTitle } from '../js/ics.js';
 import * as F from './fixtures.js';
 
@@ -130,40 +130,71 @@ t('no recap for unfinished games', () => {
   assert.equal(buildRecap(live), null);
 });
 
-/* ---------- picks ---------- */
-t('upset pays more than a favourite', () => {
-  assert.ok(P.pointsFor(0.25) > P.pointsFor(0.5)); assert.ok(P.pointsFor(0.5) > P.pointsFor(0.75));
-  assert.ok(P.pointsFor(0.99) >= 4 && P.pointsFor(0.01) <= 30);
+/* ---------- betting game ---------- */
+const nbaPre = normEvent(F.event('nba', 11, { state: 'pre', hs: 0, as: 0 }), 'nba');
+t('underdogs pay more, and the house keeps an edge', () => {
+  const ml = B.moneylines(nbaPre);
+  assert.ok(ml.home.dec < ml.away.dec); // home is the favourite in the fixture odds
+  assert.ok(1 / ml.home.dec + 1 / ml.away.dec > 1); // vig
 });
-t('pick, settle, stats', () => {
-  const pre = normEvent(F.event('nba', 11, { state: 'pre', hs: 0, as: 0 }), 'nba');
-  const pk = P.makePick(pre, 'away', 'classic');
-  assert.equal(pk.status, 'pending');
-  const fin = normEvent(F.event('nba', 11, { state: 'post', hs: 90, as: 100, detail: 'Final' }), 'nba');
-  const done = P.settlePick(pk, fin);
-  assert.equal(done.status, 'won'); assert.equal(done.points, pk.pts);
-  const lost = P.settlePick(P.makePick(pre, 'home', 'streak'), fin);
-  assert.equal(lost.status, 'lost');
-  const st = P.computeStats({ a: done, b: { ...lost, key: 'b', date: '2026-10-18T00:00:00Z' } });
-  assert.equal(st.won, 1); assert.equal(st.lost, 1); assert.equal(st.accuracy, 0.5);
-  assert.equal(st.favorites.total, 2);
+t('american odds display', () => { assert.equal(B.american(2.5), '+150'); assert.equal(B.american(1.5), '-200'); });
+t('parlay odds multiply', () => assert.equal(B.parlayDec([{ dec: 2 }, { dec: 1.5 }, { dec: 2 }]), 6));
+t('moneyline legs settle', () => {
+  const win = B.mlLeg(nbaPre, 'away');
+  const fin = { game: normEvent(F.event('nba', 11, { state: 'post', hs: 90, as: 100, detail: 'Final' }), 'nba') };
+  assert.equal(B.evalLeg(win, fin), 'won');
+  assert.equal(B.evalLeg(B.mlLeg(nbaPre, 'home'), fin), 'lost');
+  const live = { game: normEvent(F.event('nba', 11, { state: 'in', hs: 50, as: 40 }), 'nba') };
+  assert.equal(B.evalLeg(win, live), 'pending');
 });
-t('soccer draw pick', () => {
+t('soccer draw leg', () => {
   const pre = normEvent(F.event('eng.1', 12, { state: 'pre' }), 'eng.1');
-  const pk = P.makePick(pre, 'draw', 'classic');
-  const fin = normEvent(F.event('eng.1', 12, { state: 'post', hs: 1, as: 1, detail: 'FT' }), 'eng.1');
-  assert.equal(P.settlePick(pk, fin).status, 'won');
+  const fin = { game: normEvent(F.event('eng.1', 12, { state: 'post', hs: 1, as: 1, detail: 'FT' }), 'eng.1') };
+  assert.equal(B.evalLeg(B.mlLeg(pre, 'draw'), fin), 'won');
+  assert.equal(B.evalLeg(B.mlLeg(pre, 'home'), fin), 'lost');
 });
-t('postponed games are void', () => {
-  const pre = normEvent(F.event('nba', 13, { state: 'pre' }), 'nba');
-  const ev = F.event('nba', 13, { state: 'post', detail: 'Postponed' }); ev.competitions[0].status.type.name = 'STATUS_POSTPONED';
-  assert.equal(P.settlePick(P.makePick(pre, 'home', 'classic'), normEvent(ev, 'nba')).status, 'void');
+const fin = (hs, as) => normEvent(F.event('nfl', 14, { state: 'post', hs, as, detail: 'Final' }), 'nfl');
+const nflPre = normEvent(F.event('nfl', 14, { state: 'pre', hs: 0, as: 0 }), 'nfl');
+const box = { players: [{ teamId: '7', groups: [{ name: 'passing', labels: ['C/ATT', 'YDS', 'AVG', 'TD', 'INT'], rows: [{ id: '700', stats: ['20/30', '287', '9.5', '3', '0'] }] }, { name: 'rushing', labels: ['CAR', 'YDS', 'TD'], rows: [{ id: '700', stats: ['5', '33', '1'] }] }] }] };
+t('props settle from the box score', () => {
+  const mk = (stat, line, dir, g, l) => B.propLeg(nflPre, { playerId: '700', name: 'Josh Allen', label: stat, stat, line, over: 2, under: 2, box: [{ g: new RegExp(g), l: [l] }] }, dir);
+  const data = { game: fin(30, 20), box };
+  assert.equal(B.evalLeg(mk('Passing TDs', 2.5, 'over', 'pass', 'TD'), data), 'won');
+  assert.equal(B.evalLeg(mk('Passing TDs', 2.5, 'under', 'pass', 'TD'), data), 'lost');
+  assert.equal(B.evalLeg(mk('Passing yards', 300.5, 'over', 'pass', 'YDS'), data), 'lost');
+  assert.equal(B.evalLeg(mk('Rushing yards', 33, 'over', 'rush', 'YDS'), data), 'push');
+  const dnp = B.propLeg(nflPre, { playerId: '999', name: 'Bench Guy', label: 'x', stat: 'passyds', line: 1.5, over: 2, under: 2, box: [{ g: /pass/, l: ['YDS'] }] }, 'over');
+  assert.equal(B.evalLeg(dnp, data), 'void');
 });
-t('perfect slate bonus', () => {
-  const picks = {};
-  for (let i = 0; i < 3; i++) picks['k' + i] = { key: 'k' + i, mode: 'slate', slate: 'nba:20261017', status: 'won', points: 10, pts: 10, date: `2026-10-17T0${i}:00:00Z`, pPicked: 0.5, pHome: 0.5, pAway: 0.5, result: 'home', league: 'nba' };
-  const st = P.computeStats(picks);
-  assert.equal(st.perfectSlates, 1); assert.equal(st.points, 30 + P.SLATE_BONUS);
+t('prop lines come from season averages and never push', () => {
+  const def = B.PROP_DEFS.nba[0];
+  const p = B.priceProp(def, 24.6);
+  assert.ok(p.line % 1 === 0.5); assert.ok(p.over > 1 && p.under > 1);
+  assert.equal(B.priceProp(def, 3), null); // too small to be a real prop
+  const blocks = [{ labels: ['GP', 'MIN', 'PTS'], values: ['10', '30', '24.6'] }];
+  assert.equal(B.seasonAvg(blocks, def), 24.6);
+  const nfl = [{ labels: ['GP', 'CMP', 'ATT', 'YDS', 'TD'], values: ['6', '150', '230', '1,500', '12'] }];
+  assert.equal(B.seasonAvg(nfl, B.PROP_DEFS.nfl[0]), 250); assert.equal(B.seasonAvg(nfl, B.PROP_DEFS.nfl[1]), 2);
+  const rb = [{ labels: ['GP', 'CAR', 'YDS', 'TD'], values: ['5', '100', '500', '4'] }];
+  assert.equal(B.seasonAvg(rb, B.PROP_DEFS.nfl[0]), null); // a runner's block has no passing stats
+  assert.equal(B.seasonAvg(rb, B.PROP_DEFS.nfl[2]), 100);
+});
+t('payouts: parlay, streak boost, loss, refund', () => {
+  const L = (r, dec) => ({ result: r, dec });
+  assert.equal(B.decideBet({ stake: 100, legs: [L('won', 2), L('won', 1.5)] }, 0).payout, 300);
+  assert.equal(B.decideBet({ stake: 100, legs: [L('won', 2)] }, 2).payout, 220);
+  assert.equal(B.decideBet({ stake: 100, legs: [L('won', 2), L('lost', 2)] }, 0).status, 'lost');
+  assert.equal(B.decideBet({ stake: 100, legs: [L('won', 2), L('pending', 2)] }, 0), null);
+  assert.equal(B.decideBet({ stake: 100, legs: [L('won', 2), L('lost', 2), L('pending', 2)] }, 0).status, 'lost'); // dead parlay settles early
+  const d = B.decideBet({ stake: 100, legs: [L('won', 2), L('void', 3)] }, 0);
+  assert.equal(d.payout, 200); // voided leg counts as 1.0
+  assert.equal(B.decideBet({ stake: 100, legs: [L('void', 2)] }, 0).status, 'void');
+  assert.equal(B.streakBoost(20), 0.5);
+});
+t('levels get harder', () => { assert.equal(B.levelFor(0), 1); assert.ok(B.levelFor(5000) > B.levelFor(500)); assert.ok(B.xpForLevel(5) > B.xpForLevel(4)); });
+t('conflicting legs are detected', () => {
+  assert.ok(B.conflicts(B.mlLeg(nbaPre, 'home'), B.mlLeg(nbaPre, 'away')));
+  assert.ok(!B.conflicts(B.mlLeg(nbaPre, 'home'), B.mlLeg(nflPre, 'home')));
 });
 
 /* ---------- calendar ---------- */

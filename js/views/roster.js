@@ -80,13 +80,12 @@ export function rosterBlock(league) {
         for (const p of data.players) {
           const b = statsCache.get(p.id);
           if (!b) continue;
-          const g = titleCase(p.group || p.posName || p.pos || 'Players');
-          const key = g + '|' + b.labels.join(',');
-          if (!byGroup.has(key)) byGroup.set(key, { g, b, rows: [] });
-          byGroup.get(key).rows.push({ p, values: b.values });
+          const key = b.labels.join(',');
+          if (!byGroup.has(key)) byGroup.set(key, { b, rows: [] });
+          byGroup.get(key).rows.push({ p, values: b.values, o: orderOf(titleCase(p.group || p.posName || p.pos || '')) });
         }
-        const tables = [...byGroup.values()].sort((a, b) => orderOf(a.g) - orderOf(b.g) || b.rows.length - a.rows.length);
-        tables.forEach((t) => tablesHost.append(statsTable(`${t.g} · ${t.b.title}${t.b.split ? ' (' + t.b.split + ')' : ''}`, t.b.labels, t.rows)));
+        const tables = [...byGroup.values()].sort((a, b) => b.rows.length - a.rows.length);
+        tables.forEach((t) => { t.rows.sort((a, b) => a.o - b.o); tablesHost.append(statsTable(`${t.b.title}${t.b.split ? ' · ' + t.b.split : ''} · ${t.rows.length} players`, t.b.labels, t.rows)); });
         const have = data.players.filter((p) => statsCache.get(p.id)).length;
         status.textContent = need.length && statsCache.size < data.players.length ? `Loading stats… ${statsCache.size} of ${data.players.length} players` : have ? `Season stats for ${have} players.` : 'The feed returned no season stats for these players.';
       };

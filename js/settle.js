@@ -1,23 +1,30 @@
-// Settles pending Pick'em picks by looking up the final score of each game.
-import { getState, update } from './store.js';
+// Settles open bets by looking up each game's final score and box score.
+import { getState, openBets, resolveBet, getBank } from './store.js';
 import { getSummary } from './espn.js';
-import { settlePick } from './picks.js';
+import { evalLeg, decideBet } from './bets.js';
 
 let running = null;
 
 export function settleAll() {
   if (running) return running;
   running = (async () => {
-    const pending = Object.values(getState().picks).filter((p) => p.status === 'pending' && new Date(p.date).getTime() < Date.now());
+    const pending = openBets();
+    // one lookup per game, shared by every bet that uses it
+    const need = new Map();
+    for (const b of pending) for (const l of b.legs) if (l.result === 'pending' && new Date(l.date).getTime() < Date.now()) need.set(l.gameKey, l);
+    const data = new Map();
+    const list = [...need.values()];
+    for (let i = 0; i < list.length; i += 4) {
+      const batch = list.slice(i, i + 4);
+      const res = await Promise.allSettled(batch.map((l) => getSummary(l.league, l.gameId, 60000)));
+      res.forEach((r, k) => { if (r.status === 'fulfilled' && r.value.game) data.set(batch[k].gameKey, r.value); });
+    }
     let changed = 0;
-    for (let i = 0; i < pending.length; i += 4) {
-      const batch = pending.slice(i, i + 4);
-      const results = await Promise.allSettled(batch.map((p) => getSummary(p.league, p.gameId, 60000)));
-      results.forEach((r, k) => {
-        if (r.status !== 'fulfilled' || !r.value.game) return;
-        const next = settlePick(batch[k], r.value.game);
-        if (next.status !== 'pending') { update((s) => { s.picks[next.key] = next; }); changed++; }
-      });
+    for (const b of pending) {
+      const results = b.legs.map((l) => (l.result !== 'pending' ? l.result : data.has(l.gameKey) ? evalLeg(l, data.get(l.gameKey)) : 'pending'));
+      const probe = { ...b, legs: b.legs.map((l, i) => ({ ...l, result: results[i] })) };
+      const decision = decideBet(probe, getBank().streak);
+      if (decision || results.some((r, i) => r !== b.legs[i].result)) { resolveBet(b.id, results, decision); if (decision) changed++; }
     }
     return changed;
   })().finally(() => { running = null; });

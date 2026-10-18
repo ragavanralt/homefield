@@ -38,7 +38,7 @@ globalThis.fetch = async (url) => {
   } else if (m && m[2] === 'summary') {
     const lg = byPath[m[1]]; const id = url.match(/event=(\d+)/)[1];
     body = id === '1001' ? F.summary(lg, id, { state: 'in', hs: 2, as: 1, detail: '2nd Period', clock: '8:42', period: 2 })
-      : id === '1003' ? F.summary(lg, id, { state: 'pre', hs: 0, as: 0, detail: 'Scheduled', clock: '0:00', period: 0 }) : F.summary(lg, id);
+      : id === '1003' ? F.summary(lg, id, { state: 'pre', hs: 0, as: 0, detail: 'Scheduled', clock: '0:00', period: 0, date: new Date(Date.now() + 5 * 36e5).toISOString() }) : F.summary(lg, id);
   } else if (m && m[2] === 'teams') body = F.teamsList(byPath[m[1]]);
   return { ok: true, status: 200, json: async () => JSON.parse(JSON.stringify(body)) };
 };
@@ -89,15 +89,50 @@ for (const [lg, id] of games) {
   ok(`game ${lg}/${id} (${tabs.length} tabs)`);
 }
 
-// pick something in a game and see it on the picks page
+// betting game
+const slipEl = w.document.getElementById('slip');
+const { mountSlip } = await import('../js/slip.js');
+mountSlip(slipEl);
 await visit('#/game/nhl/1003', { wait: 350 });
-const side = app().querySelector('.pp-side');
-assert.ok(side, 'pick buttons'); side.click(); await sleep(50);
-assert.ok(Object.keys(store.getState().picks).length === 1, 'pick saved'); ok('pick saved from game page');
-text = await visit('#/picks', { wait: 400 });
-assert.ok(app().querySelector('.mode'), 'modes'); ok('picks page');
-app().querySelector('#mode-streak').click(); await sleep(300); ok('switch to Streak Run');
-text = await visit('#/season', { wait: 300 }); assert.ok(/Points/.test(text)); ok('season page');
+let mlBtn = app().querySelector('.ml-row .bet-btn');
+assert.ok(mlBtn, 'moneyline buttons'); mlBtn.click(); await sleep(30);
+assert.equal(store.getState().slip.legs.length, 1); assert.ok(!slipEl.classList.contains('empty')); ok('moneyline leg added to slip');
+app().querySelector('#show-props').click(); await sleep(900);
+const propBtns = app().querySelectorAll('.pr-row .bet-btn');
+assert.ok(propBtns.length >= 2, 'prop buttons'); propBtns[0].click(); await sleep(30);
+assert.equal(store.getState().slip.legs.length, 2); ok('player props loaded and added');
+slipEl.querySelector('#slip-parlay').click(); await sleep(20);
+assert.equal(store.getState().slip.mode, 'parlay');
+slipEl.querySelector('#place-bet').click(); await sleep(30);
+const bets = Object.values(store.getState().bets);
+assert.equal(bets.length, 1); assert.equal(bets[0].mode, 'parlay'); assert.equal(bets[0].legs.length, 2);
+assert.equal(store.getState().bank.coins, 1000 - 50); ok('parlay placed, stake taken from bankroll');
+for (const [lg, id] of [['nba', 1003], ['nfl', 1003], ['mlb', 1003]]) { await visit(`#/game/${lg}/${id}`, { wait: 350 }); app().querySelector('#show-props').click(); await sleep(1000); assert.ok(app().querySelectorAll('.pr-row').length > 0, lg + ' props'); ok(`${lg} props render`); }
+text = await visit('#/picks', { wait: 600 });
+assert.ok(app().querySelector('.bankroll') && app().querySelector('.pgame'), 'board'); ok('pick em board');
+app().querySelector('#scope-mine').click(); await sleep(500); app().querySelector('#scope-all').click(); await sleep(500); ok('all / my teams switch');
+assert.ok(/Parlay|parlay/.test(app().textContent)); ok('open bets listed');
+app().querySelector('#daily').click(); await sleep(20); assert.ok(store.getState().bank.coins > 1000 - 50); ok('daily bonus');
+// settlement end to end: bets on finished game 1002 (final 3-2, home TB... home team wins)
+{
+  const { settleAll } = await import('../js/settle.js');
+  const { normEvent } = await import('../js/espn.js');
+  const { mlLeg } = await import('../js/bets.js');
+  const g = normEvent(F.event('nhl', 1002, { state: 'post', hs: 3, as: 2, detail: 'Final' }), 'nhl');
+  const win = { ...mlLeg(g, 'home'), date: '2026-10-10T23:00Z' }, lose = { ...mlLeg(g, 'away'), date: '2026-10-10T23:00Z' };
+  const before = store.getState().bank.coins;
+  store.update((st) => {
+    st.bets.t1 = { id: 't1', ts: 1, mode: 'single', stake: 100, dec: win.dec, legs: [win], status: 'pending', payout: 0 };
+    st.bets.t2 = { id: 't2', ts: 2, mode: 'single', stake: 100, dec: lose.dec, legs: [lose], status: 'pending', payout: 0 };
+    st.bank.coins -= 200;
+  });
+  await settleAll();
+  const bb = store.getState().bets;
+  assert.equal(bb.t1.status, 'won'); assert.equal(bb.t2.status, 'lost');
+  assert.equal(store.getState().bank.coins, before - 200 + bb.t1.payout);
+  assert.ok(store.getState().bank.streak >= 0 && store.getState().bank.xp > 0); ok('bets settle from final scores and pay out');
+}
+text = await visit('#/season', { wait: 300 }); assert.ok(/Badges/.test(text) && /Bankroll/.test(text)); ok('season page');
 text = await visit('#/settings'); assert.ok(/Spoiler/.test(text)); ok('settings page');
 w.document.getElementById('set-spoil').click(); await sleep(20);
 assert.equal(store.getState().settings.spoilerFree, true); ok('spoiler toggle');
