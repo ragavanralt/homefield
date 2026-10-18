@@ -20,6 +20,14 @@ export const SECTIONS = [
   { id: 'formal', label: 'Formal', blurb: 'Shirts, suits, coats and good shoes.' },
   { id: 'brand', label: 'Designer', blurb: 'Labels and heavy jewellery. Priced like the real thing.' },
 ];
+// Body types are free. Upper body and legs are widened separately so a built frame gets broad
+// shoulders on normal legs, and clothes stretch with the body.
+export const BODIES = [
+  { id: 'lean', label: 'Lean', up: 0.9, low: 0.92 },
+  { id: 'athletic', label: 'Athletic', up: 1, low: 1 },
+  { id: 'built', label: 'Built', up: 1.12, low: 1.04 },
+  { id: 'heavy', label: 'Heavy', up: 1.18, low: 1.14 },
+];
 export const ALWAYS_ON = ['hair', 'top', 'bottom', 'shoes'];
 export const TIERS = { free: { label: 'Free' }, common: { label: 'Common' }, rare: { label: 'Rare' }, epic: { label: 'Epic' }, legend: { label: 'Legendary' }, earned: { label: 'Earned' } };
 
@@ -156,9 +164,9 @@ const M = (s) => `<g transform="matrix(-1 0 0 1 120 0)">${s}</g>`;
 const both = (s) => s + M(s);
 
 const TORSO = 'M38 77 Q60 71 82 77 L84 112 L83 131 Q60 137 37 131 L36 112 Z';
-const ARM = 'M38 78 C31 77 26 82 25 90 L22 121 C22 126 33 127 34 122 L39 98 Z';
-const SLEEVE_S = 'M38 78 C31 77 26 82 25 90 L23 106 L37 108 L39 96 Z';
-const SLEEVE_L = 'M38 78 C31 77 26 82 25 90 L22 119 L34 121 L39 98 Z';
+const ARM = 'M38 77.6 L31 77.4 Q23.8 78.4 23.4 87 Q23.2 95 24.6 101 Q23 110 22.8 121 L33.8 122 Q35.4 112 35.2 106 Q37.6 100 38.8 92 Z';
+const SLEEVE_S = 'M38 77.6 L31 77.4 Q24.6 78.4 24.2 87 L23 106 L37 108 L39 96 Z';
+const SLEEVE_L = 'M38 77.6 L31 77.4 Q24.6 78.4 24.2 87 L22 119 L34 121 L39 98 Z';
 const CUFF_S = 'M23.4 100 L37.6 102 L37 108 L23 106 Z';
 const CUFF_L = 'M22.4 113.5 L34.6 115.5 L34 121 L22 119 Z';
 const JACKET = 'M36 77 Q60 70 84 77 L86 112 L85 137 Q60 143 35 137 L34 112 Z';
@@ -242,7 +250,7 @@ const HAND = {
 };
 
 /* ----- head ----- */
-const HEAD = 'M39 42 C39 27 48 18 60 18 C72 18 81 27 81 42 C81 52 79 58 74 63 C69 67 64 69 60 69 C56 69 51 67 46 63 C41 58 39 52 39 42 Z';
+const HEAD = 'M40 40 C40 25 49 17.6 60 17.6 C71 17.6 80 25 80 40 L80.4 49 C80.4 55 79 59 75.6 62.4 L67 68.6 Q60 71.6 53 68.6 L44.4 62.4 C41 59 39.6 55 39.6 49 Z';
 const HP = (d, h, x = '') => `<path d="${d}" fill="${h}" stroke="rgba(8,10,28,.5)" stroke-width="1.2" stroke-linejoin="round" ${x}/><path d="${d}" fill="url(#hf-sv)"/>`;
 const SHINE = (d) => L(d, 'rgba(255,255,255,.28)', 1.4);
 const SHORT = 'M38 46 C33 22 46 11 60 11 C74 11 87 22 82 46 C81 36 75 29 67 27 C58 32 46 31 38 46 Z';
@@ -408,42 +416,52 @@ export function avatarSvg(av, team, vb) {
   const hd = eq.hair || 'short';
   const pick = (map, id, fallback) => (map[id] ? map[id](c, hair, skin) : fallback ? map[fallback](c, hair, skin) : '');
   const sk = (s) => s.replace(/var\(--sk\)/g, skin);
-  const hand = `<circle cx="28" cy="127" r="5.6" fill="${skin}" ${OUT}/><circle cx="28" cy="127" r="5.6" fill="url(#hf-sh)"/>`;
+  const body = BODIES[av.body ?? 1] || BODIES[1];
+  const sx = (k) => `translate(60 0) scale(${k} 1) translate(-60 0)`;
+  const UP = (s) => (s ? `<g transform="${sx(body.up)}">${s}</g>` : '');
+  const LOW = (s) => `<g transform="${sx(body.low)}">${s}</g>`;
+  // a closed fist with a thumb, not a ball
+  const FIST = 'M22.4 120.6 L34 121.6 Q34.8 127 33.2 130.4 Q30.6 133.4 27 133 Q23.4 132.4 22.4 128.6 Q21.8 124.6 22.4 120.6 Z';
+  const hand = P(FIST, skin) + L('M30.6 123.4 Q33.4 125 32.4 128.6', 'rgba(0,0,0,.28)', 1) + L('M24 127.6 H30', 'rgba(0,0,0,.14)', 1);
+  const muscle = body.up >= 1.1 ? L('M26.6 86 Q29.6 92 28.6 100', 'rgba(0,0,0,.16)', 1.2) : '';
   const out = [];
   out.push(`<svg viewBox="${vb || '-12 12 144 202'}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="filter:saturate(.82) contrast(1.04)">`, DEFS);
-  out.push('<ellipse cx="60" cy="208" rx="38" ry="5" fill="rgba(0,0,0,.3)"/>');
-  out.push(pick(BACK, eq.back));
-  out.push(`<g transform="translate(60 76) scale(.8) translate(-60 -76)">${HAIR_BACK[hd] ? HAIR_BACK[hd](hair) : ''}</g>`);
-  out.push(sk(`<g>${both(P('M41 128 L59 128 L58 194 L43 194 Z', skin))}</g>`));
-  out.push(sk(pick(SHOES, eq.shoes, 'sneakers')));
-  out.push(sk(pick(BOTTOM, eq.bottom, 'jeans')));
-  out.push(both(P(ARM, skin)) + both(hand));
-  out.push(`<rect x="51" y="60" width="18" height="22" rx="7" fill="${skin}" ${OUT}/><path d="M51 66 Q60 78 69 66 V74 H51 Z" fill="rgba(0,0,0,.22)"/>`);
-  out.push(P(TORSO, skin));
-  out.push(pick(TOP, eq.top, 'tee'));
-  out.push(pick(OUTER, eq.outer));
-  out.push(pick(SCARF, eq.scarf));
-  out.push(pick(CHAIN, eq.chain));
-  out.push(pick(WRIST, eq.wrist));
+  out.push(LOW('<ellipse cx="60" cy="208" rx="38" ry="5" fill="rgba(0,0,0,.3)"/>'));
+  out.push(UP(pick(BACK, eq.back)));
+  out.push(`<g transform="translate(60 76) scale(.76 .8) translate(-60 -76)">${HAIR_BACK[hd] ? HAIR_BACK[hd](hair) : ''}</g>`);
+  out.push(LOW(sk(both(P('M41 128 L59 128 L58 194 L43 194 Z', skin))) + sk(pick(SHOES, eq.shoes, 'sneakers')) + sk(pick(BOTTOM, eq.bottom, 'jeans'))));
+  const upper = [];
+  upper.push(both(P(ARM, skin) + muscle) + both(hand));
+  // neck with a little trapezius slope into the shoulders
+  upper.push(`<path d="M50 58 H70 L71 74 Q77 76 82 77.4 L38 77.4 Q43 76 49 74 Z" fill="${skin}" ${OUT}/><path d="M50 64 Q60 76 70 64 V74 H50 Z" fill="rgba(0,0,0,.22)"/>` + L('M53.4 66 L56.6 77 M66.6 66 L63.4 77', 'rgba(0,0,0,.12)', 1.2));
+  upper.push(P(TORSO, skin));
+  if (eq.top === 'tank' && body.up >= 1.1) upper.push(L('M44 96 Q52 100 58 97 M62 97 Q68 100 76 96', 'rgba(0,0,0,.16)', 1.2));
+  upper.push(pick(TOP, eq.top, 'tee'));
+  upper.push(pick(OUTER, eq.outer));
+  upper.push(pick(SCARF, eq.scarf));
+  upper.push(pick(CHAIN, eq.chain));
+  upper.push(pick(WRIST, eq.wrist));
+  out.push(UP(upper.join('')));
   // head: scaled down a little and set on the neck so the proportions look grown up
-  out.push(`<g transform="translate(60 76) scale(.8) translate(-60 -76)">`);
+  out.push(`<g transform="translate(60 76) scale(.76 .8) translate(-60 -76)">`);
   out.push(`<ellipse cx="39.6" cy="46" rx="3" ry="5.2" fill="${skin}" ${OUT}/><ellipse cx="80.4" cy="46" rx="3" ry="5.2" fill="${skin}" ${OUT}/>`);
   out.push(pick(EAR, eq.ear));
   out.push(P(HEAD, skin));
-  // soft shading: jaw, temples, under the brow
-  out.push(`<path d="M41 50 C42 58 48 66 60 68.4 C72 66 78 58 79 50 C77 58 72 62.6 60 63.4 C48 62.6 43 58 41 50 Z" fill="rgba(0,0,0,.13)"/><path d="M39.6 38 C39.4 46 40 50 41 52 L44 46 L44 36 Z M80.4 38 C80.6 46 80 50 79 52 L76 46 L76 36 Z" fill="rgba(0,0,0,.1)"/>`);
+  // shading: under the jaw line, cheekbones and temples, so the face reads angular rather than round
+  out.push(both('<path d="M40 49 C40.4 55 42 58.6 44.8 61.6 L53.4 67.6 Q56 68.8 58.4 69.4 L52.4 64.6 L46.8 60.4 C43.8 57.8 41.4 54.4 40 49 Z" fill="rgba(0,0,0,.14)"/><path d="M40.2 37 C40 44 40.4 48 41.4 50.6 L44 45 L44 35.6 Z" fill="rgba(0,0,0,.1)"/>'));
   out.push(pick(BEARD, eq.beard));
   const eye = `<path d="M45.4 44.8 Q51 40.8 56.6 44.2 Q51 47.2 45.4 44.8 Z" fill="#E6E1D6" stroke="rgba(0,0,0,.5)" stroke-width=".8"/><circle cx="51.8" cy="44.2" r="2.3" fill="#3A281B"/><circle cx="51.8" cy="44.2" r="1.1" fill="#0B0B10"/><circle cx="52.5" cy="43.5" r=".5" fill="#fff" opacity=".8"/>`
-    + `<path d="M44.8 44.8 Q51 40 57 43.8" fill="none" stroke="${INK}" stroke-width="2.1" stroke-linecap="round"/><path d="M46 41.4 Q51 38.4 56 41" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1"/><path d="M46.6 46.8 Q51 48.6 56 46.4" fill="none" stroke="rgba(0,0,0,.16)" stroke-width="1.5" stroke-linecap="round"/>`
+    + `<path d="M44.8 44.6 Q51 40.4 57 43.8" fill="none" stroke="#24180F" stroke-width="1.5" stroke-linecap="round"/><path d="M46 41.4 Q51 38.4 56 41" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1"/><path d="M46.6 46.8 Q51 48.6 56 46.4" fill="none" stroke="rgba(0,0,0,.16)" stroke-width="1.5" stroke-linecap="round"/>`
     + `<path d="M44.6 37.8 Q50.6 35.6 57 38.8" fill="none" stroke="#2A1C12" stroke-opacity=".9" stroke-width="3" stroke-linecap="round"/>`;
   out.push(both(eye));
   out.push(`<path d="M58.4 42 Q57.6 48 57.2 51.6" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2"/>` + L('M56.6 53.2 Q58.2 55.6 60 54.2 Q61.8 55.6 63.4 53.2', 'rgba(60,20,10,.5)', 1.4) + `<path d="M62.6 42 Q63.4 48 63.4 52" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="1.6"/>`);
-  out.push(`<path d="M53.6 59.6 Q57 60.6 60.4 60.2 Q64 60 66.8 58.4" fill="none" stroke="#3A1C1C" stroke-width="1.9" stroke-linecap="round"/><path d="M56 62.4 Q60 64 64 62.2" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="1.5" stroke-linecap="round"/>`);
+  out.push(`<path d="M54.6 60 Q60 60.9 65.8 59.6" fill="none" stroke="#3A1C1C" stroke-width="1.8" stroke-linecap="round"/><path d="M56 62.6 Q60 64 64 62.4" fill="none" stroke="rgba(0,0,0,.1)" stroke-width="1.5" stroke-linecap="round"/>`);
   out.push(pick(FACE, eq.face));
   out.push(HAIR_FRONT[hd] ? HAIR_FRONT[hd](hair) : '');
   out.push(pick(HAT, eq.hat));
   out.push('</g>');
-  out.push(sk(pick(HAND, eq.hand)));
+  const hx = ((92 - 60) * (body.up - 1)).toFixed(2);
+  out.push(`<g transform="translate(${hx} 0)">${sk(pick(HAND, eq.hand))}</g>`);
   out.push('</svg>');
   return out.join('');
 }

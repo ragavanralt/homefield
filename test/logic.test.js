@@ -382,6 +382,12 @@ import * as S from '../js/specials.js';
     assert.ok(Math.max(...blank.map((i) => i.price)) * 10 < Math.min(...brand.map((i) => i.price)));
     assert.ok(m.itemById('foghoodie').price > m.itemById('tee').price + 5000);
   });
+  t('avatar: body types are free and change the drawing', () => {
+    const eq = { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' };
+    const lean = m.avatarSvg({ skin: 2, hairColor: 0, body: 0, eq }, null), built = m.avatarSvg({ skin: 2, hairColor: 0, body: 2, eq }, null);
+    assert.notEqual(lean, built); assert.ok(built.includes('scale(1.12 1)'));
+    assert.equal(st.getState().avatar.body, 1);
+  });
   t('shop: earned items unlock from stats and rescue; reset bets keeps items', () => {
     st.update((s) => { s.bank.rescues = 1; });
     syncUnlocks();

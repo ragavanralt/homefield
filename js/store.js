@@ -25,7 +25,7 @@ const fresh = () => ({
   ask: { day: '', n: 0 },
   soccerLeague: 'uefa.champions',
   lastMode: 'classic',
-  avatar: { skin: 2, hairColor: 0, team: '', eq: { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' }, owned: ['short', 'buzz', 'curly', 'tee', 'jeans', 'sneakers'], spent: 0 },
+  avatar: { skin: 2, hairColor: 0, body: 1, team: '', eq: { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' }, owned: ['short', 'buzz', 'curly', 'tee', 'jeans', 'sneakers'], spent: 0 },
 });
 
 function mergeAvatar(d, a) {
