@@ -81,8 +81,10 @@ export function applyTheme(settings) {
   const mode = resolveMode(settings.theme);
   root.setAttribute('data-theme', mode);
   const list = BACKGROUNDS[mode];
-  const pick = list.find((b) => b.id === (mode === 'dark' ? settings.bgDark : settings.bgLight)) || list[0];
-  const acc = ACCENTS.find((a) => a.id === settings.accent) || ACCENTS[0];
+  // Team colours on but no team to match (none play today): always black and gold
+  const gold = settings.teamMode !== false && !themeTeam;
+  const pick = (gold ? list.find((b) => b.id === (mode === 'dark' ? 'noir' : 'ivory')) : null) || list.find((b) => b.id === (mode === 'dark' ? settings.bgDark : settings.bgLight)) || list[0];
+  const acc = (gold ? ACCENTS.find((a) => a.id === 'gold') : null) || ACCENTS.find((a) => a.id === settings.accent) || ACCENTS[0];
   const set = (k, v) => root.style.setProperty(k, v);
   set('--bg', pick.bg); set('--surface', pick.surface); set('--surface-2', pick.surface2); set('--line', pick.line);
   set('--accent', acc.a); set('--accent2', acc.b); set('--accent-ink', acc.ink);

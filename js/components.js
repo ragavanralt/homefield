@@ -6,7 +6,7 @@ import { BACKGROUNDS, ACCENTS, DEFAULT_APPEARANCE, applyTheme, resolveMode } fro
 import { watchScore, watchLabel, watchReason } from './winprob.js';
 import { fmtDay, fmtTime, sameDay } from './util.js';
 import { rememberGame } from './espn.js';
-import { themeMatch, repaintBrand, onBrandChange } from './brand.js';
+import { themeMatch, repaintBrand, onBrandChange, chooseTheme } from './brand.js';
 
 export const pageHead = (title, sub) => h('div', { class: 'page-head' }, h('h1', null, title), sub ? h('p', null, sub) : null);
 
@@ -90,7 +90,8 @@ export function appearanceCard(title = 'Appearance') {
       h('div', { class: 'seg' }, [[true, 'On'], [false, 'Off']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (team === k ? ' on' : ''), id: 'team-' + (k ? 'on' : 'off'), onclick: () => { setSetting('teamMode', k); repaint(); draw(); } }, l))),
       h('small', null, team ? 'The whole app takes the colours of whichever of your teams plays next. Open a team or game and it matches that team. Dark and light each get their own version.' : 'Pick your own background and accent below.'));
     const m = team ? themeMatch() : null;
-    const matchRow = m ? h('div', { class: 'set-row match', id: 'theme-match' }, h('div', { class: 'set-l' }, 'Matched to'), h('div', { class: 'match-v' }, m.team ? crest(m.team, 26) : null, h('span', null, m.text))) : null;
+    const matchRow = m ? h('div', { class: 'set-row match', id: 'theme-match' }, h('div', { class: 'set-l' }, 'Matched to'), h('div', { class: 'match-v' }, m.team ? crest(m.team, 26) : null, h('span', null, m.text)),
+      m.options && m.options.length > 1 ? h('div', { class: 'match-opts' }, m.options.map((o) => h('button', { type: 'button', class: 'chip' + (o.key === m.current ? ' on' : ''), 'data-pick': o.key, 'aria-pressed': o.key === m.current ? 'true' : 'false', onclick: () => { chooseTheme(o.key); } }, o.label))) : null) : null;
     host.replaceChildren(...[h('h2', { class: 'card-h' }, title),
       h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Theme'),
         h('div', { class: 'seg' }, [['auto', 'Auto'], ['dark', 'Dark'], ['light', 'Light']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (s.theme === k ? ' on' : ''), id: 'theme-' + k, onclick: () => { setSetting('theme', k); repaint(); draw(); } }, l))),

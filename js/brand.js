@@ -1,14 +1,17 @@
-// Picks which of your teams sets the app's colours: the one playing now or next (or the team you are looking at).
-// The last pick is remembered so the theme is already right when the app opens. The logo never changes.
-import { myTeams, getState } from './store.js';
-import { getTeamSchedule, recallGame } from './espn.js';
+// Picks which of your teams sets the app's colours. Rules:
+//  - Only one of your teams plays today: the app matches it, automatically.
+//  - Two or more play today: it starts with the one on soonest, and Settings lets you choose.
+//  - None play today: black and gold.
+// Opening a team or game page matches that team while you are there. The last pick is remembered so the
+// theme is already right when the app opens.
+import { myTeams, getState, setSetting, findTeam } from './store.js';
+import { getTeamSchedule, getScoreboard, recallGame } from './espn.js';
+import { isSoccer, SOCCER_KEYS } from './leagues.js';
 import { setThemeTeam, teamPalette } from './themes.js';
-import { lighten, darken, fmtDay, fmtTime } from './util.js';
-import { findTeam, myTeamIn } from './store.js';
+import { lighten, darken, fmtDay, fmtTime, ymd, sameDay } from './util.js';
+import { dayKey } from './period.js';
 
 const KEY = 'homefield:brand';
-const FALLBACK = { t1: '#FF6B4A', t2: '#7C5CFF', tink: '#FFFFFF', tacc: '#E8C45A' };
-
 const readCache = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
 const writeCache = (v) => { try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch (e) { /* ignore */ } };
 
@@ -24,36 +27,56 @@ function logoColours(team) {
   return { g0: lighten(p.accent, 0.5), g1: p.accent, g2: darken(p.accent2, 0.25), seam: lighten(p.accent, 0.25) };
 }
 function drawLogo(team) {
+  if (typeof document === 'undefined') return;
   const mark = document.querySelector('.brand-mark');
   if (mark) mark.innerHTML = badgeSvg(32, logoColours(team));
   const brand = document.querySelector('.brand');
   if (brand) brand.title = team && getState().settings.teamMode !== false ? `Colours: ${team.name || team.abbr}` : 'Homefield';
 }
 
-// Two teams can set the app's look: the one with the next game (main), and the one on screen (context).
-let main = null, mainGame = null, ctx = null;
+// Teams that play today and have not finished (live or still to come), soonest first.
+let todays = [], main = null, ctx = null, loaded = false;
 const listeners = new Set();
 export const onBrandChange = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
-function paint() { const t = ctx || main; drawLogo(t); setThemeTeam(t); listeners.forEach((fn) => { try { fn(); } catch (e) { /* ignore */ } }); }
+const teamKey = (t) => `${t.league}:${t.id}`;
+
+function pickMain() {
+  if (!todays.length) return null;
+  if (todays.length === 1) return todays[0].team;
+  const s = getState().settings;
+  const chosen = s.themePickDay === dayKey() && todays.find((x) => teamKey(x.team) === s.themePick);
+  return (chosen || todays[0]).team;
+}
+function paint() {
+  const t = ctx || main;
+  drawLogo(t); setThemeTeam(t);
+  listeners.forEach((fn) => { try { fn(); } catch (e) { /* ignore */ } });
+}
 /** Repaint after the Team colours setting changes. */
 export const repaintBrand = () => paint();
+/** When two of your teams play today, you choose which one the app matches. */
+export function chooseTheme(key) {
+  if (!todays.some((x) => teamKey(x.team) === key)) return;
+  setSetting('themePick', key); setSetting('themePickDay', dayKey());
+  main = pickMain(); remember(); paint();
+}
+function remember() { writeCache(main ? { id: main.id, league: main.league, name: main.name, color: main.color, alt: main.alt, day: dayKey() } : null); }
 
 /** What the app is matched to right now, in words, for Settings. */
 export function themeMatch() {
   if (getState().settings.teamMode === false) return null;
-  const t = ctx || main;
-  if (!t) return { team: null, text: 'No team yet, so you are seeing black and gold. Follow a team and the app takes its colours.' };
-  const name = t.name || t.abbr;
-  if (ctx) return { team: t, text: `${name}, because you are on its page.` };
-  const g = mainGame;
-  if (g && String(g.team.id) === String(t.id)) {
-    const opp = String(g.game.home.id) === String(t.id) ? g.game.away : g.game.home;
-    const o = opp.short || opp.name || opp.abbr;
-    return { team: t, text: g.game.state === 'in' ? `${name}, playing ${o} right now.` : `${name}, your next game: ${String(g.game.home.id) === String(t.id) ? 'vs' : '@'} ${o}, ${fmtDay(g.game.date)} ${fmtTime(g.game.date)}.` };
-  }
-  return { team: t, text: `${name}, your first team (nothing scheduled right now).` };
+  const when = (g) => (g.state === 'in' ? 'playing right now' : `plays today ${fmtTime(g.date)}`);
+  const vs = (x) => { const home = String(x.game.home.id) === String(x.team.id); const o = home ? x.game.away : x.game.home; return `${home ? 'vs' : '@'} ${o.short || o.name || o.abbr}`; };
+  const options = todays.map((x) => ({ key: teamKey(x.team), team: x.team, label: `${x.team.short || x.team.name} ${vs(x)}, ${x.game.state === 'in' ? 'live' : fmtTime(x.game.date)}` }));
+  if (ctx) return { team: ctx, text: `${ctx.name || ctx.abbr}, because you are on its page.`, options: [] };
+  if (!myTeams().length) return { team: null, text: 'No teams yet, so you are seeing black and gold. Follow a team and the app takes its colours on game days.', options: [] };
+  if (!loaded) return { team: main, text: main ? `${main.name || main.abbr}, checking today's games…` : 'Checking today\'s games…', options: [] };
+  if (!todays.length) return { team: null, text: 'None of your teams play today, so you are seeing black and gold.', options: [] };
+  const x = todays.find((y) => y.team === main) || todays[0];
+  const name = x.team.name || x.team.abbr;
+  if (todays.length === 1) return { team: x.team, text: `${name}, ${when(x.game)} (${vs(x)}). It is the only one of your teams on today.`, options: [] };
+  return { team: x.team, text: `${name}, ${when(x.game)} (${vs(x)}). ${todays.length} of your teams play today, so pick one:`, options, current: teamKey(x.team) };
 }
-export function setContextTeam(team) { ctx = team || null; paint(); }
 
 /** The team a page is about: a team page, or a game (your team in it, else the home side). */
 export async function teamForRoute(name, params) {
@@ -67,29 +90,52 @@ export async function teamForRoute(name, params) {
     if (name === 'game') {
       const g = recallGame(`${params.league}:${params.id}`);
       if (!g) return null;
-      const mine = myTeamIn(g);
+      const mine = myTeams().find((t) => (t.league === g.league || (isSoccer(t.league) && isSoccer(g.league))) && (t.id === g.home.id || t.id === g.away.id));
       const side = mine ? (String(g.home.id) === String(mine.id) ? g.home : g.away) : g.home;
       return { ...side, color: side.color || (mine && mine.color), alt: side.alt || (mine && mine.alt) };
     }
   } catch (e) { /* keep the current look */ }
   return null;
 }
+export function setContextTeam(team) { ctx = team || null; paint(); }
+
+/** Look up today's games for your teams (scoreboards plus team schedules). */
+async function findToday(now = new Date()) {
+  const teams = myTeams();
+  if (!teams.length) return [];
+  const leagues = new Set(teams.map((t) => t.league));
+  if (teams.some((t) => isSoccer(t.league))) SOCCER_KEYS.forEach((k) => leagues.add(k)); // a club can be playing in another competition
+  const day = ymd(now);
+  const boards = await Promise.all([...leagues].map((l) => getScoreboard(l, day, 60000).catch(() => [])));
+  const all = boards.flat();
+  const rows = await Promise.all(teams.map(async (t) => {
+    const games = all.filter((g) => (g.league === t.league || (isSoccer(t.league) && isSoccer(g.league))) && (String(g.home.id) === String(t.id) || String(g.away.id) === String(t.id)));
+    let sched = [];
+    try { const s = await getTeamSchedule(t.league, t.id); sched = s.games || []; if (s.team) { t = { ...t, color: s.team.color || t.color, alt: s.team.alt || t.alt }; } } catch (e) { /* the scoreboard may be enough */ }
+    const byKey = new Map();
+    for (const g of [...sched, ...games]) byKey.set(g.key, g); // scoreboard copy is the freshest
+    const today = [...byKey.values()].filter((g) => (g.state === 'in' || (g.state === 'pre' && sameDay(new Date(g.date), now))));
+    today.sort((a, b) => (a.state === 'in' ? 0 : 1) - (b.state === 'in' ? 0 : 1) || new Date(a.date) - new Date(b.date));
+    return today.length ? { team: t, game: today[0], when: today[0].state === 'in' ? 0 : new Date(today[0].date).getTime() } : null;
+  }));
+  return rows.filter(Boolean).sort((a, b) => a.when - b.when);
+}
+
+/** For tests: pretend these are the teams playing today. */
+export function _setToday(list) { todays = list; loaded = true; main = pickMain(); paint(); }
 
 let timer = null;
 export async function refreshBrand() {
-  const n = await nextTeam();
-  main = n ? n.team : myTeams()[0] || null; // nothing scheduled: fall back to your first team
-  mainGame = n;
-  paint();
-  writeCache(main ? { id: main.id, league: main.league, name: main.name, color: main.color, alt: main.alt } : null);
+  const found = await findToday();
+  todays = found; loaded = true;
+  main = pickMain(); remember(); paint();
 }
 export function startBrand() {
   const c = readCache();
-  const still = c && myTeams().some((t) => t.id === c.id && t.league === c.league);
-  main = still ? c : myTeams()[0] || null;
+  main = c && c.day === dayKey() && myTeams().some((t) => t.id === c.id && t.league === c.league) ? c : null; // last pick, for the first paint only
   paint();
-  refreshBrand().catch(() => {});
+  refreshBrand().catch(() => { loaded = true; paint(); });
   if (timer) clearInterval(timer);
-  timer = setInterval(() => refreshBrand().catch(() => {}), 15 * 60000);
+  timer = setInterval(() => refreshBrand().catch(() => {}), 10 * 60000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshBrand().catch(() => {}); });
 }

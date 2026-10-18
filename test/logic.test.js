@@ -498,4 +498,36 @@ import * as S from '../js/specials.js';
   });
 }
 
+// ---- which team the theme matches ----
+{
+  const st = await import('../js/store.js');
+  const br = await import('../js/brand.js');
+  st.resetAll();
+  const A = { league: 'nhl', id: '21', name: 'Toronto Maple Leafs', short: 'Maple Leafs', color: '003e7e', alt: 'ffffff' };
+  const B = { league: 'esp.1', id: '86', name: 'Real Madrid', short: 'Madrid', color: 'ffffff', alt: '000000' };
+  const C = { league: 'nfl', id: '2', name: 'Buffalo Bills', short: 'Bills', color: '00338d', alt: 'c60c30' };
+  [A, B, C].forEach((x) => st.follow(x));
+  const g = (team, opp, hour, state = 'pre') => ({ team, game: { state, date: new Date(2026, 9, 18, hour).toISOString(), home: { id: team.id }, away: { id: opp, short: 'Them' } } });
+  t('theme match: no team plays today means black and gold', () => {
+    br._setToday([]);
+    const m = br.themeMatch();
+    assert.equal(m.team, null); assert.ok(/black and gold/.test(m.text));
+  });
+  t('theme match: one team playing switches to it, no choice offered', () => {
+    br._setToday([g(C, '9', 16)]);
+    const m = br.themeMatch();
+    assert.equal(m.team.id, '2'); assert.equal(m.options.length, 0);
+  });
+  t('theme match: two teams today default to the soonest and can be chosen', () => {
+    br._setToday([g(B, '1', 15), g(C, '9', 16)]);
+    let m = br.themeMatch();
+    assert.equal(m.team.id, '86'); assert.equal(m.options.length, 2);
+    br.chooseTheme('nfl:2');
+    m = br.themeMatch();
+    assert.equal(m.team.id, '2'); assert.equal(m.current, 'nfl:2');
+    br.chooseTheme('nhl:21'); // not playing today, ignored
+    assert.equal(br.themeMatch().team.id, '2');
+  });
+}
+
 console.log(`\n${passed} checks passed`);

@@ -615,3 +615,4 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 .quest .xp { background: var(--line); }
 
 .match-v { display: flex; align-items: center; gap: 10px; } .match-v span { font-size: 14px; }
+.match-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; } .match-opts .chip.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
