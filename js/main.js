@@ -14,7 +14,8 @@ const ROUTES = [
   { re: /^\/game\/([^/]+)\/([^/]+)$/, view: () => import('./views/game.js'), nav: 'home', params: (m) => ({ league: decodeURIComponent(m[1]), id: decodeURIComponent(m[2]) }) },
   { re: /^\/picks$/, view: () => import('./views/picks.js'), nav: 'picks', params: () => ({}) },
   { re: /^\/season$/, view: () => import('./views/season.js'), nav: 'season', params: () => ({}) },
-  { re: /^\/profile$/, view: () => import('./views/profile.js'), nav: 'profile', params: () => ({}) },
+  { re: /^\/profile$/, view: () => import('./views/profile.js'), nav: 'profile', params: () => ({ mode: 'fan' }) },
+  { re: /^\/shop$/, view: () => import('./views/profile.js'), nav: 'shop', params: () => ({ mode: 'shop' }) },
   { re: /^\/onboarding$/, view: () => import('./views/onboarding.js'), nav: 'none', params: () => ({}) },
   { re: /^\/settings$/, view: () => import('./views/settings.js'), nav: 'settings', params: () => ({}) },
   { re: /^\/check$/, view: () => import('./views/check.js'), nav: 'settings', params: () => ({}) },
@@ -26,6 +27,7 @@ const NAV = [
   { id: 'picks', label: "Pick'em", href: '#/picks' },
   { id: 'season', label: 'Season', href: '#/season' },
   { id: 'profile', label: 'Fan', href: '#/profile' },
+  { id: 'shop', label: 'Shop', href: '#/shop' },
   { id: 'settings', label: 'Settings', href: '#/settings' },
 ];
 

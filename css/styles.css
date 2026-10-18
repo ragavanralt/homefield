@@ -560,3 +560,17 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 .cs-sw.on i { outline: 3px solid var(--fg); outline-offset: 2px; }
 .cs-sw small { font-size: 12px; text-align: center; }
 @media (min-width: 761px) { .cs-back { align-items: center; } .cs-panel { border-radius: 18px; } }
+.buy.short { opacity: .55; }
+.buy-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.buy-sum > div > div { font-family: var(--display); font-weight: 800; font-size: 22px; display: flex; align-items: center; gap: 6px; }
+.buy-sum .coin { width: 18px; height: 18px; }
+.buy-sum .neg { color: var(--hot); font-size: 18px; }
+#confirm-buy { width: 100%; }
+.pf-mini { gap: 10px; }
+.pf-mini .btn { width: 100%; }
+@media (max-width: 760px) {
+  .pf-mini { display: grid; grid-template-columns: 120px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 14px; }
+  .pf-mini .pf-stage { grid-row: 1 / 3; padding-top: 6px; }
+  .pf-mini .avatar.lg, .pf-mini .avatar.lg svg { height: 170px; }
+  .pf-mini .pf-coins { font-size: 28px; }
+}

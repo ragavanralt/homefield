@@ -7,14 +7,18 @@ import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, i
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
-export async function render(root) {
+// Two pages share this file: #/profile (your character and closet) and #/shop (buying).
+export async function render(root, params = {}) {
+  const shop = params.mode === 'shop';
   const unlocked = syncUnlocks();
   if (unlocked.length) toast(`New item unlocked: ${unlocked.map((i) => itemById(i)?.name).join(', ')}`);
   let sec = 'team';
   let only = false;
   let picking = null; // item id whose colour menu is open
+  let confirming = null, confirmCi = 0; // item waiting for a confirmed buy, and the colour being tried
   const host = h('div', { class: 'profile' });
-  root.append(pageHead('Your fan', 'Dress your character with coins you win. Looks only. Nothing here changes your odds.'), host);
+  root.append(shop ? pageHead('Shop', 'Spend the coins you win on clothes and gear. Looks only. Nothing here changes your odds.') : pageHead('Your fan', 'Your character and everything you own. Changing your look is free.'), host);
+  host.classList.toggle('is-shop', shop);
 
   function draw() {
     const state = getState(), av = state.avatar, bank = getBank();
@@ -26,10 +30,13 @@ export async function render(root) {
 
     // left: character
     const teams = myTeams();
-    const left = h('section', { class: 'card pf-me' },
-      h('div', { class: 'pf-stage', style: team ? { '--stage': team.color ? '#' + String(team.color).replace('#', '') : null } : null }, renderAvatar(av, team, 'lg')),
+    const stage = h('div', { class: 'pf-stage', style: team ? { '--stage': team.color ? '#' + String(team.color).replace('#', '') : null } : null }, renderAvatar(av, team, 'lg'));
+    const coins = h('div', { class: 'pf-coins' }, h('i', { class: 'coin' }), fmt(bank.coins), h('small', null, 'coins'));
+    const left = shop
+      ? h('section', { class: 'card pf-me pf-mini' }, stage, coins, h('a', { class: 'btn', href: '#/profile' }, 'Change your look'))
+      : h('section', { class: 'card pf-me' }, stage,
       h('div', { class: 'pf-name' }, h('b', null, `Level ${lvl} · ${rankFor(lvl)}`), h('small', null, `${st.won}-${st.lost} record · best streak ${st.bestStreak}`)),
-      h('div', { class: 'pf-coins' }, h('i', { class: 'coin' }), fmt(bank.coins), h('small', null, 'coins')),
+      coins,
       h('div', { class: 'pf-row' }, h('small', null, 'Body type (free)'), h('div', { class: 'seg pf-body' }, BODIES.map((b, i) => h('button', { type: 'button', class: 'seg-b' + ((av.body ?? 1) === i ? ' on' : ''), 'data-body': b.id, onclick: () => { setAvatar((a) => { a.body = i; }); draw(); } }, b.label)))),
       h('div', { class: 'pf-row' }, h('small', null, 'Skin'), h('div', { class: 'swatches' }, SKINS.map((c, i) => h('button', { type: 'button', class: 'sw' + (av.skin === i ? ' on' : ''), style: { background: c }, 'aria-label': `Skin ${i + 1}`, onclick: () => { setAvatar((a) => { a.skin = i; }); draw(); } })))),
       h('div', { class: 'pf-row' }, h('small', null, 'Hair colour'), h('div', { class: 'swatches' }, HAIR_COLORS.map((c, i) => h('button', { type: 'button', class: 'sw' + (av.hairColor === i ? ' on' : ''), style: { background: c }, 'aria-label': `Hair colour ${i + 1}`, onclick: () => { setAvatar((a) => { a.hairColor = i; }); draw(); } })))),
@@ -41,16 +48,19 @@ export async function render(root) {
     // right: shop
     const tabs = h('div', { class: 'seg pf-tabs', role: 'tablist' }, SECTIONS.map((s) => h('button', { type: 'button', role: 'tab', class: 'seg-b' + (sec === s.id ? ' on' : ''), 'aria-selected': sec === s.id ? 'true' : 'false', onclick: () => { sec = s.id; draw(); } }, s.label)));
     const cur = SECTIONS.find((s) => s.id === sec);
-    const items = ITEMS.filter((i) => i.sec === sec && !i.ach && (!only || av.owned.includes(i.id)));
+    const items = shop ? ITEMS.filter((i) => i.sec === sec && !i.ach && (!only || av.owned.includes(i.id))) : ITEMS.filter((i) => av.owned.includes(i.id));
     const body = h('div', { class: 'shop-body' });
     for (const s of SLOTS) {
       const list = items.filter((i) => i.slot === s.id).sort((a, b) => a.price - b.price);
       if (!list.length) continue;
       body.append(h('h3', { class: 'shop-slot' }, s.label, h('small', null, String(list.length))), h('div', { class: 'shop-grid' }, list.map((it) => itemCard(it, av, bank, team, deal))));
     }
-    if (!items.length) body.append(h('p', { class: 'muted' }, 'You do not own anything here yet.'));
+    if (!items.length) body.append(h('p', { class: 'muted' }, shop ? 'You do not own anything here yet.' : 'Nothing yet.'));
     const dealSec = deal && SECTIONS.find((s) => s.id === deal.sec);
-    const right = h('section', { class: 'card pf-shop' },
+    const right = !shop ? h('section', { class: 'card pf-shop pf-closet' },
+      h('div', { class: 'pf-shop-h' }, h('h2', { class: 'card-h' }, 'Your closet', h('small', null, `${av.owned.length} items`)), h('a', { class: 'btn main', href: '#/shop' }, 'Go to the shop')),
+      h('p', { class: 'muted pf-blurb' }, 'Tap Wear to put something on. The dots switch colours.'), body)
+      : h('section', { class: 'card pf-shop' },
       h('div', { class: 'pf-shop-h' }, h('h2', { class: 'card-h' }, 'Shop'),
         h('label', { class: 'pf-only' }, h('input', { type: 'checkbox', id: 'pf-owned', checked: only ? '' : null, onchange: (e) => { only = e.target.checked; draw(); } }), ' Owned only')),
       deal ? h('div', { class: 'deal' }, h('i', null, 'Today only:'), ` ${deal.name} is 20% off (${fmt(priceOf(deal))} coins, normally ${fmt(deal.price)}). It is in ${dealSec ? dealSec.label : 'the shop'}.`) : null,
@@ -58,8 +68,9 @@ export async function render(root) {
 
     host.append(left, right);
     if (picking) host.append(colourSheet(itemById(picking), av, team));
+    if (confirming) host.append(buySheet(itemById(confirming), av, bank, team));
 
-    host.append(h('section', { class: 'card pf-wide' }, h('h2', { class: 'card-h' }, 'Earned items'),
+    if (!shop) host.append(h('section', { class: 'card pf-wide' }, h('h2', { class: 'card-h' }, 'Earned items'),
       h('p', { class: 'muted' }, 'These cannot be bought. Do the thing and they unlock.'),
       h('div', { class: 'shop-grid' }, ITEMS.filter((i) => i.ach).map((it) => itemCard(it, av, bank, team, deal)))));
   }
@@ -75,11 +86,7 @@ export async function render(root) {
     if (worn) act = ALWAYS_ON.includes(it.slot) ? h('span', { class: 'pill won' }, 'Wearing') : h('button', { type: 'button', class: 'btn small take', onclick: () => { unequip(it.slot); draw(); } }, 'Take off');
     else if (owned) act = h('button', { type: 'button', class: 'btn small wear', onclick: () => { equip(it.id); draw(); } }, 'Wear');
     else if (it.ach) act = h('small', null, it.ach);
-    else act = h('button', { type: 'button', class: 'btn small main buy', 'data-id': it.id, disabled: bank.coins < price ? '' : null, onclick: () => {
-      const r = buy(it.id);
-      if (r.ok) { toast(`Bought ${it.name}`); if (it.colors) picking = it.id; } else toast(r.why === 'coins' ? 'Not enough coins yet' : 'Cannot buy that');
-      draw();
-    } }, h('i', { class: 'coin' }), sale ? h('s', null, fmt(it.price)) : null, ' ' + fmt(price));
+    else act = h('button', { type: 'button', class: 'btn small main buy' + (bank.coins < price ? ' short' : ''), 'data-id': it.id, onclick: () => { confirming = it.id; confirmCi = 0; draw(); } }, h('i', { class: 'coin' }), sale ? h('s', null, fmt(it.price)) : null, ' ' + fmt(price));
     return h('article', { class: `item t-${it.tier}` + (worn ? ' worn' : '') + (owned ? ' owned' : ''), 'data-item': it.id },
       svg,
       h('div', { class: 'it-n' }, it.name),
@@ -98,6 +105,33 @@ export async function render(root) {
         : h('i', { class: 'dot', style: { background: col.k }, title: col.n })),
       owned ? h('button', { type: 'button', class: 'dot more', 'aria-label': `All colours for ${it.name}`, onclick: () => { picking = it.id; draw(); } }, '+')
         : h('small', null, `${it.colors.length} colours`));
+  }
+
+  // Tapping a price only opens this. Nothing is bought until you press the buy button here.
+  function buySheet(it, av, bank, team) {
+    const price = priceOf(it);
+    const after = bank.coins - price;
+    const close = () => { confirming = null; draw(); };
+    const pv = document.createElement('span');
+    pv.className = 'avatar cs-pv'; pv.innerHTML = previewSvg(it, av, team, it.colors ? confirmCi : null);
+    const yes = () => {
+      const r = buy(it.id);
+      if (r.ok) { if (it.colors && confirmCi) setColour(it.id, confirmCi); toast(`Bought ${it.name}${it.colors ? ' in ' + it.colors[confirmCi].n.toLowerCase() : ''}`); }
+      else toast(r.why === 'coins' ? 'Not enough coins yet' : 'Cannot buy that');
+      confirming = null; draw();
+    };
+    return h('div', { class: 'cs-back', onclick: (e) => { if (e.target === e.currentTarget) close(); } },
+      h('div', { class: 'cs-panel', role: 'dialog', 'aria-label': `Buy ${it.name}` },
+        h('div', { class: 'cs-h' }, h('div', null, h('small', null, 'Try it on'), h('div', { class: 'cs-n' }, it.name)), h('button', { type: 'button', class: 'btn small', id: 'buy-cancel', onclick: close }, 'Cancel')),
+        pv,
+        it.colors ? h('div', { class: 'cs-grid' }, it.colors.map((col, i) => h('button', { type: 'button', class: 'cs-sw' + (i === confirmCi ? ' on' : ''), 'data-ci': i, onclick: () => { confirmCi = i; draw(); } },
+          h('i', { style: { background: col.k } }), h('small', null, col.n)))) : null,
+        h('div', { class: 'buy-sum' },
+          h('div', null, h('small', null, 'Price'), h('div', null, h('i', { class: 'coin' }), fmt(price))),
+          h('div', null, h('small', null, 'You have'), h('div', null, fmt(bank.coins))),
+          h('div', null, h('small', null, 'After'), h('div', { class: after < 0 ? 'neg' : '' }, after < 0 ? `${fmt(-after)} short` : fmt(after)))),
+        it.colors ? h('small', { class: 'muted' }, 'All colours come with it. This just picks the one you start in.') : null,
+        h('button', { type: 'button', class: 'btn main big', id: 'confirm-buy', disabled: after < 0 ? '' : null, onclick: yes }, after < 0 ? 'Not enough coins' : `Buy for ${fmt(price)} coins`)));
   }
 
   // The colour menu: opens after you buy something that comes in colours, or from the + on a card.

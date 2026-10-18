@@ -161,15 +161,21 @@ text = await visit('#/league/nhl', { wait: 250 }); assert.ok(!/\b3\b.*\b2\b/.tes
 store.setSetting('spoilerFree', false);
 text = await visit('#/season', { wait: 300 }); assert.ok(app().querySelector('.bk-av svg'), 'avatar on season'); ok('avatar shows on season');
 text = await visit('#/profile', { wait: 200 });
-assert.ok(app().querySelector('.pf-me svg') && /Shop/.test(text), 'profile'); ok('profile page draws avatar and shop');
+assert.ok(app().querySelector('.pf-me svg') && /Your closet/.test(text) && !app().querySelector('.buy'), 'profile'); ok('fan page draws the character and closet, no shop');
+text = await visit('#/shop', { wait: 200 });
+assert.ok(app().querySelector('.pf-me svg') && app().querySelector('.pf-tabs'), 'shop'); ok('shop is its own page');
 app().querySelectorAll('.pf-tabs .seg-b')[0].click();
 const coinsBefore = store.getBank().coins;
 const capBtn = app().querySelector('.buy[data-id="cap"]'); assert.ok(capBtn, 'cap for sale');
 capBtn.click(); await sleep(50);
+assert.equal(store.getBank().coins, coinsBefore, 'tapping a price does not buy'); assert.ok(app().querySelector('#confirm-buy'), 'confirm sheet');
+app().querySelector('#buy-cancel').click(); await sleep(30);
+assert.ok(!app().querySelector('#confirm-buy') && !store.getState().avatar.owned.includes('cap')); ok('tapping a price opens a confirm sheet; cancel buys nothing');
+app().querySelector('.buy[data-id="cap"]').click(); await sleep(30); app().querySelector('#confirm-buy').click(); await sleep(50);
 assert.ok(store.getBank().coins < coinsBefore && store.getState().avatar.owned.includes('cap')); ok('buying an item takes coins');
 assert.ok(app().querySelector('.pf-me svg').innerHTML.includes('#003e7e') || app().querySelector('.pf-me svg').innerHTML.toLowerCase().includes('#003e7e'), 'team colours'); ok('cap wears followed team colours');
-// colour menu: blanks tab, open the + on the free tee, pick black
-app().querySelectorAll('.pf-tabs .seg-b')[2].click(); await sleep(30);
+// colour menu: from the closet on the fan page, open the + on the free tee, pick black
+text = await visit('#/profile', { wait: 200 });
 const teeMore = app().querySelector('[data-item="tee"] .dot.more'); assert.ok(teeMore, 'tee colour button'); teeMore.click(); await sleep(30);
 assert.ok(app().querySelector('.cs-panel'), 'colour menu'); app().querySelector('.cs-sw[data-ci="2"]').click(); await sleep(30);
 assert.equal(store.getState().avatar.col.tee, 2); app().querySelector('#cs-done').click(); await sleep(30);
