@@ -4,7 +4,7 @@ import { getState, update, myTeams, myTeamIn, onSlipChange, leagueHidden } from 
 import { LEAGUES, MAJOR_KEYS, SOCCER_KEYS, SOCCER_EXTRAS, isSoccer } from '../leagues.js';
 import { getScoreboard } from '../espn.js';
 import { pageHead } from '../components.js';
-import { moneylineRow, propsPanel } from '../markets.js';
+import { moneylineRow, panelFor } from '../markets.js';
 import { bankStrip, betCard } from '../bankroll.js';
 import { settleAll } from '../settle.js';
 import { addDays, fmtDay, fmtTime, ymd } from '../util.js';
@@ -18,8 +18,9 @@ export async function render(root) {
   let chip = 'all'; // all | nhl | nba | nfl | mlb | soccer
   let offset = 0;
   let tab = 'open';
+  let type = 'winner'; // winner | props | first | game
 
-  root.append(pageHead("Pick'em", 'Play money. Tap a price to add it to your slip. Underdogs pay more.'));
+  root.append(pageHead("Pick'em", 'Play money. Pick a section, then tap a price to add it to your slip.'));
   const bank = bankStrip();
   const controls = h('div', { class: 'controls row-controls' });
   const board = h('div', { class: 'stack' });
@@ -40,6 +41,7 @@ export async function render(root) {
 
   function drawControls() {
     clear(controls).append(
+      h('div', { class: 'seg mk-types' }, [['winner', 'Winners'], ['props', 'Player props'], ['first', 'First scorer'], ['game', 'Game bets']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (type === k ? ' on' : ''), id: 'type-' + k, onclick: () => { type = k; drawControls(); loadGames(); } }, l))),
       h('div', { class: 'seg' }, [['all', 'All games'], ['mine', 'My teams']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (scope === k ? ' on' : ''), id: 'scope-' + k, onclick: () => { scope = k; update((s) => { s.pickScope = k; }); drawControls(); loadGames(); } }, l))),
       h('div', { class: 'chip-row' }, [['all', 'All sports'], ['nhl', 'NHL'], ['nba', 'NBA'], ['nfl', 'NFL'], ['mlb', 'MLB'], ['soccer', 'Soccer']].map(([k, l]) => h('button', { type: 'button', class: 'chip' + (chip === k ? ' on' : ''), 'aria-pressed': chip === k ? 'true' : 'false', onclick: () => { chip = k; drawControls(); loadGames(); } }, l))),
       h('div', { class: 'seg' }, ['Today', 'Tomorrow', 'In 2 days'].map((l, i) => h('button', { type: 'button', class: 'seg-b' + (offset === i ? ' on' : ''), onclick: () => { offset = i; drawControls(); loadGames(); } }, l))));
@@ -65,22 +67,21 @@ export async function render(root) {
   }
 
   function gameRow(g) {
+    const my = myTeamIn(g);
+    const head = h('div', { class: 'pg-h' },
+      h('a', { class: 'pg-teams', href: `#/game/${g.league}/${g.id}` }, crest(g.away, 30), h('span', null, `${g.away.abbr} ${isSoccer(g.league) ? 'vs' : '@'} ${g.home.abbr}`), crest(g.home, 30)),
+      h('small', null, `${LEAGUES[g.league].label} · ${fmtDay(g.date)} ${fmtTime(g.date)}`));
+    if (type === 'winner') return h('div', { class: 'pgame' + (my ? ' mine' : '') }, head, moneylineRow(g));
+    // the other sections load when you open a game, so nothing is fetched until you ask
     const holder = h('div', { class: 'pprops', hidden: true });
-    let loaded = false;
-    const btn = h('button', { type: 'button', class: 'btn small', 'aria-expanded': 'false', onclick: () => {
+    let built = false;
+    const btn = h('button', { type: 'button', class: 'btn small pg-open', 'aria-expanded': 'false', onclick: () => {
       holder.hidden = !holder.hidden;
       btn.setAttribute('aria-expanded', holder.hidden ? 'false' : 'true');
-      btn.textContent = holder.hidden ? 'Player props' : 'Hide props';
-      if (!loaded && !holder.hidden) { loaded = true; holder.append(propsPanel(g)); }
-    } }, 'Player props');
-    const my = myTeamIn(g);
-    return h('div', { class: 'pgame' + (my ? ' mine' : '') },
-      h('div', { class: 'pg-h' },
-        h('a', { class: 'pg-teams', href: `#/game/${g.league}/${g.id}` }, crest(g.away, 30), h('span', null, `${g.away.abbr} ${isSoccer(g.league) ? 'vs' : '@'} ${g.home.abbr}`), crest(g.home, 30)),
-        h('small', null, `${LEAGUES[g.league].label} · ${fmtDay(g.date)} ${fmtTime(g.date)}`)),
-      moneylineRow(g),
-      g.league && LEAGUES[g.league].group !== 'soccer' ? btn : null,
-      holder);
+      btn.textContent = holder.hidden ? 'Open' : 'Close';
+      if (!holder.hidden && !built) { built = true; holder.append(panelFor(type, g)); }
+    } }, 'Open');
+    return h('div', { class: 'pgame' + (my ? ' mine' : '') }, h('div', { class: 'pg-row' }, head, btn), holder);
   }
 
   function drawHistory() {

@@ -5,7 +5,7 @@ import { getState, myTeamIn, markWatched, isWatched, askLeft, useAsk } from '../
 import { LEAGUES, groupOf, isSoccer, leagueLabel } from '../leagues.js';
 import { getSummary, rememberGame, recallGame } from '../espn.js';
 import { statusInfo, watchBlock } from '../components.js';
-import { moneylineRow, propsPanel } from '../markets.js';
+import { marketTabs } from '../markets.js';
 import { betCard } from '../bankroll.js';
 import { buildSeries, swings, preGameProbs } from '../winprob.js';
 import { buildRecap, whenLabel } from '../recap.js';
@@ -128,9 +128,7 @@ export async function render(root, { league, id }) {
     const mineBets = Object.values(getState().bets).filter((b) => b.legs.some((l) => l.gameKey === g.key)).sort((a, b) => b.ts - a.ts);
     const wrap = h('div', { class: 'stack' });
     if (g.state === 'pre') {
-      const holder = h('div');
-      wrap.append(h('h2', { class: 'card-h' }, 'Bet on this game'), moneylineRow(g),
-        h('div', { class: 'seg' }, h('button', { type: 'button', class: 'btn small', id: 'show-props', onclick: (e) => { e.currentTarget.remove(); holder.append(propsPanel(g)); } }, 'Show player props')), holder);
+      wrap.append(h('h2', { class: 'card-h' }, 'Bet on this game'), marketTabs(g));
     }
     if (mineBets.length) wrap.append(h('h2', { class: 'card-h' }, 'Your bets on this game'), h('div', { class: 'betgrid' }, mineBets.map(betCard)));
     return wrap.children.length ? h('section', { class: 'card' }, wrap) : null;

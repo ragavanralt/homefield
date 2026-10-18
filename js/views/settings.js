@@ -49,7 +49,7 @@ export async function render(root) {
     const keyIn = h('input', { class: 'search', type: 'password', id: 'odds-key', placeholder: 'Paste your Odds API key', autocomplete: 'off', value: getState().settings.oddsKey || '' });
     const keyMsg = h('p', { class: 'muted small-note', id: 'odds-msg' }, getState().settings.oddsKey ? 'A key is saved on this device.' : 'No key yet. Pick\'em uses simulated lines.');
     host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Live sportsbook lines (optional)'),
-      h('p', { class: 'muted' }, 'Gets real DraftKings and FanDuel player props for NFL, NBA, NHL and MLB through The Odds API. Make a free key at the-odds-api.com (500 credits a month, about 3 to 5 credits per game you open). The key stays on this device.'),
+      h('p', { class: 'muted' }, 'Gets real DraftKings and FanDuel player props for NFL, NBA, NHL and MLB through The Odds API. Make a free key at the-odds-api.com (500 credits a month). Opening a section like Passing or First scorer costs 1 to 2 credits, and answers are saved on this device for a while so reopening is free. If you run out, the app switches to simulated lines by itself. The key stays on this device.'),
       keyIn, keyMsg,
       h('div', { class: 'row wrap' },
         h('button', { type: 'button', class: 'btn main', id: 'odds-save', onclick: async () => {

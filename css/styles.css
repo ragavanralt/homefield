@@ -473,3 +473,24 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 }
 
 .facts2 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+/* pick'em sections */
+.mk-types, .mk-tabs { overflow-x: auto; scrollbar-width: none; max-width: 100%; } .mk-types .seg-b, .mk-tabs .seg-b { white-space: nowrap; }
+.pg-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pg-row .pg-h { flex: 1; min-width: 0; }
+.mk { display: flex; flex-direction: column; gap: 10px; }
+.mk-t { font-family: var(--display); font-size: 16px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 8px 0 0; }
+.gb { display: flex; flex-direction: column; gap: 6px; }
+.gb-t { font-weight: 700; font-size: 14px; }
+.gb .ml-row .bet-btn { min-height: 52px; }
+.pr-row.first { grid-template-columns: minmax(0, 1fr) auto; }
+.props .chip-row, .mk .chip-row { flex-wrap: wrap; }
+.pg-h small { display: block; }
+@media (max-width: 560px) {
+  .bankroll { grid-template-columns: 1fr 1fr; padding: 12px 14px; gap: 10px 14px; }
+  .bk-main, .bk-lvl, .bk-act { grid-column: 1 / -1; }
+  .bk-coins { font-size: 34px; } .bk-big { font-size: 24px; }
+  .pr-row.first { grid-template-columns: minmax(0, 1fr); } .pr-row.first .pr-btns .bet-btn { width: 100%; }
+}
+.mk-types { display: flex; flex-wrap: wrap; overflow: visible; } .mk-types .seg-b { flex: 1 1 auto; }
+@media (max-width: 560px) { .mk-types { display: grid; grid-template-columns: 1fr 1fr; } .bk-streak small:last-child { display: none; } .bk-lvl .xp { display: none; } }

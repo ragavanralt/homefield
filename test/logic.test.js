@@ -291,4 +291,46 @@ t('mlb best-of series closes when a team has enough wins', () => {
   store.setSetting('oddsKey', '');
 }
 
+/* ---------- game bets and first scorer ---------- */
+import * as S from '../js/specials.js';
+{
+  const mkG = (lg, over = {}) => ({ ...normEvent(F.event(lg, 5, { state: 'pre', hs: 0, as: 0, date: new Date(Date.now() + 36e5 * 30).toISOString() }), lg), ...over });
+  const nfl = mkG('nfl'); nfl.odds = { ...(nfl.odds || {}), overUnder: 44.5, details: nfl.home.abbr + ' -3.5' };
+  const list = S.gameBets(nfl);
+  t('game bets: nfl has total, spread, first team, overtime and turnovers', () => {
+    const ids = list.map((m) => m.id);
+    for (const id of ['total', 'spread', 'first', 'ot', 'to-total', 'to-away', 'to-home']) assert.ok(ids.includes(id), id);
+    assert.ok(list.every((m) => m.legs.every((l) => l.dec > 1)));
+  });
+  t('game bets: soccer has both teams to score and no spread', () => {
+    const ids = S.gameBets(mkG('eng.1')).map((m) => m.id);
+    assert.ok(ids.includes('btts') && !ids.includes('spread') && ids.includes('total'));
+  });
+  const fin = (lg, hs, as, extra = {}) => ({ game: { ...normEvent(F.event(lg, 6, { state: 'post', hs, as, detail: 'Final' }), lg), ...extra }, plays: [], box: { teams: [], players: [] } });
+  const leg = (m, i) => ({ ...m.legs[i], league: 'nfl' });
+  t('settle: total and spread', () => {
+    const d = fin('nfl', 27, 20); // 47 total, home by 7
+    assert.equal(B.evalLeg(leg(list.find((m) => m.id === 'total'), 0), d), 'won');
+    assert.equal(B.evalLeg(leg(list.find((m) => m.id === 'total'), 1), d), 'lost');
+    const sp = list.find((m) => m.id === 'spread'); // home -3.5
+    assert.equal(B.evalLeg(leg(sp, 1), d), 'won'); assert.equal(B.evalLeg(leg(sp, 0), d), 'lost');
+  });
+  t('settle: first team, first scorer and turnovers from plays and box', () => {
+    const d = fin('nfl', 27, 20);
+    d.plays = [{ scoring: true, teamId: d.game.away.id, type: 'Field Goal Good', text: 'K Kicker 40 Yd Field Goal', participants: [] },
+      { scoring: true, teamId: d.game.home.id, type: 'Rushing Touchdown', text: 'Josh Allen 5 Yd Run', participants: ['Josh Allen'] }];
+    assert.equal(B.evalLeg(leg(list.find((m) => m.id === 'first'), 0), d), 'won'); // away scored first
+    const fp = S.firstLeg(nfl, { name: 'Josh Allen', playerId: '1', dec: 8 });
+    assert.equal(B.evalLeg({ ...fp, league: 'nfl' }, d), 'won'); // first TD, not the field goal
+    assert.equal(B.evalLeg({ ...S.firstLeg(nfl, { name: 'Other Guy', playerId: '2', dec: 8 }), league: 'nfl' }, d), 'lost');
+    d.box = { players: [], teams: [{ id: d.game.home.id, stats: [{ label: 'Turnovers', value: '2' }] }, { id: d.game.away.id, stats: [{ label: 'Turnovers', value: '1' }] }] };
+    assert.equal(B.evalLeg(leg(list.find((m) => m.id === 'to-total'), 0), d), 'won'); // 3 over 2.5
+  });
+  t('first scorer prices are sensible', () => {
+    const players = [{ id: 'a', name: 'A Back', short: 'A. Back', pos: 'RB' }, { id: 'b', name: 'B Wide', short: 'B. Wide', pos: 'WR' }];
+    const m = S.scorerMarkets(nfl, 'home', players, new Map([['a', 0.8], ['b', 0.5]]));
+    assert.equal(m[0].name, 'A Back'); assert.ok(m[0].dec > 2 && m[0].dec < 15 && m[0].dec < m[1].dec);
+  });
+}
+
 console.log(`\n${passed} checks passed`);

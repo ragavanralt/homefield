@@ -1,5 +1,7 @@
-// Real sportsbook player prop lines (DraftKings, FanDuel) from The Odds API, with your own free key.
-// The key lives only on this device. Without a key the app uses its own simulated lines.
+// Real sportsbook lines (DraftKings, FanDuel) from The Odds API, with your own free key.
+// The key lives only on this device. Without a key (or out of credits) the app uses its own simulated lines.
+// Credit saving: every call asks for only the markets on screen, answers are remembered on this device,
+// and the schedule lookup is free.
 import { CONFIG } from './config.js';
 import { getState } from './store.js';
 import { LEAGUES } from './leagues.js';
@@ -15,21 +17,46 @@ export const BOOK_MARKETS = {
   nhl: { player_points: 'pts', player_shots_on_goal: 'sog' },
   mlb: { batter_hits: 'hits', batter_home_runs: 'hr' },
 };
-const PER_MARKET = { nfl: 6, nba: 6, nhl: 6, mlb: 6 };
+const FIRST_MARKET = { nfl: 'player_1st_td', nhl: 'player_goal_scorer_first', nba: 'player_first_basket' };
+const PER_MARKET = 8;
 
 export const oddsKey = () => (getState().settings.oddsKey || '').trim();
 export const hasOddsKey = () => !!oddsKey();
 let remaining = null;
+let outUntil = 0; // when a 429 comes back, stop asking for a while
 export const creditsLeft = () => remaining;
+export const outOfCredits = () => Date.now() < outUntil;
+
+/* small on-device cache so reloads and re-opens cost nothing */
+const LS = 'homefield:odds';
+const mem = new Map();
+function lsGet(k) {
+  try { const all = JSON.parse(localStorage.getItem(LS) || '{}'); return all[k]; } catch (e) { return undefined; }
+}
+function lsSet(k, v) {
+  try {
+    const all = JSON.parse(localStorage.getItem(LS) || '{}');
+    all[k] = v;
+    const keys = Object.keys(all);
+    if (keys.length > 60) keys.sort((a, b) => all[a].t - all[b].t).slice(0, keys.length - 60).forEach((x) => delete all[x]);
+    localStorage.setItem(LS, JSON.stringify(all));
+  } catch (e) { /* storage full or blocked */ }
+}
+const cacheGet = (k, ttl) => { const v = mem.get(k) || lsGet(k); return v && Date.now() - v.t < ttl ? v.data : null; };
+const cacheSet = (k, data) => { const v = { t: Date.now(), data }; mem.set(k, v); lsSet(k, v); };
+// lines move more close to the game, so remember them for less time then
+const ttlFor = (game) => { const mins = (new Date(game.date).getTime() - Date.now()) / 60000; return mins > 360 ? 3 * 3600000 : mins > 60 ? 45 * 60000 : 10 * 60000; };
+export const clearOddsCache = () => { mem.clear(); try { localStorage.removeItem(LS); } catch (e) { /* ignore */ } };
 
 async function call(path, params = {}) {
+  if (outOfCredits()) throw new Error('Out of Odds API credits for now');
   const q = new URLSearchParams({ apiKey: oddsKey(), ...params });
   const url = `${API}${path}?${q}`;
   const res = await fetch(CONFIG.proxy ? `${CONFIG.proxy}?u=${encodeURIComponent(url)}` : url);
   const left = res.headers.get('x-requests-remaining');
   if (left != null) remaining = left;
   if (res.status === 401) throw new Error('The Odds API rejected that key');
-  if (res.status === 429) throw new Error('Out of Odds API credits for now');
+  if (res.status === 429 || res.status === 402) { outUntil = Date.now() + 30 * 60000; throw new Error('Out of Odds API credits for now'); }
   if (!res.ok) throw new Error('The Odds API answered with ' + res.status);
   return res.json();
 }
@@ -40,30 +67,43 @@ export async function testKey() {
   return { sports: Array.isArray(j) ? j.length : 0, remaining };
 }
 
-const evCache = new Map(); // sport -> { t, list }
 async function events(sport) {
-  const hit = evCache.get(sport);
-  if (hit && Date.now() - hit.t < 600000) return hit.list;
-  const list = await call(`/v4/sports/${sport}/events`, {});
-  evCache.set(sport, { t: Date.now(), list });
+  const hit = cacheGet('ev:' + sport, 600000);
+  if (hit) return hit;
+  const list = await call(`/v4/sports/${sport}/events`, {}); // free
+  cacheSet('ev:' + sport, list);
   return list;
 }
 
 const sameTeam = (a, b) => { const x = nameKey(a), y = nameKey(b); return !!x && !!y && (x === y || x.endsWith(y) || y.endsWith(x)); };
 
-/** Props for one game from the books. Returns { markets: [market], book }. markets have no teamId yet. */
-export async function bookProps(game) {
+async function findEvent(game, sport) {
+  const evs = await events(sport);
+  return evs.find((e) => sameTeam(e.home_team, game.home.name) && sameTeam(e.away_team, game.away.name))
+    || evs.find((e) => sameTeam(e.home_team, game.home.name) || sameTeam(e.away_team, game.away.name));
+}
+
+async function eventOdds(game, sport, markets, ck) {
+  const hit = cacheGet(ck, ttlFor(game));
+  if (hit) return hit;
+  const ev = await findEvent(game, sport);
+  if (!ev) return { bookmakers: [] };
+  const j = await call(`/v4/sports/${sport}/events/${ev.id}/odds`, { regions: 'us', bookmakers: 'draftkings,fanduel', markets: markets.join(','), oddsFormat: 'decimal' });
+  cacheSet(ck, j);
+  return j;
+}
+
+/** Over/under props for the given stat keys (for example ['passyds','passtd']). Returns { markets, book }. */
+export async function bookProps(game, stats) {
   const grp = LEAGUES[game.league]?.group;
   const sport = SPORT[grp];
   if (!sport || !hasOddsKey()) return { markets: [], book: '' };
-  const evs = await events(sport);
-  const ev = evs.find((e) => sameTeam(e.home_team, game.home.name) && sameTeam(e.away_team, game.away.name))
-    || evs.find((e) => sameTeam(e.home_team, game.home.name) || sameTeam(e.away_team, game.away.name));
-  if (!ev) return { markets: [], book: '' };
   const map = BOOK_MARKETS[grp];
-  const j = await call(`/v4/sports/${sport}/events/${ev.id}/odds`, { regions: 'us', bookmakers: 'draftkings,fanduel', markets: Object.keys(map).join(','), oddsFormat: 'decimal' });
+  const want = Object.keys(map).filter((k) => !stats || stats.includes(map[k]));
+  if (!want.length) return { markets: [], book: '' };
+  const j = await eventOdds(game, sport, want, `p:${game.key}:${want.join(',')}`);
   const defs = PROP_DEFS[grp];
-  const rows = new Map(); // market|player -> market
+  const rows = new Map();
   for (const bk of ['draftkings', 'fanduel']) {
     const b = (j.bookmakers || []).find((x) => x.key === bk);
     if (!b) continue;
@@ -88,10 +128,31 @@ export async function bookProps(game) {
       }
     }
   }
-  // keep the busiest few per market
   const byStat = new Map();
   for (const m of rows.values()) { if (!byStat.has(m.stat)) byStat.set(m.stat, []); byStat.get(m.stat).push(m); }
   const out = [];
-  for (const list of byStat.values()) out.push(...list.sort((a, b) => b.line - a.line).slice(0, PER_MARKET[grp] || 6));
+  for (const list of byStat.values()) out.push(...list.sort((a, b) => b.line - a.line).slice(0, PER_MARKET * 2));
   return { markets: out, book: [...new Set(out.map((m) => m.book))].join(' and ') };
+}
+
+/** First scorer prices. Returns { markets: [{ name, dec }], book }. */
+export async function bookFirst(game) {
+  const grp = LEAGUES[game.league]?.group;
+  const sport = SPORT[grp], market = FIRST_MARKET[grp];
+  if (!sport || !market || !hasOddsKey()) return { markets: [], book: '' };
+  const j = await eventOdds(game, sport, [market], `f:${game.key}`);
+  const out = new Map();
+  for (const bk of ['draftkings', 'fanduel']) {
+    const b = (j.bookmakers || []).find((x) => x.key === bk);
+    const m = b && (b.markets || []).find((x) => x.key === market);
+    if (!m) continue;
+    for (const o of m.outcomes || []) {
+      const who = o.description || o.name;
+      if (!who || !(o.price > 1) || /^(over|under|yes|no)$/i.test(who)) continue;
+      const k = nameKey(who);
+      if (!out.has(k)) out.set(k, { name: who, dec: o.price, book: b.title || bk });
+    }
+  }
+  const list = [...out.values()].sort((a, b) => a.dec - b.dec);
+  return { markets: list, book: [...new Set(list.map((x) => x.book))].join(' and ') };
 }

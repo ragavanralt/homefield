@@ -2,6 +2,7 @@
 import { LEAGUES, hasDraw } from './leagues.js';
 import { preGameProbs } from './winprob.js';
 import { clamp } from './util.js';
+import { evalSpecial } from './specials.js';
 
 export const START_COINS = 1000;
 export const MIN_STAKE = 10;
@@ -17,7 +18,7 @@ export function american(dec) {
 }
 export const fmtX = (dec) => (dec >= 10 ? dec.toFixed(1) : dec.toFixed(2)) + 'x';
 
-function poissonOver(lambda, line) {
+export function poissonOver(lambda, line) {
   const k = Math.floor(line);
   let term = Math.exp(-lambda), sum = term;
   for (let i = 1; i <= k; i++) { term *= lambda / i; sum += term; }
@@ -29,7 +30,7 @@ function erf(x) { // Abramowitz-Stegun
   const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
   return s * y;
 }
-const normalOver = (mean, sd, line) => clamp(1 - 0.5 * (1 + erf((line - mean) / (sd * Math.SQRT2))), 0.02, 0.98);
+export const normalOver = (mean, sd, line) => clamp(1 - 0.5 * (1 + erf((line - mean) / (sd * Math.SQRT2))), 0.02, 0.98);
 
 /** Moneyline prices for a game, from the feed's odds or team records. */
 export function moneylines(g) {
@@ -64,6 +65,14 @@ export const PROP_DEFS = {
     { key: 'hr', label: 'Home runs', dist: 'poisson', labels: ['HR'], need: 'AB', box: [{ g: /batt/i, l: ['HR'] }], min: 0.12, top: 2, fixedLine: 0.5 },
   ],
 };
+/** The stat groups shown as chips in the props section. */
+export const PROP_CATS = {
+  nfl: [{ id: 'pass', label: 'Passing', stats: ['passyds', 'passtd'] }, { id: 'rush', label: 'Rushing yards', stats: ['rushyds'] }, { id: 'recy', label: 'Receiving yards', stats: ['recyds'] }, { id: 'rec', label: 'Receptions', stats: ['rec'] }],
+  nba: [{ id: 'pts', label: 'Points', stats: ['pts'] }, { id: 'reb', label: 'Rebounds', stats: ['reb'] }, { id: 'ast', label: 'Assists', stats: ['ast'] }],
+  nhl: [{ id: 'pts', label: 'Points', stats: ['pts'] }, { id: 'sog', label: 'Shots on goal', stats: ['sog'] }],
+  mlb: [{ id: 'hits', label: 'Hits', stats: ['hits'] }, { id: 'hr', label: 'Home runs', stats: ['hr'] }],
+};
+export const propCatsFor = (league) => PROP_CATS[LEAGUES[league]?.group] || [];
 export const propDefsFor = (league) => PROP_DEFS[LEAGUES[league]?.group] || [];
 
 const nk = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
@@ -201,7 +210,8 @@ export function propLeg(g, market, dir) {
 
 /** Two legs that can't both be bet: same market, other side. */
 export const conflicts = (a, b) => a.key !== b.key && a.gameKey === b.gameKey && (
-  (a.kind === 'ml' && b.kind === 'ml') || (a.kind === 'prop' && b.kind === 'prop' && a.prop.playerId === b.prop.playerId && a.prop.stat === b.prop.stat));
+  (a.kind === 'ml' && b.kind === 'ml') || (a.kind === 'prop' && b.kind === 'prop' && a.prop.playerId === b.prop.playerId && a.prop.stat === b.prop.stat) ||
+  (a.kind === 'special' && b.kind === 'special' && a.sp.grp === b.sp.grp));
 
 export const parlayDec = (legs) => r2(legs.reduce((m, l) => m * l.dec, 1));
 
@@ -217,6 +227,7 @@ export function evalLeg(leg, data) {
     const winner = h > a ? 'home' : 'away';
     return leg.side === winner ? 'won' : 'lost';
   }
+  if (leg.kind === 'special') return evalSpecial(leg, data);
   let total = 0, found = false;
   for (const spec of leg.prop.box) {
     const re = new RegExp(spec.g, 'i');
@@ -268,7 +279,7 @@ export function betStats(bets, bank) {
   const returned = settled.reduce((s, b) => s + (b.payout || 0), 0) - settled.filter((b) => b.status === 'void').reduce((s, b) => s + b.stake, 0);
   const biggest = won.reduce((m, b) => (!m || b.payout - b.stake > m.payout - m.stake ? b : m), null);
   const longshot = won.reduce((m, b) => (!m || b.dec > m.dec ? b : m), null);
-  const propWins = won.reduce((n, b) => n + b.legs.filter((l) => l.kind === 'prop' && l.result === 'won').length, 0);
+  const propWins = won.reduce((n, b) => n + b.legs.filter((l) => (l.kind === 'prop' || l.kind === 'special') && l.result === 'won').length, 0);
   const parlayWins = won.filter((b) => b.mode === 'parlay');
   return {
     total: all.length, pending: all.length - settled.length, won: won.length, lost: lost.length,
@@ -283,7 +294,7 @@ export function badges(st, bank) {
     { id: 'first', name: 'First blood', blurb: 'Win your first bet', got: st.won >= 1 },
     { id: 'parlay', name: 'Parlay pro', blurb: 'Hit a 3+ leg parlay', got: st.biggestParlay >= 3 },
     { id: 'long', name: 'Longshot', blurb: 'Win a bet paying 4x or more', got: !!st.longshot && st.longshot.dec >= 4 },
-    { id: 'props', name: 'Prop master', blurb: 'Win 5 player props', got: st.propWins >= 5 },
+    { id: 'props', name: 'Prop master', blurb: 'Win 5 props or game bets', got: st.propWins >= 5 },
     { id: 'heat', name: 'On fire', blurb: 'Win 5 bets in a row', got: st.bestStreak >= 5 },
     { id: 'rich', name: 'High roller', blurb: 'Reach 5,000 coins', got: bank.peak >= 5000 },
   ];
