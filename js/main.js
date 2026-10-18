@@ -5,6 +5,7 @@ import { mountSlip, slipHidden } from './slip.js';
 import { toast } from './ui.js';
 import { TABS } from './leagues.js';
 import { settleAll } from './settle.js';
+import { applyTheme, watchSystem } from './themes.js';
 
 const ROUTES = [
   { re: /^\/?$/, view: () => import('./views/home.js'), nav: 'home', params: () => ({}) },
@@ -54,7 +55,6 @@ export async function route() {
   document.body.classList.toggle('onboarding', navId === 'none');
   slipHidden(navId === 'none');
   document.body.removeAttribute('style');
-  document.documentElement.removeAttribute('style');
 
   clear(app);
   const root = h('div', { class: 'view' });
@@ -79,6 +79,8 @@ function drawNav(nav, active) {
 }
 
 export function start() {
+  applyTheme(getState().settings);
+  watchSystem(() => getState().settings);
   window.addEventListener('hashchange', route);
   const slip = document.getElementById('slip');
   if (slip) mountSlip(slip);

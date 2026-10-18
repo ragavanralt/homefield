@@ -44,7 +44,9 @@ export const scoreboardUrl = (lg, ymdStr) => `${base(lg)}/scoreboard?dates=${ymd
 export const summaryUrl = (lg, id) => `${base(lg)}/summary?event=${id}`;
 export const teamsUrl = (lg) => `${base(lg)}/teams?limit=300`;
 export const scheduleUrl = (lg, teamId) => `${base(lg)}/teams/${teamId}/schedule`;
-export const standingsUrl = (lg) => `${CONFIG.espnBase}/apis/v2/sports/${LEAGUES[lg].sport}/${LEAGUES[lg].slug}/standings`;
+// The standings table lives on ESPN's "web" host; the plain host only returns a stub with a link.
+export const standingsUrl = (lg) => `${CONFIG.espnWebBase}/apis/v2/sports/${LEAGUES[lg].sport}/${LEAGUES[lg].slug}/standings`;
+export const standingsUrlAlt = (lg) => `${CONFIG.espnBase}/apis/v2/sports/${LEAGUES[lg].sport}/${LEAGUES[lg].slug}/standings`;
 
 /* ---------- remember games we have seen so a game page can open instantly ---------- */
 const seen = new Map();
@@ -305,20 +307,23 @@ export function normSummary(j, league, id) {
 
 export function normStandings(j) {
   const out = [];
-  const nodes = j.children && j.children.length ? j.children : [j];
-  for (const ch of nodes) {
-    const entries = ch.standings?.entries || [];
-    if (!entries.length) continue;
-    out.push({
-      name: ch.name || ch.abbreviation || '',
-      rows: entries.map((e) => {
-        const stats = {};
-        for (const s of e.stats || []) stats[s.name] = { v: s.displayValue ?? s.value, abbr: s.abbreviation || s.shortDisplayName || s.name, value: s.value };
-        const t = e.team || {};
-        return { team: { id: String(t.id || ''), abbr: t.abbreviation || '', name: t.displayName || t.name || '', logo: t.logos?.[0]?.href || t.logo || '' }, stats };
-      }),
-    });
-  }
+  const walk = (node, trail) => {
+    const entries = node.standings?.entries || [];
+    if (entries.length) {
+      out.push({
+        name: [...trail, node.name || node.abbreviation || ''].filter(Boolean).slice(-2).join(' · '),
+        rows: entries.map((e) => {
+          const stats = {};
+          for (const s of e.stats || []) stats[s.name] = { v: s.displayValue ?? s.value, abbr: s.abbreviation || s.shortDisplayName || s.name, value: s.value };
+          const t = e.team || {};
+          return { team: { id: String(t.id || ''), abbr: t.abbreviation || '', name: t.displayName || t.name || '', logo: t.logos?.[0]?.href || t.logo || '' }, stats };
+        }),
+      });
+    }
+    for (const c of node.children || []) walk(c, [...trail, node.name && node !== j ? node.name : ''].filter(Boolean));
+  };
+  walk(j, []);
+  // when a conference table and its division tables both exist, keep the more detailed (smaller) groups
   return out;
 }
 
@@ -365,7 +370,7 @@ export async function getTeams(league) {
     } catch (e) { firstErr = firstErr || e; }
   }
   try {
-    const groups = normStandings(await getJSON(standingsUrl(league), 3600000));
+    const groups = await getStandings(league);
     const seen = new Map();
     for (const g of groups) for (const r of g.rows) if (r.team.id && !seen.has(r.team.id)) seen.set(r.team.id, r.team);
     const teams = mapTeams(league, [...seen.values()].map((t) => ({ id: t.id, abbreviation: t.abbr, displayName: t.name, logo: t.logo })));
@@ -450,6 +455,13 @@ export async function getAthleteStats(league, athleteId) {
 }
 
 export async function getStandings(league) {
-  const j = await getJSON(standingsUrl(league), 300000);
-  return normStandings(j);
+  let lastErr, groups = [];
+  for (const url of [standingsUrl(league), standingsUrlAlt(league)]) {
+    try {
+      groups = normStandings(await getJSON(url, 300000));
+      if (groups.length) return groups;
+    } catch (e) { lastErr = lastErr || e; }
+  }
+  if (lastErr && !groups.length) throw lastErr;
+  return groups;
 }

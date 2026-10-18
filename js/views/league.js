@@ -64,14 +64,18 @@ export async function render(root, { id }) {
         const cols = COLS[LEAGUES[league].group];
         groups.forEach((gr) => {
           const first = gr.rows[0]?.stats || {};
-          const use = cols.filter((c) => first[c]);
+          let use = cols.filter((c) => first[c]);
+          if (use.length < 3) use = Object.keys(first).filter((k) => !/rank|seed|clincher|note/i.test(k)).slice(0, 8);
           const rows = [...gr.rows];
-          if (rows.every((r) => r.stats.rank)) rows.sort((a, b) => a.stats.rank.value - b.stats.rank.value);
+          const num = (r, k) => parseFloat(r.stats[k]?.value ?? r.stats[k]?.v);
+          if (rows.every((r) => r.stats.rank)) rows.sort((a, b) => num(a, 'rank') - num(b, 'rank'));
+          else if (rows.every((r) => r.stats.playoffSeed)) rows.sort((a, b) => num(a, 'playoffSeed') - num(b, 'playoffSeed'));
+          else { const k = ['points', 'winPercent', 'wins'].find((x) => rows.every((r) => r.stats[x])); if (k) rows.sort((a, b) => num(b, k) - num(a, k)); }
           body.append(h('section', { class: 'blk' }, gr.name ? h('h2', { class: 'blk-h' }, gr.name) : null,
             h('div', { class: 'tbl-scroll' }, h('table', { class: 'tbl' },
               h('thead', null, h('tr', null, h('th', null, '#'), h('th', { class: 'l' }, 'Team'), use.map((c) => h('th', null, first[c].abbr || c)))),
               h('tbody', null, rows.map((r, i) => {
-                const mine = getState().teams.some((t) => t.id === r.team.id && (t.league === league || isSoccer(t.league) === isSoccer(league)));
+                const mine = getState().teams.some((t) => t.id === r.team.id && (t.league === league || (isSoccer(t.league) && isSoccer(league))));
                 return h('tr', { class: mine ? 'mine' : '' }, h('td', null, i + 1),
                   h('td', { class: 'l team-cell' }, crest(r.team, 22), h('span', null, r.team.name || r.team.abbr)),
                   use.map((c) => h('td', null, r.stats[c] ? r.stats[c].v : '')));

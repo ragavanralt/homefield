@@ -2,7 +2,7 @@
 // If something looks wrong in the app, run this and send the report.
 import { h, clear, toast } from '../ui.js';
 import { CONFIG } from '../config.js';
-import { getJSON, scoreboardUrl, summaryUrl, teamsUrl, standingsUrl, scheduleUrl, getRoster, getAthleteStats, normEvent, normSummary } from '../espn.js';
+import { getJSON, scoreboardUrl, summaryUrl, teamsUrl, standingsUrl, scheduleUrl, getRoster, getAthleteStats, getStandings, normEvent, normSummary } from '../espn.js';
 import { pageHead } from '../components.js';
 import { addDays, ymd } from '../util.js';
 import { LEAGUES } from '../leagues.js';
@@ -47,7 +47,11 @@ async function checkLeague(lg) {
         r.items.push(['Player season stats', st.length ? `found (${st[0].labels.slice(0, 6).join(' ')})` : 'missing']);
       }
     } catch (e) { r.items.push(['Roster / player stats', 'missing: ' + e.message]); }
-    for (const [label, url] of [['Team list', teamsUrl(lg)], ['Standings', standingsUrl(lg)], ['Team schedule', null]]) {
+    try {
+      const gr = await getStandings(lg);
+      r.items.push(['Standings', gr.length ? `found (${gr.length} tables, ${gr.reduce((n, x) => n + x.rows.length, 0)} teams)` : 'missing: feed returned no table']);
+    } catch (e) { r.items.push(['Standings', 'missing: ' + e.message]); }
+    for (const [label, url] of [['Team list', teamsUrl(lg)], ['Team schedule', null]]) {
       try {
         let u = url;
         if (!u) { const t = (await getJSON(teamsUrl(lg), 1000)).sports?.[0]?.leagues?.[0]?.teams?.[0]?.team; u = t ? scheduleUrl(lg, t.id) : null; }

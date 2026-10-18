@@ -1,13 +1,16 @@
-// Settings: display options, your teams, backup and reset.
+// Settings: appearance, display options, your teams, backup and resets.
 import { h, clear, crest, toast, downloadText } from '../ui.js';
-import { getState, setSetting, unfollow, myTeams, exportData, importData, resetAll } from '../store.js';
+import { getState, setSetting, unfollow, myTeams, exportData, importData, resetAll, resetBets, resetTeams } from '../store.js';
 import { leagueLabel } from '../leagues.js';
 import { pageHead } from '../components.js';
+import { BACKGROUNDS, ACCENTS, DEFAULT_APPEARANCE, applyTheme, resolveMode } from '../themes.js';
 
 export async function render(root) {
   root.append(pageHead('Settings'));
-  const host = h('div', { class: 'stack' });
+  const host = h('div', { class: 'settings-grid' });
   root.append(host);
+
+  const repaintTheme = () => applyTheme(getState().settings);
 
   function toggle(id, label, sub, key) {
     return h('label', { class: 'toggle', for: id },
@@ -15,8 +18,40 @@ export async function render(root) {
       h('input', { type: 'checkbox', id, checked: !!getState().settings[key], onchange: (e) => { setSetting(key, e.target.checked); toast(e.target.checked ? 'Turned on' : 'Turned off'); } }));
   }
 
+  /** A button that needs a second tap to confirm. */
+  function confirmBtn(id, title, sub, doIt, cls = 'btn danger') {
+    let armed = false, timer;
+    const b = h('button', { type: 'button', class: cls, id }, h('b', null, title), h('small', null, sub));
+    b.addEventListener('click', () => {
+      if (!armed) {
+        armed = true; clear(b).append(h('b', null, 'Tap again to confirm'), h('small', null, title));
+        timer = setTimeout(() => { armed = false; clear(b).append(h('b', null, title), h('small', null, sub)); }, 4000);
+        return;
+      }
+      clearTimeout(timer); armed = false; doIt();
+    });
+    return b;
+  }
+
+  function appearance() {
+    const s = getState().settings;
+    const mode = resolveMode(s.theme);
+    const key = mode === 'dark' ? 'bgDark' : 'bgLight';
+    const swatch = (label, bg, on, onclick, id) => h('button', { type: 'button', class: 'swatch', id, 'aria-pressed': on ? 'true' : 'false', onclick }, h('i', { style: { background: bg } }), label);
+    return h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Appearance'),
+      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Theme'),
+        h('div', { class: 'seg' }, [['auto', 'Auto'], ['dark', 'Dark'], ['light', 'Light']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (s.theme === k ? ' on' : ''), id: 'theme-' + k, onclick: () => { setSetting('theme', k); repaintTheme(); draw(); } }, l))),
+        h('small', null, s.theme === 'auto' ? 'Follows your phone or computer.' : '')),
+      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, `Background (${mode})`),
+        h('div', { class: 'swatches' }, BACKGROUNDS[mode].map((b) => swatch(b.name, `linear-gradient(135deg, ${b.bg} 50%, ${b.surface} 50%)`, s[key] === b.id, () => { setSetting(key, b.id); repaintTheme(); draw(); }, 'bg-' + b.id)))),
+      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Accent colour'),
+        h('div', { class: 'swatches' }, ACCENTS.map((a) => swatch(a.name, `linear-gradient(135deg, ${a.a}, ${a.b})`, s.accent === a.id, () => { setSetting('accent', a.id); repaintTheme(); draw(); }, 'acc-' + a.id)))),
+      h('div', { class: 'set-row' }, h('button', { type: 'button', class: 'btn small', id: 'reset-look', onclick: () => { Object.entries(DEFAULT_APPEARANCE).forEach(([k, v]) => setSetting(k, v)); repaintTheme(); draw(); toast('Appearance reset'); } }, 'Reset appearance to default')));
+  }
+
   function draw() {
     clear(host);
+    host.append(appearance());
     host.append(
       h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Display'),
         toggle('set-logos', 'Team logos and player photos', 'Loaded from the data feed. If off, you get colour badges and initials.', 'logos'),
@@ -32,19 +67,20 @@ export async function render(root) {
     const file = h('input', { type: 'file', id: 'import-file', accept: 'application/json', hidden: true, onchange: async (e) => {
       const f = e.target.files[0];
       if (!f) return;
-      try { importData(await f.text()); toast('Data restored'); draw(); } catch (err) { toast(err.message); }
+      try { importData(await f.text()); repaintTheme(); toast('Data restored'); draw(); } catch (err) { toast(err.message); }
     } });
-    let armed = false;
-    const resetBtn = h('button', { type: 'button', class: 'btn danger', id: 'reset-btn', onclick: () => {
-      if (!armed) { armed = true; resetBtn.textContent = 'Tap again to erase everything'; setTimeout(() => { armed = false; resetBtn.textContent = 'Erase all data'; }, 4000); return; }
-      resetAll(); toast('Everything erased'); location.hash = '#/onboarding';
-    } }, 'Erase all data');
     host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Your data'),
-      h('p', { class: 'muted' }, 'Teams, picks and watched games live only on this device. Back them up if you switch phones.'),
+      h('p', { class: 'muted' }, 'Everything lives only on this device. Back it up if you switch phones.'),
       h('div', { class: 'row wrap' },
         h('button', { type: 'button', class: 'btn', onclick: () => downloadText('homefield-backup.json', exportData(), 'application/json') }, 'Download backup'),
-        h('button', { type: 'button', class: 'btn', onclick: () => file.click() }, 'Restore backup'),
-        file, resetBtn)));
+        h('button', { type: 'button', class: 'btn', onclick: () => file.click() }, 'Restore backup'), file)));
+
+    host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Reset'),
+      h('p', { class: 'muted' }, 'Each button asks you to tap twice so nothing gets wiped by accident.'),
+      h('div', { class: 'reset-grid' },
+        confirmBtn('reset-bets', 'Reset bets and bankroll', 'Back to 1,000 coins, clears all bets, streaks and XP', () => { resetBets(); toast('Bankroll reset to 1,000 coins'); draw(); }),
+        confirmBtn('reset-teams', 'Reset followed teams', 'Unfollow everyone and start over', () => { resetTeams(); toast('Teams cleared'); location.hash = '#/onboarding'; }),
+        confirmBtn('reset-btn', 'Erase everything', 'Teams, bets, watched games and settings', () => { resetAll(); repaintTheme(); toast('Everything erased'); location.hash = '#/onboarding'; }))));
 
     host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'About'),
       h('p', null, 'Scores, lineups, box scores and plays come from ESPN\'s public data feed. Logos and photos belong to their owners. Homefield is a personal project and is not affiliated with any league or team.'),

@@ -16,7 +16,7 @@ const fresh = () => ({
   v: 1,
   onboarded: false,
   teams: [],
-  settings: { logos: true, spoilerFree: false },
+  settings: { logos: true, spoilerFree: false, theme: 'auto', bgDark: 'midnight', bgLight: 'paper', accent: 'coral' },
   bank: { coins: START_COINS, xp: 0, streak: 0, bestStreak: 0, peak: START_COINS, lastDaily: '', dailyStreak: 0, rescued: '' },
   bets: {},
   slip: { legs: [], mode: 'single', stake: 50 },
@@ -186,4 +186,10 @@ export function importData(text) {
   state = { ...f, ...s, settings: { ...f.settings, ...(s.settings || {}) } };
   save();
 }
-export function resetAll() { state = fresh(); save(); }
+export function resetBets() {
+  const f = fresh();
+  update((s) => { s.bank = f.bank; s.bets = {}; s.slip = f.slip; s.notices = []; s.lastMode = f.lastMode; });
+  ping();
+}
+export function resetTeams() { update((s) => { s.teams = []; }); }
+export function resetAll() { state = fresh(); save(); ping(); }
