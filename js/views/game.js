@@ -1,9 +1,9 @@
-// The game page: story (matchup, recap, win chance with replay), plays, box score, lineups, ask.
+// The game page: story (matchup, recap, win chance with replay), plays, box score, lineups.
 import { h, clear, crest, face, applySkin, errorBox, loading, downloadText, toast, isHidden, reveal, scoreText, poll } from '../ui.js';
 import { CONFIG } from '../config.js';
-import { getState, myTeamIn, markWatched, isWatched, askLeft, useAsk, track } from '../store.js';
+import { getState, myTeamIn, markWatched, isWatched, track } from '../store.js';
 import { LEAGUES, groupOf, isSoccer, leagueLabel } from '../leagues.js';
-import { getSummary, rememberGame, recallGame } from '../espn.js';
+import { getSummary, rememberGame, recallGame, getDepthChart } from '../espn.js';
 import { statusInfo, watchBlock } from '../components.js';
 import { marketTabs } from '../markets.js';
 import { betCard } from '../bankroll.js';
@@ -12,10 +12,11 @@ import { buildRecap, whenLabel } from '../recap.js';
 import { wpChart } from '../chart.js';
 import { buildICS, googleUrl } from '../ics.js';
 import { shareRecap } from '../share.js';
-import { askContext, askGame, suggestionsFor } from '../ask.js';
 import { fmtDay, fmtTime, fmtDateTime, skinFromColors, colorDistance } from '../util.js';
 
 const titleCase = (s) => String(s || '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
+
+const depthCache = new Map(); // league:teamId -> depth chart groups, null if it failed
 
 export async function render(root, { league, id }) {
   const key = `${league}:${id}`;
@@ -27,7 +28,6 @@ export async function render(root, { league, id }) {
   let playTimer = null;
   let boxTeam = 'home';
   let showAllPlays = false;
-  const askState = { msgs: [], busy: false };
   const sides = isSoccer(league) ? ['home', 'away'] : ['away', 'home'];
 
   const headHost = h('div');
@@ -77,7 +77,7 @@ export async function render(root, { league, id }) {
   }
 
   /* ---------- tabs ---------- */
-  const TABS = [['story', 'Story'], ['plays', 'Plays'], ['box', 'Box score'], ['lineups', 'Lineups'], ['ask', 'Ask']];
+  const TABS = [['story', 'Story'], ['plays', 'Plays'], ['box', 'Box score'], ['lineups', 'Lineups']];
   function drawTabs() {
     clear(tabsHost).append(h('div', { class: 'tabs2', role: 'tablist' }, TABS.map(([k, label]) => h('button', {
       type: 'button', role: 'tab', class: 'tab2' + (tab === k ? ' on' : ''), 'aria-selected': tab === k ? 'true' : 'false', id: 'tab-' + k,
@@ -95,7 +95,7 @@ export async function render(root, { league, id }) {
       return;
     }
     if (!data) { bodyHost.append(loading('Loading game')); return; }
-    const builder = { story, plays, box, lineups, ask }[tab];
+    const builder = { story, plays, box, lineups }[tab];
     bodyHost.append(builder());
   }
 
@@ -328,6 +328,28 @@ export async function render(root, { league, id }) {
     const wrap = h('div', { class: 'stack gcols' });
     const probables = sides.map((sd) => game[sd].probable ? [sd, game[sd].probable] : null).filter(Boolean);
     if (probables.length) wrap.append(card('Probable starters', h('div', { class: 'probs' }, probables.map(([sd, p]) => h('div', { class: 'prob' }, face(p, league, 44), h('div', null, h('small', null, game[sd].name), h('div', null, p.name)))))));
+    if (!L && league === 'nfl') { // football feeds carry no starters, so use each team's depth chart
+      const holder = h('div', { class: 'stack gcols' });
+      const drawDepth = () => {
+        clear(holder);
+        const person = (p) => h('li', { class: 'pl-row' }, face(p, league, 34), h('span', { class: 'jn' }, p.jersey ? '#' + p.jersey : ''), h('span', { class: 'pn' }, p.name), p.injury ? h('small', { class: 'inj' }, String(p.injury)) : null, p.pos ? h('small', null, p.pos) : null);
+        for (const sd of sides) {
+          const rows = depthCache.get(`${league}:${game[sd].id}`);
+          holder.append(card(null, h('div', { class: 'ldr-h' }, crest(game[sd], 26), h('span', null, game[sd].name), h('small', null, ' · expected starters')),
+            rows === undefined ? loading('Loading depth chart')
+              : !rows || !rows.length ? note('No depth chart is posted for this team yet.')
+                : rows.map((grp) => h('div', null, h('h4', { class: 'dc-h' }, grp.name), h('ul', { class: 'pl-list' }, grp.players.map(person))))));
+        }
+      };
+      drawDepth();
+      sides.forEach((sd) => {
+        const k = `${league}:${game[sd].id}`;
+        if (depthCache.has(k)) return;
+        getDepthChart(league, game[sd].id).then((r) => depthCache.set(k, r)).catch(() => depthCache.set(k, null)).then(() => { if (tab === 'lineups') drawDepth(); });
+      });
+      wrap.append(holder, note('Football feeds do not publish game-day starters, so this is each team\'s depth chart: the first name listed at each spot. Injury tags come from the feed.'));
+      return wrap;
+    }
     if (!L) {
       wrap.append(card('Starting lineups', note('Lineups are not posted yet. Most feeds publish them shortly before the game starts, and this page fills in by itself.')));
       return wrap;
@@ -341,47 +363,6 @@ export async function render(root, { league, id }) {
         h('ul', { class: 'pl-list' }, t.starters.map(person)),
         t.bench && t.bench.length ? h('details', null, h('summary', null, `Bench (${t.bench.length})`), h('ul', { class: 'pl-list' }, t.bench.map(person))) : null));
     });
-    return wrap;
-  }
-
-  /* ---------- ask the game ---------- */
-  function ask() {
-    const wrap = h('div', { class: 'stack' });
-    if (!CONFIG.askUrl) {
-      return card('Ask the game', h('p', null, 'This feature needs a small free server to keep the AI key private, and it is not connected yet.'), h('p', { class: 'muted' }, 'Setup takes about 10 minutes. The steps are in the README under "Ask the game".'));
-    }
-    const left = askLeft(CONFIG.askDailyLimit);
-    const log = h('div', { class: 'chat', 'aria-live': 'polite' });
-    const input = h('input', { class: 'search', id: 'ask-input', type: 'text', placeholder: 'Ask about this game', 'aria-label': 'Your question', maxlength: 240 });
-    const countEl = h('small', { class: 'muted' }, `${left} questions left today`);
-    const sendBtn = h('button', { type: 'button', class: 'btn main', id: 'ask-send' }, 'Ask');
-
-    const paint = () => {
-      clear(log);
-      if (!askState.msgs.length) log.append(h('div', { class: 'sugg' }, suggestionsFor(league).map((q) => h('button', { type: 'button', class: 'chip', onclick: () => { input.value = q; send(); } }, q))));
-      askState.msgs.forEach((m) => log.append(h('div', { class: 'bub ' + (m.role === 'user' ? 'q' : 'a') }, m.text, m.role === 'ai' ? h('small', { class: 'src' }, 'From this game\'s data') : null)));
-      if (askState.busy) log.append(h('div', { class: 'bub a' }, loading('Thinking')));
-    };
-    async function send() {
-      const q = input.value.trim();
-      if (!q || askState.busy) return;
-      if (askLeft(CONFIG.askDailyLimit) <= 0) { toast('Daily question limit reached. It resets tomorrow.'); return; }
-      askState.msgs.push({ role: 'user', text: q });
-      input.value = '';
-      askState.busy = true; paint();
-      try {
-        const a = await askGame(q, askContext(data, game));
-        askState.msgs.push({ role: 'ai', text: a });
-        useAsk();
-      } catch (e) { askState.msgs.push({ role: 'ai', text: 'Sorry, that did not work: ' + e.message }); }
-      askState.busy = false;
-      countEl.textContent = `${askLeft(CONFIG.askDailyLimit)} questions left today`;
-      paint();
-    }
-    sendBtn.addEventListener('click', send);
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
-    paint();
-    wrap.append(card('Ask the game', log, h('div', { class: 'row' }, input, sendBtn), countEl));
     return wrap;
   }
 
@@ -401,8 +382,8 @@ export async function render(root, { league, id }) {
     }
     drawHead();
     drawTabs();
-    // Do not rebuild the page under someone who is replaying or typing a question.
-    const keep = !first && (replayIdx != null || tab === 'ask');
+    // Do not rebuild the page under someone who is replaying.
+    const keep = !first && replayIdx != null;
     if (!keep) drawBody();
   }
 

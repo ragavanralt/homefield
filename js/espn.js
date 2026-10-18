@@ -248,6 +248,45 @@ function normLineups(j, box) {
   return out.length ? { kind: 'starters', teams: out } : null;
 }
 
+/* ---------- football depth charts (NFL game feeds carry no starters) ---------- */
+const POS = {
+  Offense: new Set(['QB', 'RB', 'FB', 'HB', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'OL', 'OT', 'OG', 'T', 'G']),
+  Defense: new Set(['DE', 'DT', 'NT', 'DL', 'LB', 'OLB', 'ILB', 'MLB', 'CB', 'S', 'SS', 'FS', 'DB', 'EDGE']),
+  'Special teams': new Set(['K', 'P', 'PK', 'LS', 'KR', 'PR', 'H']),
+};
+function posGroup(...cands) {
+  for (const raw of cands) {
+    const a = String(raw || '').toUpperCase().replace(/[0-9]/g, '');
+    if (!a) continue;
+    for (const [g, set] of Object.entries(POS)) if (set.has(a) || (a.length > 2 && set.has(a.slice(1)))) return g;
+  }
+  return null;
+}
+/** The first name at each position of the first offence, defence and special teams chart. Pure, so it can be tested. */
+export function normDepth(j, league = 'nfl') {
+  const sport = LEAGUES[league]?.slug || 'nfl';
+  const picked = {};
+  for (const ch of Array.isArray(j?.depthchart) ? j.depthchart : []) {
+    const slots = Object.entries(ch.positions || {});
+    const votes = {};
+    for (const [k, sl] of slots) { const g = posGroup(sl.position?.parent?.abbreviation, sl.position?.abbreviation, k); if (g) votes[g] = (votes[g] || 0) + 1; }
+    const best = Object.entries(votes).sort((a, b) => b[1] - a[1])[0];
+    if (!best || picked[best[0]]) continue;
+    picked[best[0]] = slots.map(([k, sl]) => {
+      const a = (sl.athletes || [])[0];
+      if (!a) return null;
+      const inj = (a.injuries || [])[0];
+      return { id: String(a.id), name: a.displayName || a.shortName || '', short: a.shortName || a.displayName || '', pos: String(sl.position?.abbreviation || sl.position?.parent?.abbreviation || k).toUpperCase(),
+        jersey: a.jersey || '', face: a.id ? `https://a.espncdn.com/i/headshots/${sport}/players/full/${a.id}.png` : '', injury: inj ? (inj.status || inj.type?.description || inj.type || 'Injured') : '' };
+    }).filter(Boolean);
+  }
+  return ['Offense', 'Defense', 'Special teams'].filter((g) => picked[g] && picked[g].length).map((name) => ({ name, players: picked[name] }));
+}
+export async function getDepthChart(league, teamId) {
+  const j = await getJSON(`${base(league)}/teams/${teamId}/depthcharts`, 1800000);
+  return normDepth(j, league);
+}
+
 function normLeaders(j) {
   return (j.leaders || []).map((t) => ({
     teamId: String(t.team?.id || ''),

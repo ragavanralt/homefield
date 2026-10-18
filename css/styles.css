@@ -616,3 +616,5 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 
 .match-v { display: flex; align-items: center; gap: 10px; } .match-v span { font-size: 14px; }
 .match-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; } .match-opts .chip.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.dc-h { margin: 12px 0 4px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.pl-row .inj { color: #ff6b6b; font-weight: 600; }

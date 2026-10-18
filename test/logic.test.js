@@ -530,4 +530,26 @@ import * as S from '../js/specials.js';
   });
 }
 
+// ---- football depth chart ----
+{
+  const { normDepth } = await import('../js/espn.js');
+  const slot = (abbr, parent, ...names) => ({ position: { abbreviation: abbr, parent: { abbreviation: parent } }, athletes: names.map((n, i) => ({ id: String(100 + i), displayName: n, shortName: n, injuries: i === 0 && n === 'Hurt Guy' ? [{ status: 'Questionable' }] : [] })) });
+  const j = { depthchart: [
+    { name: 'Base 4-3 D', positions: { lde: slot('LDE', 'DE', 'Arden Key', 'Backup'), mlb: slot('MLB', 'LB', 'Mike Backer'), ss: slot('SS', 'S', 'Hurt Guy') } },
+    { name: 'Base 3WR 1TE 1RB', positions: { qb: slot('QB', 'QB', 'Quarter Back'), wr1: slot('WR', 'WR', 'Wide One'), lt: slot('LT', 'OT', 'Left Tackle'), te: slot('TE', 'TE') } },
+    { name: 'Base 3-4 D', positions: { lde: slot('LDE', 'DE', 'Other Formation') } },
+    { name: 'Special Teams', positions: { k: slot('PK', 'PK', 'Kick Man') } },
+  ] };
+  t('depth chart: first name at each spot, one chart per side, injuries kept', () => {
+    const r = normDepth(j);
+    assert.deepEqual(r.map((x) => x.name), ['Offense', 'Defense', 'Special teams']);
+    const def = r.find((x) => x.name === 'Defense').players;
+    assert.deepEqual(def.map((p) => p.name), ['Arden Key', 'Mike Backer', 'Hurt Guy']);
+    assert.equal(def[2].injury, 'Questionable');
+    assert.ok(def[0].face.includes('/nfl/players/full/'));
+    assert.equal(r.find((x) => x.name === 'Offense').players.length, 3); // te slot had nobody listed
+    assert.deepEqual(normDepth({}), []);
+  });
+}
+
 console.log(`\n${passed} checks passed`);
