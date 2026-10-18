@@ -498,9 +498,10 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 /* ---------- fan: avatar, profile, shop ---------- */
 .avatar { display: inline-block; line-height: 0; }
 .avatar svg { width: 100%; height: auto; display: block; overflow: visible; }
-.avatar.sm { width: 64px; } .avatar.lg { width: min(260px, 70%); }
+.avatar.sm { width: 64px; } .avatar.lg, .avatar.lg svg { height: 360px; width: auto; max-width: 100%; }
+.avatar.pv { width: 100%; height: 104px; } .avatar.pv svg { height: 104px; overflow: hidden; }
 .bk-av { display: flex; flex-direction: column; align-items: center; gap: 2px; justify-self: start; }
-.bk-av .avatar { width: 64px; background: var(--surface-2); border-radius: 18px; padding: 4px 4px 0; overflow: hidden; }
+.bk-av .avatar { width: 64px; height: 64px; background: var(--surface-2); border-radius: 18px; padding: 4px 4px 0; overflow: hidden; }
 .profile { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: 16px; align-items: start; }
 .pf-wide { grid-column: 1 / -1; }
 .profile > * { min-width: 0; }
@@ -521,7 +522,7 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 .deal { background: color-mix(in srgb, var(--volt) 22%, var(--surface)); border: 1px solid color-mix(in srgb, var(--volt) 55%, var(--line)); border-radius: 12px; padding: 8px 12px; font-size: 14px; }
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
 .item { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
-.item .avatar { width: 96px; }
+.item .avatar.pv { width: 100%; }
 .item.worn { border-color: var(--good); }
 .item.t-rare { border-color: color-mix(in srgb, var(--aqua) 60%, var(--line)); }
 .item.t-legend { border-color: var(--volt); box-shadow: 0 0 0 1px var(--volt) inset; }
@@ -534,5 +535,5 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
   .profile { grid-template-columns: minmax(0, 1fr); }
   .pf-me { position: static; }
   .shop-grid { grid-template-columns: repeat(2, 1fr); }
-  .bk-av .avatar { width: 52px; }
+  .bk-av .avatar { width: 52px; height: 52px; }
 }

@@ -162,7 +162,7 @@ store.setSetting('spoilerFree', false);
 text = await visit('#/season', { wait: 300 }); assert.ok(app().querySelector('.bk-av svg'), 'avatar on season'); ok('avatar shows on season');
 text = await visit('#/profile', { wait: 200 });
 assert.ok(app().querySelector('.pf-me svg') && /Shop/.test(text), 'profile'); ok('profile page draws avatar and shop');
-app().querySelectorAll('.pf-tabs .seg-b')[1].click();
+app().querySelectorAll('.pf-tabs .seg-b')[0].click();
 const coinsBefore = store.getBank().coins;
 const capBtn = app().querySelector('.buy[data-id="cap"]'); assert.ok(capBtn, 'cap for sale');
 capBtn.click(); await sleep(50);
