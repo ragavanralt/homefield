@@ -289,3 +289,7 @@ details summary { cursor: pointer; padding: 10px 0; font-weight: 600; color: var
   .th-text h1 { font-size: 34px; } .lb-row { grid-template-columns: 90px 1fr auto; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.tile-grid > .loading, .tile-grid > .errbox, .tile-grid > .empty, .tile-grid > p { grid-column: 1 / -1; }
+.chip-grid { flex-direction: column; flex-wrap: nowrap; min-width: 0; } .chip-grid .chip-row { flex-wrap: wrap; overflow: visible; align-items: center; } .chip-label { color: var(--muted); font-size: 13px; font-weight: 700; flex: 0 0 100%; }
+.errbox .row { flex-wrap: wrap; justify-content: center; }

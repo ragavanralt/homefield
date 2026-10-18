@@ -10,20 +10,31 @@ export async function getJSON(url, ttl = 15000) {
   const hit = cache.get(url);
   const now = Date.now();
   if (hit && now - hit.t < ttl) return hit.v;
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), 14000);
-  try {
-    const res = await fetch(url, { signal: ctl.signal });
-    if (!res.ok) throw new Error('The data feed answered with ' + res.status);
-    const v = await res.json();
-    cache.set(url, { t: now, v });
-    return v;
-  } catch (e) {
-    if (hit) return hit.v; // keep showing the last good data if the network drops
-    throw e;
-  } finally {
-    clearTimeout(timer);
+  let lastErr;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 14000);
+    try {
+      const res = await fetch(url, { signal: ctl.signal });
+      if (!res.ok) throw new Error('The data feed answered with ' + res.status);
+      const v = await res.json();
+      cache.set(url, { t: now, v });
+      return v;
+    } catch (e) {
+      lastErr = e;
+      if (e.name === 'TypeError' && attempt === 0) { await new Promise((r) => setTimeout(r, 700)); continue; } // network blip, try once more
+      break;
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  if (hit) return hit.v; // keep showing the last good data if the network drops
+  if (lastErr && lastErr.name === 'TypeError') {
+    let part = url;
+    try { part = new URL(url).pathname.replace(/^.*\/sports\//, ''); } catch (e) { /* ignore */ }
+    throw new Error('Failed to fetch (' + part + ')');
+  }
+  throw lastErr;
 }
 
 const base = (lg) => `${CONFIG.espnBase}/apis/site/v2/sports/${LEAGUES[lg].sport}/${LEAGUES[lg].slug}`;
@@ -322,19 +333,41 @@ export async function getSummary(league, id, ttl = 12000) {
   return normSummary(j, league, id);
 }
 
+const mapTeams = (league, raw) => raw.map((x) => x.team || x).filter((t) => t && t.id).map((t) => ({
+  league,
+  id: String(t.id),
+  abbr: t.abbreviation || '',
+  name: t.displayName || t.name || '',
+  short: t.shortDisplayName || t.name || '',
+  color: hexColor(t.color),
+  alt: hexColor(t.alternateColor),
+  logo: t.logos?.[0]?.href || t.logo || '',
+})).sort((a, b) => a.name.localeCompare(b.name));
+
+/** Team list. Tries a few addresses because the feed is picky; the standings table is the last resort. */
 export async function getTeams(league) {
-  const j = await getJSON(teamsUrl(league), 3600000);
-  const raw = j.sports?.[0]?.leagues?.[0]?.teams || [];
-  return raw.map((x) => x.team || x).map((t) => ({
-    league,
-    id: String(t.id),
-    abbr: t.abbreviation || '',
-    name: t.displayName || t.name || '',
-    short: t.shortDisplayName || t.name || '',
-    color: hexColor(t.color),
-    alt: hexColor(t.alternateColor),
-    logo: t.logos?.[0]?.href || t.logo || '',
-  })).sort((a, b) => a.name.localeCompare(b.name));
+  const L = LEAGUES[league];
+  const tries = [
+    () => getJSON(teamsUrl(league), 3600000),
+    () => getJSON(`${CONFIG.espnBase}/apis/site/v2/sports/${L.sport}/${L.slug}/teams`, 3600000),
+    () => getJSON(`https://site.web.api.espn.com/apis/site/v2/sports/${L.sport}/${L.slug}/teams`, 3600000),
+  ];
+  let firstErr;
+  for (const t of tries) {
+    try {
+      const j = await t();
+      const teams = mapTeams(league, j.sports?.[0]?.leagues?.[0]?.teams || []);
+      if (teams.length) return teams;
+    } catch (e) { firstErr = firstErr || e; }
+  }
+  try {
+    const groups = normStandings(await getJSON(standingsUrl(league), 3600000));
+    const seen = new Map();
+    for (const g of groups) for (const r of g.rows) if (r.team.id && !seen.has(r.team.id)) seen.set(r.team.id, r.team);
+    const teams = mapTeams(league, [...seen.values()].map((t) => ({ id: t.id, abbreviation: t.abbr, displayName: t.name, logo: t.logo })));
+    if (teams.length) return teams;
+  } catch (e) { firstErr = firstErr || e; }
+  throw firstErr || new Error('No teams came back for ' + L.label);
 }
 
 export async function getTeamSchedule(league, teamId) {

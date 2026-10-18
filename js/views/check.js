@@ -2,7 +2,7 @@
 // If something looks wrong in the app, run this and send the report.
 import { h, clear, toast } from '../ui.js';
 import { CONFIG } from '../config.js';
-import { getJSON, scoreboardUrl, summaryUrl, normEvent, normSummary } from '../espn.js';
+import { getJSON, scoreboardUrl, summaryUrl, teamsUrl, standingsUrl, scheduleUrl, normEvent, normSummary } from '../espn.js';
 import { pageHead } from '../components.js';
 import { addDays, ymd } from '../util.js';
 import { LEAGUES } from '../leagues.js';
@@ -38,8 +38,17 @@ async function checkLeague(lg) {
       ['Odds', yes(!!(s.game && s.game.odds && s.game.odds.home != null))],
     ];
     r.keys = s.keys.join(', ');
+    for (const [label, url] of [['Team list', teamsUrl(lg)], ['Standings', standingsUrl(lg)], ['Team schedule', null]]) {
+      try {
+        let u = url;
+        if (!u) { const t = (await getJSON(teamsUrl(lg), 1000)).sports?.[0]?.leagues?.[0]?.teams?.[0]?.team; u = t ? scheduleUrl(lg, t.id) : null; }
+        if (!u) { r.items.push([label, 'skipped (no team list)']); continue; }
+        await getJSON(u, 1000);
+        r.items.push([label, 'found']);
+      } catch (e) { r.items.push([label, 'missing: ' + e.message]); }
+    }
   } catch (e) {
-    r.error = e.message === 'Failed to fetch' ? 'Failed to fetch. The browser blocked the request (network or CORS). See the README on using the Worker proxy.' : e.message;
+    r.error = String(e.message).startsWith('Failed to fetch') ? 'Failed to fetch. The browser blocked the request (network or CORS). See the README on using the Worker proxy.' : e.message;
   }
   return r;
 }
