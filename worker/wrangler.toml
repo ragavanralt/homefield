@@ -1,0 +1,12 @@
+name = "homefield-worker"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Optional: lock the Worker to your site
+# [vars]
+# ALLOWED_ORIGIN = "https://YOURNAME.github.io"
+
+# Optional: per-IP daily cap. Create with: npx wrangler kv namespace create LIMITS
+# [[kv_namespaces]]
+# binding = "LIMITS"
+# id = "PASTE_ID_HERE"
