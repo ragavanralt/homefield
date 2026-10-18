@@ -171,3 +171,31 @@ export function summary(lg, id, o = { state: 'post', hs: 112, as: 104, detail: '
   }
   return j;
 }
+
+/* ----- rosters and player stats ----- */
+function rp(id, name, jersey, pos, group) {
+  return { id: String(id), displayName: name, shortName: name.split(' ')[0][0] + '. ' + name.split(' ').slice(-1)[0], jersey: String(jersey), position: { abbreviation: pos, displayName: pos }, age: 25 + (id % 8), displayHeight: "6' 2\"", displayWeight: '205 lbs', headshot: { href: `https://a.espncdn.com/i/headshots/x/players/full/${id}.png` }, experience: { years: id % 6 }, ...(id % 7 === 0 ? { injuries: [{ status: 'Questionable' }] } : {}), _g: group };
+}
+export function roster(lg, teamId) {
+  const grp = lg === 'nfl' ? 'nfl' : lg === 'mlb' ? 'mlb' : 'flat';
+  const idb = Number(teamId) * 100;
+  if (grp === 'nfl') {
+    return { team: { id: String(teamId) }, coach: [{ firstName: 'Test', lastName: 'Coach' }], athletes: [
+      { position: 'offense', items: [rp(idb + 1, 'Josh Allen', 17, 'QB'), rp(idb + 2, 'James Cook', 4, 'RB'), rp(idb + 3, 'Khalil Shakir', 10, 'WR'), rp(idb + 4, 'Dalton Kincaid', 86, 'TE')] },
+      { position: 'defense', items: [rp(idb + 5, 'Von Miller', 40, 'LB')] },
+    ] };
+  }
+  if (grp === 'mlb') {
+    return { team: { id: String(teamId) }, athletes: [
+      { position: 'pitchers', items: [rp(idb + 1, 'Test Pitcher', 45, 'SP')] },
+      { position: 'catchers', items: [rp(idb + 2, 'Test Catcher', 12, 'C')] },
+      { position: 'outfielders', items: [rp(idb + 3, 'Test Outfielder', 24, 'RF')] },
+    ] };
+  }
+  return { team: { id: String(teamId) }, athletes: [rp(idb + 1, 'Test Star', 4, 'G'), rp(idb + 2, 'Test Center', 21, 'C'), rp(idb + 3, 'Test Wing', 8, 'F'), rp(idb + 7, 'Test Bench', 30, 'G')] };
+}
+export function overview(lg, athleteId) {
+  const labs = lg === 'nba' ? ['GP', 'MIN', 'PTS', 'REB', 'AST'] : lg === 'nhl' ? ['GP', 'G', 'A', 'PTS', 'SOG'] : lg === 'nfl' ? ['GP', 'CMP', 'ATT', 'YDS', 'TD'] : lg === 'mlb' ? ['GP', 'AB', 'H', 'HR', 'RBI'] : ['GP', 'G', 'A'];
+  const vals = lg === 'nba' ? ['10', '32.1', '24.6', '5.2', '6.1'] : lg === 'nhl' ? ['10', '5', '6', '11', '31'] : lg === 'nfl' ? ['6', '150', '230', '1520', '12'] : lg === 'mlb' ? ['120', '450', '120', '25', '80'] : ['10', '4', '3'];
+  return { statistics: { displayName: 'Season Stats', labels: labs, splits: [{ displayName: 'Regular Season', stats: vals }, { displayName: 'Career', stats: vals }] } };
+}

@@ -2,7 +2,7 @@
 // If something looks wrong in the app, run this and send the report.
 import { h, clear, toast } from '../ui.js';
 import { CONFIG } from '../config.js';
-import { getJSON, scoreboardUrl, summaryUrl, teamsUrl, standingsUrl, scheduleUrl, normEvent, normSummary } from '../espn.js';
+import { getJSON, scoreboardUrl, summaryUrl, teamsUrl, standingsUrl, scheduleUrl, getRoster, getAthleteStats, normEvent, normSummary } from '../espn.js';
 import { pageHead } from '../components.js';
 import { addDays, ymd } from '../util.js';
 import { LEAGUES } from '../leagues.js';
@@ -38,6 +38,15 @@ async function checkLeague(lg) {
       ['Odds', yes(!!(s.game && s.game.odds && s.game.odds.home != null))],
     ];
     r.keys = s.keys.join(', ');
+    try {
+      const t = (await getJSON(teamsUrl(lg), 1000)).sports?.[0]?.leagues?.[0]?.teams?.[0]?.team || { id: pick.home.id };
+      const ro = await getRoster(lg, t.id);
+      r.items.push(['Roster', ro.players.length ? `found (${ro.players.length} players, ${ro.players.filter((p) => p.face).length} headshots)` : 'missing']);
+      if (ro.players[0]) {
+        const st = await getAthleteStats(lg, ro.players[0].id);
+        r.items.push(['Player season stats', st.length ? `found (${st[0].labels.slice(0, 6).join(' ')})` : 'missing']);
+      }
+    } catch (e) { r.items.push(['Roster / player stats', 'missing: ' + e.message]); }
     for (const [label, url] of [['Team list', teamsUrl(lg)], ['Standings', standingsUrl(lg)], ['Team schedule', null]]) {
       try {
         let u = url;

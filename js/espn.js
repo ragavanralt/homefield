@@ -389,6 +389,66 @@ export async function getTeamSchedule(league, teamId) {
   };
 }
 
+
+/* ---------- rosters and player stats ---------- */
+export const rosterUrl = (lg, id) => `${base(lg)}/teams/${id}/roster`;
+const webBase = (lg) => `${CONFIG.espnWebBase}/apis/common/v3/sports/${LEAGUES[lg].sport}/${LEAGUES[lg].slug}`;
+export const athleteUrl = (lg, id) => `${webBase(lg)}/athletes/${id}/overview`;
+
+export function normRoster(j) {
+  const flat = [];
+  for (const a of j.athletes || []) {
+    if (Array.isArray(a.items)) a.items.forEach((x) => flat.push({ ...x, _group: a.position || a.name || '' }));
+    else flat.push(a);
+  }
+  const players = flat.filter((a) => a && a.id).map((a) => ({
+    id: String(a.id),
+    name: a.displayName || a.fullName || a.shortName || '',
+    short: a.shortName || a.displayName || '',
+    jersey: a.jersey || '',
+    pos: a.position?.abbreviation || '',
+    posName: a.position?.displayName || a.position?.name || '',
+    group: a._group || '',
+    age: a.age || '',
+    ht: a.displayHeight || '',
+    wt: a.displayWeight || '',
+    face: a.headshot?.href || '',
+    exp: a.experience?.displayValue || (a.experience?.years != null ? a.experience.years + ' yr' : ''),
+    status: a.injuries?.[0]?.status || '',
+  }));
+  const coach = j.coach?.[0] ? [j.coach[0].firstName, j.coach[0].lastName].filter(Boolean).join(' ') : '';
+  return { players, coach };
+}
+
+export async function getRoster(league, teamId) {
+  const j = await getJSON(rosterUrl(league, teamId), 1800000);
+  return normRoster(j);
+}
+
+/** Season stat lines from an athlete overview. Each block is { title, labels, values, split }. */
+export function normAthleteStats(j) {
+  const st = j.statistics;
+  const blocks = Array.isArray(st) ? st : st ? [st] : [];
+  const out = [];
+  for (const b of blocks) {
+    const labels = b.labels || b.names || [];
+    const splits = b.splits || [];
+    const pick = splits.find((x) => /regular|season|current|^\d{4}/i.test(x.displayName || '') && !/career/i.test(x.displayName || '')) || splits[0];
+    if (labels.length && pick && Array.isArray(pick.stats) && pick.stats.length) {
+      out.push({ title: b.displayName || b.name || 'Season', labels, values: pick.stats.map(String), split: pick.displayName || '' });
+    }
+  }
+  return out;
+}
+
+export async function getAthleteStats(league, athleteId) {
+  let lastErr;
+  for (const url of [athleteUrl(league, athleteId), `${CONFIG.espnBase}/apis/common/v3/sports/${LEAGUES[league].sport}/${LEAGUES[league].slug}/athletes/${athleteId}/overview`]) {
+    try { return normAthleteStats(await getJSON(url, 1800000)); } catch (e) { lastErr = lastErr || e; }
+  }
+  throw lastErr;
+}
+
 export async function getStandings(league) {
   const j = await getJSON(standingsUrl(league), 300000);
   return normStandings(j);

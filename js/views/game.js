@@ -1,7 +1,7 @@
 // The game page: story (matchup, recap, win chance with replay), plays, box score, lineups, ask.
 import { h, clear, crest, face, applySkin, errorBox, loading, downloadText, toast, isHidden, reveal, scoreText, poll } from '../ui.js';
 import { CONFIG } from '../config.js';
-import { getState, myTeamIn, markWatched, isWatched, findTeamAnyLeague, askLeft, useAsk } from '../store.js';
+import { getState, myTeamIn, markWatched, isWatched, askLeft, useAsk } from '../store.js';
 import { LEAGUES, groupOf, isSoccer, leagueLabel } from '../leagues.js';
 import { getSummary, rememberGame, recallGame } from '../espn.js';
 import { statusInfo, watchBlock, pickPanel } from '../components.js';
@@ -44,8 +44,7 @@ export async function render(root, { league, id }) {
 
     const teamBlock = (side) => {
       const t = g[side];
-      const f = findTeamAnyLeague(t.id);
-      return h('a', { class: 'gh-team', href: `#/team/${f ? f.league : league}/${t.id}` }, crest(t, 64), h('div', { class: 'gh-name' }, t.short || t.name), t.record ? h('small', null, t.record) : null);
+      return h('a', { class: 'gh-team', href: `#/team/${league}/${t.id}` }, crest(t, 64), h('div', { class: 'gh-name' }, t.short || t.name), t.record ? h('small', null, t.record) : null);
     };
     const mid = g.state === 'pre'
       ? h('div', { class: 'gh-mid' }, h('div', { class: 'big-time' }, fmtTime(g.date)), h('small', null, fmtDay(g.date)))
@@ -111,7 +110,7 @@ export async function render(root, { league, id }) {
 
   function story() {
     const g = game;
-    const wrap = h('div', { class: 'stack' });
+    const wrap = h('div', { class: 'stack gcols' });
     if (g.state === 'pre') {
       put(wrap, matchupCard(), card(null, pickPanel(g)), h2hCard(), leadersCard('Team leaders'));
     } else if (g.state === 'in') {
@@ -274,7 +273,7 @@ export async function render(root, { league, id }) {
   /* ---------- box score ---------- */
   function box() {
     const b = data.box;
-    const wrap = h('div', { class: 'stack' });
+    const wrap = h('div', { class: 'stack gcols' });
     if (!b.teams.length && !b.players.length) return card('Box score', note('The feed has no box score for this game yet.'));
 
     const ht = b.teams.find((t) => t.id === game.home.id) || b.teams.find((t) => t.homeAway === 'home');
@@ -311,7 +310,7 @@ export async function render(root, { league, id }) {
   /* ---------- lineups ---------- */
   function lineups() {
     const L = data.lineups;
-    const wrap = h('div', { class: 'stack' });
+    const wrap = h('div', { class: 'stack gcols' });
     const probables = sides.map((sd) => game[sd].probable ? [sd, game[sd].probable] : null).filter(Boolean);
     if (probables.length) wrap.append(card('Probable starters', h('div', { class: 'probs' }, probables.map(([sd, p]) => h('div', { class: 'prob' }, face(p, league, 44), h('div', null, h('small', null, game[sd].name), h('div', null, p.name)))))));
     if (!L) {

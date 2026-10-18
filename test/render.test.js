@@ -29,6 +29,8 @@ globalThis.fetch = async (url) => {
   const std = url.match(/apis\/v2\/sports\/([a-z]+\/[a-z0-9.]+)\/standings/);
   let body = {};
   if (std) body = F.standings(byPath[std[1]]);
+  else if (url.includes('/athletes/')) { const mm = url.match(/sports\/([a-z]+\/[a-z0-9.]+)\/athletes\/(\d+)/); body = F.overview(byPath[mm[1]], mm[2]); }
+  else if (url.includes('/roster')) { const mm = url.match(/sports\/([a-z]+\/[a-z0-9.]+)\/teams\/(\d+)\/roster/); body = F.roster(byPath[mm[1]], mm[2]); }
   else if (url.includes('/schedule')) { const mm = url.match(/sports\/([a-z]+\/[a-z0-9.]+)\/teams\/(\d+)\/schedule/); body = F.schedule(byPath[mm[1]], mm[2]); }
   else if (m && m[2] === 'scoreboard') {
     const lg = byPath[m[1]];
@@ -59,7 +61,7 @@ const ok = (name) => { n++; console.log('  ok  ' + name); };
 let text = await visit('#/');
 assert.ok(w.location.hash === '#/onboarding', 'redirects to onboarding'); ok('first run redirects to onboarding');
 text = await visit('#/onboarding', { wait: 300 });
-console.log(app().querySelector('.ob-sec')?.textContent.slice(0,300)); assert.ok(app().querySelectorAll('.tile').length > 0, 'team tiles'); ok('onboarding lists teams');
+assert.ok(app().querySelectorAll('.tile').length > 0, 'team tiles'); ok('onboarding lists teams');
 store.follow({ league: 'nhl', id: '20', abbr: 'TB', name: 'Tampa Bay Lightning', short: 'Lightning', color: '#003e7e', alt: '#ffffff' });
 store.follow({ league: 'nba', id: '28', abbr: 'TOR', name: 'Toronto Raptors', short: 'Raptors', color: '#ce1141', alt: '#000000' });
 store.setOnboarded(true);
@@ -72,6 +74,11 @@ for (const lg of ['nhl', 'nba', 'nfl', 'mlb', 'soccer']) {
 }
 text = await visit('#/team/nhl/20', { wait: 300 });
 assert.ok(app().querySelector('.thero'), 'team hero'); ok('team page');
+if (!app().querySelector('#ttab-roster')) console.log(app().textContent.slice(0,300)); app().querySelector('#ttab-roster').click(); await sleep(400);
+assert.ok(app().querySelectorAll('.pcard').length >= 3, 'roster cards'); ok('team roster with headshots');
+app().querySelector('#rs-stats').click(); await sleep(700);
+assert.ok(app().querySelector('table.players'), 'stats table'); assert.ok(/PTS/.test(app().textContent)); ok('team player stats');
+for (const [lg, id] of [['nfl', 2], ['mlb', 5]]) { await visit(`#/team/${lg}/${id}`, { wait: 300 }); app().querySelector('#ttab-roster').click(); await sleep(400); app().querySelector('#rs-stats').click(); await sleep(700); assert.ok(app().querySelector('table.players'), lg + ' stats'); ok(`${lg} roster and stats`); }
 
 const games = [['nhl', 1001], ['nhl', 1002], ['nhl', 1003], ['nba', 1002], ['nfl', 1002], ['mlb', 1002], ['mlb', 1001], ['eng.1', 1002], ['uefa.champions', 1001], ['usa.1', 1003]];
 for (const [lg, id] of games) {

@@ -5,6 +5,7 @@ import { isSoccer, SOCCER_EXTRAS, leagueLabel } from '../leagues.js';
 import { getTeamSchedule } from '../espn.js';
 import { gameCard } from '../components.js';
 import { buildICS, googleUrl } from '../ics.js';
+import { rosterBlock } from './roster.js';
 
 export async function render(root, { league, id }) {
   const host = h('div', { class: 'tview' }, loading('Loading team'));
@@ -42,7 +43,24 @@ export async function render(root, { league, id }) {
     ),
     followBtn,
   );
+
   host.append(hero);
+
+  const tabs = h('div', { class: 'tabs2', role: 'tablist' });
+  const panel = h('div', { class: 'stack' });
+  const sched = h('div', { class: 'stack tsched' });
+  let rosterEl = null;
+  let tab = 'schedule';
+  const paintTabs = () => {
+    clear(tabs).append(...[['schedule', 'Schedule'], ['roster', 'Roster and stats']].map(([k, l]) => h('button', { type: 'button', role: 'tab', id: 'ttab-' + k, class: 'tab2' + (tab === k ? ' on' : ''), 'aria-selected': tab === k ? 'true' : 'false', onclick: () => { tab = k; paintTabs(); paintPanel(); } }, l)));
+  };
+  const paintPanel = () => {
+    clear(panel);
+    if (tab === 'schedule') panel.append(sched);
+    else { if (!rosterEl) rosterEl = rosterBlock(league)(String(id)); panel.append(rosterEl); }
+  };
+  host.append(tabs, panel);
+  paintTabs(); paintPanel();
 
   // calendar
   const calRow = h('div', { class: 'row wrap' });
@@ -52,11 +70,11 @@ export async function render(root, { league, id }) {
       h('button', { type: 'button', class: 'btn', onclick: () => { downloadText(`${team.abbr}-schedule.ics`, buildICS(upcoming, `${team.name} games`)); toast(`${upcoming.length} games added to a calendar file`); } }, `Add rest of season (${upcoming.length})`),
       h('a', { class: 'btn', href: googleUrl(next), target: '_blank', rel: 'noopener' }, 'Next game in Google Calendar'),
     );
-    host.append(h('section', { class: 'blk' }, h('h2', { class: 'blk-h' }, 'Calendar'), calRow,
+    sched.append(h('section', { class: 'blk full' }, h('h2', { class: 'blk-h' }, 'Calendar'), calRow,
       h('p', { class: 'muted small-note' }, 'Downloads a standard calendar file. Open it and your calendar app adds every game with the right time for your timezone.')));
   }
 
-  if (next) host.append(h('section', { class: 'blk' }, h('h2', { class: 'blk-h' }, next.state === 'in' ? 'Live now' : 'Next game'), h('div', { class: 'cards' }, gameCard(next, { team }))));
+  if (next) sched.append(h('section', { class: 'blk full' }, h('h2', { class: 'blk-h' }, next.state === 'in' ? 'Live now' : 'Next game'), h('div', { class: 'cards' }, gameCard(next, { team }))));
 
   const listBlock = (title, list, limit) => {
     if (!list.length) return;
@@ -72,9 +90,10 @@ export async function render(root, { league, id }) {
       if (!all && list.length > limit) cards.append(h('button', { type: 'button', class: 'btn', onclick: () => paint(true) }, `Show all ${list.length}`));
     };
     paint(false);
-    host.append(h('section', { class: 'blk' }, h('h2', { class: 'blk-h' }, title, h('small', null, String(list.length))), cards));
+    sched.append(h('section', { class: 'blk' }, h('h2', { class: 'blk-h' }, title, h('small', null, String(list.length))), cards));
   };
   listBlock('Upcoming', upcoming.slice(next ? 1 : 0), 8);
   listBlock('Results', results2, 8);
-  if (!games.length) host.append(h('p', { class: 'muted pad' }, 'The feed has no schedule for this team right now.'));
+  if (!games.length) sched.append(h('p', { class: 'muted pad' }, 'The feed has no schedule for this team right now.'));
+
 }
