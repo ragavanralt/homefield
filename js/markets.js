@@ -29,14 +29,14 @@ export function propsPanel(g) {
       const data = await loadProps(g);
       clear(host);
       if (!data.supported) { host.append(h('p', { class: 'muted small-note' }, 'Player props are available for NBA, NHL, NFL and MLB. Soccer has winner bets only.')); return; }
-      if (!data.home.length && !data.away.length) {
+      if (!data.home.length && !data.away.length && !(data.other || []).length) {
         host.append(h('p', { class: 'muted small-note' }, 'No player props could be built for this game yet.'), h('details', { class: 'small-note' }, h('summary', null, 'What was tried'), h('ul', null, data.notes.map((n) => h('li', null, n)))));
         return;
       }
-      for (const side of ['away', 'home']) {
-        const list = data[side];
+      for (const side of ['away', 'home', 'other']) {
+        const list = data[side] || [];
         if (!list.length) continue;
-        host.append(h('div', { class: 'pr-team' }, g[side].name || g[side].abbr),
+        host.append(h('div', { class: 'pr-team' }, side === 'other' ? 'Players' : (g[side].name || g[side].abbr)),
           h('div', { class: 'pr-list' }, list.map((m) => h('div', { class: 'pr-row' },
             h('div', { class: 'pr-who' }, face(m, g.league, 34), h('div', null, h('div', { class: 'pr-n' }, m.short || m.name), h('small', null, [m.pos, m.label].filter(Boolean).join(' · ')))),
             h('div', { class: 'pr-line' }, String(m.line)),
@@ -44,7 +44,8 @@ export function propsPanel(g) {
       }
       const srcs = [...new Set(Object.values(data.sources))];
       if (srcs.length && !srcs.every((x) => x === 'ESPN rosters')) host.append(h('p', { class: 'muted small-note' }, 'Lines built from: ' + srcs.join(', ') + '.'));
-      host.append(h('p', { class: 'muted small-note' }, 'Lines are set from each player\'s season average in the feed. Settled from the final box score. A player who does not play is refunded.'));
+      const live = srcs.some((x) => /lines/.test(x));
+      host.append(h('p', { class: 'muted small-note' }, (live ? 'Real sportsbook prices. ' : 'Lines are set from each player\'s season average in the feed. ') + 'Settled from the final box score. A player who does not play is refunded.'));
     } catch (e) { clear(host).append(h('p', { class: 'muted small-note' }, 'Could not load props: ' + e.message)); }
   })();
   return host;

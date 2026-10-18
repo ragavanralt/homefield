@@ -2,8 +2,9 @@
 import { h, clear, crest, toast, downloadText } from '../ui.js';
 import { getState, setSetting, unfollow, myTeams, exportData, importData, resetAll, resetBets, resetTeams } from '../store.js';
 import { leagueLabel } from '../leagues.js';
-import { pageHead, hideChips } from '../components.js';
-import { BACKGROUNDS, ACCENTS, DEFAULT_APPEARANCE, applyTheme, resolveMode } from '../themes.js';
+import { pageHead, hideChips, appearanceCard } from '../components.js';
+import { applyTheme } from '../themes.js';
+import { testKey } from '../odds.js';
 
 export async function render(root) {
   root.append(pageHead('Settings'));
@@ -33,25 +34,9 @@ export async function render(root) {
     return b;
   }
 
-  function appearance() {
-    const s = getState().settings;
-    const mode = resolveMode(s.theme);
-    const key = mode === 'dark' ? 'bgDark' : 'bgLight';
-    const swatch = (label, bg, on, onclick, id) => h('button', { type: 'button', class: 'swatch', id, 'aria-pressed': on ? 'true' : 'false', onclick }, h('i', { style: { background: bg } }), label);
-    return h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Appearance'),
-      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Theme'),
-        h('div', { class: 'seg' }, [['auto', 'Auto'], ['dark', 'Dark'], ['light', 'Light']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (s.theme === k ? ' on' : ''), id: 'theme-' + k, onclick: () => { setSetting('theme', k); repaintTheme(); draw(); } }, l))),
-        h('small', null, s.theme === 'auto' ? 'Follows your phone or computer.' : '')),
-      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, `Background (${mode})`),
-        h('div', { class: 'swatches' }, BACKGROUNDS[mode].map((b) => swatch(b.name, `linear-gradient(135deg, ${b.bg} 50%, ${b.surface} 50%)`, s[key] === b.id, () => { setSetting(key, b.id); repaintTheme(); draw(); }, 'bg-' + b.id)))),
-      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Accent colour'),
-        h('div', { class: 'swatches' }, ACCENTS.map((a) => swatch(a.name, `linear-gradient(135deg, ${a.a}, ${a.b})`, s.accent === a.id, () => { setSetting('accent', a.id); repaintTheme(); draw(); }, 'acc-' + a.id)))),
-      h('div', { class: 'set-row' }, h('button', { type: 'button', class: 'btn small', id: 'reset-look', onclick: () => { Object.entries(DEFAULT_APPEARANCE).forEach(([k, v]) => setSetting(k, v)); repaintTheme(); draw(); toast('Appearance reset'); } }, 'Reset appearance to default')));
-  }
-
   function draw() {
     clear(host);
-    host.append(appearance());
+    host.append(appearanceCard());
     host.append(
       h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Display'),
         toggle('set-logos', 'Team logos and player photos', 'Loaded from the data feed. If off, you get colour badges and initials.', 'logos'),
@@ -60,6 +45,20 @@ export async function render(root) {
 
     host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Hide leagues'),
       h('p', { class: 'muted' }, 'A hidden league stops showing in Home, scores and Pick\'em. It keeps its own tab.'), hideChips()));
+
+    const keyIn = h('input', { class: 'search', type: 'password', id: 'odds-key', placeholder: 'Paste your Odds API key', autocomplete: 'off', value: getState().settings.oddsKey || '' });
+    const keyMsg = h('p', { class: 'muted small-note', id: 'odds-msg' }, getState().settings.oddsKey ? 'A key is saved on this device.' : 'No key yet. Pick\'em uses simulated lines.');
+    host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Live sportsbook lines (optional)'),
+      h('p', { class: 'muted' }, 'Gets real DraftKings and FanDuel player props for NFL, NBA, NHL and MLB through The Odds API. Make a free key at the-odds-api.com (500 credits a month, about 3 to 5 credits per game you open). The key stays on this device.'),
+      keyIn, keyMsg,
+      h('div', { class: 'row wrap' },
+        h('button', { type: 'button', class: 'btn main', id: 'odds-save', onclick: async () => {
+          setSetting('oddsKey', keyIn.value.trim());
+          if (!keyIn.value.trim()) { keyMsg.textContent = 'Key removed. Using simulated lines.'; return; }
+          keyMsg.textContent = 'Testing…';
+          try { const r = await testKey(); keyMsg.textContent = `Key works.${r.remaining != null ? ' ' + r.remaining + ' credits left this month.' : ''}`; } catch (e) { keyMsg.textContent = 'Saved, but the test failed: ' + e.message; }
+        } }, 'Save and test'),
+        h('button', { type: 'button', class: 'btn', onclick: () => { keyIn.value = ''; setSetting('oddsKey', ''); keyMsg.textContent = 'Key removed. Using simulated lines.'; } }, 'Remove key'))));
 
     const teams = myTeams();
     host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Your teams'),

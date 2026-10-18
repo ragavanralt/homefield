@@ -451,3 +451,25 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 .sr-row { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 .sr-row.lose { opacity: .55; } .sr-row.win .sr-n { color: var(--good); }
 .sr-n { flex: 1; } .sr-w { font-family: var(--display); font-size: 20px; font-weight: 800; }
+
+/* mobile pass */
+.wlegend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 13px; font-weight: 600; }
+.wlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.wlegend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; border: 1px solid var(--line); }
+.facts2 > div { min-width: 0; } .facts2 dd { overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .g-main { flex-direction: column; align-items: stretch; gap: 8px; }
+  .g-stat { flex-direction: row; justify-content: space-between; align-items: baseline; gap: 10px; text-align: left; border-top: 1px solid var(--line); padding-top: 8px; }
+  .g-stat small { text-align: right; }
+  .pr-row { grid-template-columns: auto minmax(0, 1fr); row-gap: 6px; }
+  .pr-who { grid-column: 1 / -1; }
+  .pr-line { text-align: left; min-width: 56px; font-size: 22px; }
+  .pr-btns { min-width: 0; } .pr-btns .bet-btn { flex: 1; min-width: 0; }
+  .facts2 { grid-template-columns: 1fr 1fr; gap: 10px 14px; } .facts2 dd { font-size: 15px; }
+  .tab2 { padding: 12px 12px; }
+  .page-head { flex-direction: column; gap: 2px; align-items: flex-start; }
+  .top { padding-bottom: 6px; }
+  .brand { font-size: 22px; }
+}
+
+.facts2 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }

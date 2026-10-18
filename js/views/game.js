@@ -145,8 +145,9 @@ export async function render(root, { league, id }) {
       if (!p) return null;
       const bg = k === 'draw' ? 'var(--surface-2)' : teamColor(k);
       const ink = k === 'draw' ? 'var(--fg)' : skinFromColors(g[k].color, g[k].alt).tink;
-      return h('div', { class: 'wseg', style: { width: (p * 100).toFixed(1) + '%', background: bg, color: ink } }, h('span', null, (k === 'draw' ? 'Draw' : g[k].abbr) + ' ' + Math.round(p * 100) + '%'));
+      return h('div', { class: 'wseg', style: { width: (p * 100).toFixed(1) + '%', background: bg, color: ink } }, p >= 0.2 ? h('span', null, (k === 'draw' ? 'Draw' : g[k].abbr) + ' ' + Math.round(p * 100) + '%') : null);
     }));
+    const legend = h('div', { class: 'wlegend' }, order.filter((k) => pr[k]).map((k) => h('span', null, h('i', { style: { background: k === 'draw' ? 'var(--muted)' : teamColor(k) } }), (k === 'draw' ? 'Draw' : g[k].abbr) + ' ' + Math.round(pr[k] * 100) + '%')));
     const src = pr.source === 'odds' ? 'From betting odds.' : pr.source === 'records' ? 'Estimated from team records.' : 'No odds or records yet.';
     const prob = (side) => (g[side].probable ? h('div', { class: 'prob' }, face(g[side].probable, league, 34), h('div', null, h('small', null, 'Probable starter'), h('div', null, g[side].probable.name))) : null);
     const info = h('dl', { class: 'facts2' },
@@ -155,7 +156,7 @@ export async function render(root, { league, id }) {
       g.broadcast ? h('div', null, h('dt', null, 'Watch on'), h('dd', null, g.broadcast)) : null,
       g.odds && g.odds.details ? h('div', null, h('dt', null, 'Line'), h('dd', null, g.odds.details + (g.odds.overUnder ? ` · O/U ${g.odds.overUnder}` : ''))) : null,
     );
-    return card('Matchup', bar, h('p', { class: 'muted small-note' }, src), game.home.probable || game.away.probable ? h('div', { class: 'probs' }, sides.map(prob)) : null, info);
+    return card('Matchup', bar, legend, h('p', { class: 'muted small-note' }, src), game.home.probable || game.away.probable ? h('div', { class: 'probs' }, sides.map(prob)) : null, info);
   }
 
   function leadersCard(title) {

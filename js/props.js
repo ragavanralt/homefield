@@ -4,6 +4,8 @@ import { getRoster, getAthleteStats, getSummary } from './espn.js';
 import { propCandidates, buildProps, propDefsFor, leaderProps } from './bets.js';
 import { nhlTeam, mlbTeam } from './alt.js';
 import { LEAGUES } from './leagues.js';
+import { bookProps, hasOddsKey, creditsLeft } from './odds.js';
+import { nameKey } from './alt.js';
 
 const cache = new Map(); // gameKey -> { t, value }
 
@@ -42,7 +44,34 @@ export async function loadProps(game) {
   const hit = cache.get(game.key);
   if (hit && Date.now() - hit.t < 600000) return hit.value;
   if (!propDefsFor(game.league).length) return { home: [], away: [], supported: false, sources: {}, notes: [] };
-  const out = { home: [], away: [], supported: true, sources: {}, notes: [] };
+  const out = { home: [], away: [], other: [], supported: true, sources: {}, notes: [] };
+  // Real sportsbook lines first, when the person has added an Odds API key.
+  if (hasOddsKey()) {
+    try {
+      const b = await bookProps(game);
+      if (b.markets.length) {
+        // best effort: work out which team each player is on, and find a photo
+        const names = { home: new Map(), away: new Map() };
+        await Promise.all(['home', 'away'].map(async (side) => {
+          try { for (const p of (await getRoster(game.league, game[side].id)).players) names[side].set(nameKey(p.name), p); } catch (e) { /* teams stay unsorted */ }
+          if (!names[side].size) {
+            try { const alt = game.league === 'nhl' ? await nhlTeam(game[side].abbr) : game.league === 'mlb' ? await mlbTeam(game[side].name) : null; (alt?.players || []).forEach((p) => names[side].set(nameKey(p.name), p)); } catch (e) { /* ignore */ }
+          }
+        }));
+        for (const m of b.markets) {
+          const k = nameKey(m.name);
+          const side = names.home.has(k) ? 'home' : names.away.has(k) ? 'away' : null;
+          const p = side && names[side].get(k);
+          const mk = { ...m, teamId: side ? game[side].id : null, face: p?.face || '', pos: p?.pos || '' };
+          (side ? out[side] : out.other).push(mk);
+        }
+        out.sources.home = out.sources.away = `${b.book} lines${creditsLeft() != null ? ` (${creditsLeft()} Odds API credits left)` : ''}`;
+        cache.set(game.key, { t: Date.now(), value: out });
+        return out;
+      }
+      out.notes.push('Sportsbook lines: no props posted for this game yet');
+    } catch (e) { out.notes.push('Sportsbook lines: ' + e.message); }
+  }
   let leaders; // loaded once, only if needed
   await Promise.all(['home', 'away'].map(async (side) => {
     const tries = [

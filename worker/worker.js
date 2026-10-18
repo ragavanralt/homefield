@@ -36,7 +36,7 @@ export default {
     if (url.pathname === '/proxy' && req.method === 'GET') {
       let target;
       try { target = new URL(url.searchParams.get('u') || ''); } catch (e) { return json({ error: 'Bad address' }, 400, headers); }
-      const okHosts = ['api-web.nhle.com', 'statsapi.mlb.com', 'sports.core.api.espn.com', 'site.web.api.espn.com', 'site.api.espn.com'];
+      const okHosts = ['api-web.nhle.com', 'statsapi.mlb.com', 'sports.core.api.espn.com', 'site.web.api.espn.com', 'site.api.espn.com', 'api.the-odds-api.com'];
       if (!okHosts.includes(target.hostname)) return json({ error: 'Host not allowed' }, 403, headers);
       const res = await fetch(target.toString(), { cf: { cacheTtl: 60, cacheEverything: true } });
       return new Response(res.body, { status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'application/json', 'cache-control': 'public, max-age=60', ...headers } });

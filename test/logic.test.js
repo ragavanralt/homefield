@@ -268,4 +268,27 @@ t('mlb best-of series closes when a team has enough wins', () => {
   assert.equal(r[0].series[0].state, 'done'); assert.match(r[0].series[0].text, /won 2-0/);
 });
 
+{
+  const store = await import('../js/store.js');
+  const odds = await import('../js/odds.js');
+  store.setSetting('oddsKey', 'abc');
+  const seen = [];
+  globalThis.fetch = async (url) => {
+    url = String(url); seen.push(url);
+    const body = /\/events\/ev1\/odds/.test(url)
+      ? { bookmakers: [{ key: 'draftkings', title: 'DraftKings', markets: [{ key: 'player_pass_yds', outcomes: [
+        { name: 'Over', description: 'Josh Allen', price: 1.9, point: 249.5 }, { name: 'Under', description: 'Josh Allen', price: 1.9, point: 249.5 }] }] }] }
+      : [{ id: 'ev1', home_team: 'Buffalo Bills', away_team: 'Las Vegas Raiders' }];
+    return { ok: true, status: 200, headers: { get: (k) => (k === 'x-requests-remaining' ? '495' : null) }, json: async () => body };
+  };
+  const game = { league: 'nfl', key: 'nfl:1', home: { name: 'Buffalo Bills' }, away: { name: 'Las Vegas Raiders' } };
+  const r = await odds.bookProps(game);
+  t('odds api: book prop parsed with real line and prices', () => {
+    assert.equal(r.markets.length, 1); assert.equal(r.markets[0].stat, 'passyds'); assert.equal(r.markets[0].line, 249.5); assert.equal(r.markets[0].over, 1.9);
+    assert.equal(odds.creditsLeft(), '495'); assert.match(r.book, /DraftKings/);
+    assert.ok(seen.some((u) => /player_pass_yds/.test(u)));
+  });
+  store.setSetting('oddsKey', '');
+}
+
 console.log(`\n${passed} checks passed`);

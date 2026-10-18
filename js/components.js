@@ -1,7 +1,8 @@
 // Reusable pieces: game cards and the watch-worthy meter.
 import { h, crest, applySkin, isHidden, scoreText } from './ui.js';
 import { isSoccer, leagueLabel, LEAGUES, MAJOR_KEYS, SOCCER_KEYS } from './leagues.js';
-import { getState, toggleHidden } from './store.js';
+import { getState, toggleHidden, setSetting } from './store.js';
+import { BACKGROUNDS, ACCENTS, DEFAULT_APPEARANCE, applyTheme, resolveMode } from './themes.js';
 import { watchScore, watchLabel, watchReason } from './winprob.js';
 import { fmtDay, fmtTime, sameDay } from './util.js';
 import { rememberGame } from './espn.js';
@@ -69,6 +70,29 @@ export function hideChips() {
           const hid = (getState().settings.hidden || []).includes(k);
           return h('button', { type: 'button', class: 'chip hide-chip' + (hid ? ' is-hidden' : ''), id: 'hide-' + k.replace('.', '-'), 'aria-pressed': hid ? 'true' : 'false', onclick: () => { toggleHidden(k); draw(); } }, LEAGUES[k].label, hid ? h('small', null, 'hidden') : null);
         }))));
+  };
+  draw();
+  return host;
+}
+
+/** Theme, background and accent pickers. Applies changes straight away. */
+export function appearanceCard(title = 'Appearance') {
+  const host = h('section', { class: 'card', id: 'appearance' });
+  const repaint = () => applyTheme(getState().settings);
+  const draw = () => {
+    const s = getState().settings;
+    const mode = resolveMode(s.theme);
+    const key = mode === 'dark' ? 'bgDark' : 'bgLight';
+    const swatch = (label, bg, on, onclick, id) => h('button', { type: 'button', class: 'swatch', id, 'aria-pressed': on ? 'true' : 'false', onclick }, h('i', { style: { background: bg } }), label);
+    host.replaceChildren(h('h2', { class: 'card-h' }, title),
+      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Theme'),
+        h('div', { class: 'seg' }, [['auto', 'Auto'], ['dark', 'Dark'], ['light', 'Light']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (s.theme === k ? ' on' : ''), id: 'theme-' + k, onclick: () => { setSetting('theme', k); repaint(); draw(); } }, l))),
+        h('small', null, s.theme === 'auto' ? 'Follows your phone or computer.' : '')),
+      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, `Background (${mode})`),
+        h('div', { class: 'swatches' }, BACKGROUNDS[mode].map((b) => swatch(b.name, `linear-gradient(135deg, ${b.bg} 50%, ${b.surface} 50%)`, s[key] === b.id, () => { setSetting(key, b.id); repaint(); draw(); }, 'bg-' + b.id)))),
+      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Accent colour'),
+        h('div', { class: 'swatches' }, ACCENTS.map((a) => swatch(a.name, `linear-gradient(135deg, ${a.a}, ${a.b})`, s.accent === a.id, () => { setSetting('accent', a.id); repaint(); draw(); }, 'acc-' + a.id)))),
+      h('div', { class: 'set-row' }, h('button', { type: 'button', class: 'btn small', id: 'reset-look', onclick: () => { Object.entries(DEFAULT_APPEARANCE).forEach(([k, v]) => setSetting(k, v)); repaint(); draw(); } }, 'Reset to default')));
   };
   draw();
   return host;

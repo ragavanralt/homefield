@@ -2,7 +2,7 @@
 import { h, clear, crest, loading, errorBox, applySkin } from '../ui.js';
 import { LEAGUES, MAJOR_KEYS, SOCCER_KEYS } from '../leagues.js';
 import { getTeams } from '../espn.js';
-import { hideChips } from '../components.js';
+import { hideChips, appearanceCard } from '../components.js';
 import { follow, unfollow, isFollowing, setOnboarded, myTeams } from '../store.js';
 
 export async function render(root) {
@@ -79,10 +79,13 @@ export async function render(root) {
 
   drawChips();
   root.append(
-    h('h2', { class: 'step' }, '1. Leagues'), chipHost,
-    h('h2', { class: 'step' }, '2. Teams'),
+    h('h2', { class: 'step' }, '1. Look'),
+    h('p', { class: 'muted' }, 'Pick a theme and colours. You can change them any time in Settings.'),
+    appearanceCard('Theme and colours'),
+    h('h2', { class: 'step' }, '2. Leagues'), chipHost,
+    h('h2', { class: 'step' }, '3. Teams'),
     sectionsHost,
-    h('h2', { class: 'step' }, '3. Hide leagues (optional)'),
+    h('h2', { class: 'step' }, '4. Hide leagues (optional)'),
     h('p', { class: 'muted' }, 'Tap a league you do not care about. It stops showing up in Home, scores and Pick\'em, but it keeps its own tab if you want to look.'),
     hideChips(),
     h('div', { class: 'ob-bar' }, doneBtn),
