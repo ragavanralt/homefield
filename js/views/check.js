@@ -2,7 +2,9 @@
 // If something looks wrong in the app, run this and send the report.
 import { h, clear, toast } from '../ui.js';
 import { CONFIG } from '../config.js';
-import { getJSON, scoreboardUrl, summaryUrl, teamsUrl, standingsUrl, scheduleUrl, getRoster, getAthleteStats, getStandings, normEvent, normSummary } from '../espn.js';
+import { getJSON, scoreboardUrl, summaryUrl, teamsUrl, getRoster, getAthleteStats, getStandings, getTeamSchedule, getPlayoffGames, playoffWindow, hasPlayoffs, normEvent, normSummary } from '../espn.js';
+import { leaderProps } from '../bets.js';
+import { nhlTeam, mlbTeam, nhlBracket, mlbPostseasonGames } from '../alt.js';
 import { pageHead } from '../components.js';
 import { addDays, ymd } from '../util.js';
 import { LEAGUES } from '../leagues.js';
@@ -38,28 +40,28 @@ async function checkLeague(lg) {
       ['Odds', yes(!!(s.game && s.game.odds && s.game.odds.home != null))],
     ];
     r.keys = s.keys.join(', ');
-    try {
-      const t = (await getJSON(teamsUrl(lg), 1000)).sports?.[0]?.leagues?.[0]?.teams?.[0]?.team || { id: pick.home.id };
-      const ro = await getRoster(lg, t.id);
-      r.items.push(['Roster', ro.players.length ? `found (${ro.players.length} players, ${ro.players.filter((p) => p.face).length} headshots)` : 'missing']);
-      if (ro.players[0]) {
-        const st = await getAthleteStats(lg, ro.players[0].id);
-        r.items.push(['Player season stats', st.length ? `found (${st[0].labels.slice(0, 6).join(' ')})` : 'missing']);
-      }
-    } catch (e) { r.items.push(['Roster / player stats', 'missing: ' + e.message]); }
+    const tid = pick.home.id;
+    const probe = async (label, fn) => { try { r.items.push([label, await fn()]); } catch (e) { r.items.push([label, 'missing: ' + e.message]); } };
+    let roster = { players: [] };
+    await probe('Roster (ESPN)', async () => { roster = await getRoster(lg, tid); if (!roster.players.length) throw new Error('empty'); return `found (${roster.players.length} players, ${roster.players.filter((p) => p.face).length} headshots)`; });
+    await probe('Player stats (ESPN)', async () => {
+      const p = roster.players.find((x) => x.pos === 'QB') || roster.players[0];
+      if (!p) throw new Error('no roster to test');
+      const st = await getAthleteStats(lg, p.id);
+      if (!st.length) throw new Error('empty'); return `found (${st[0].labels.slice(0, 6).join(' ')})`;
+    });
+    await probe('Props from team leaders', async () => { const n = leaderProps(lg, s.leaders, tid, pick.home.record).length; if (!n) throw new Error('none built'); return `found (${n} props)`; });
+    if (lg === 'nhl') await probe('Roster stats (NHL backup)', async () => { const x = await nhlTeam(pick.home.abbr); if (!x.players.length) throw new Error('empty'); return `found (${x.players.length} skaters)`; });
+    if (lg === 'mlb') await probe('Roster stats (MLB backup)', async () => { const x = await mlbTeam(pick.home.name); if (!x.players.length) throw new Error('empty'); return `found (${x.players.length} hitters)`; });
+    if (lg === 'nhl') await probe('Bracket (NHL backup)', async () => { const w = playoffWindow('nhl'); const x = await nhlBracket(w.from.getFullYear()); if (!x.length) throw new Error('empty'); return `found (${x.length} rounds)`; });
+    if (lg === 'mlb') await probe('Bracket (MLB backup)', async () => { const w = playoffWindow('mlb'); const x = await mlbPostseasonGames(w.from, w.to); if (!x.length) throw new Error('empty'); return `found (${x.length} games)`; });
+    if (hasPlayoffs(lg)) await probe('Bracket (ESPN)', async () => { const x = await getPlayoffGames(lg); if (!x.games.length) throw new Error('no playoff games in window'); return `found (${x.games.length} games)`; });
+    await probe('Team schedule', async () => { const x = await getTeamSchedule(lg, tid); return `found (${x.games.length} games)`; });
+    await probe('Team list (ESPN)', async () => { const j = await getJSON(teamsUrl(lg), 1000); const n = (j.sports?.[0]?.leagues?.[0]?.teams || []).length; if (!n) throw new Error('empty'); return `found (${n} teams)`; });
     try {
       const gr = await getStandings(lg);
       r.items.push(['Standings', gr.length ? `found (${gr.length} tables, ${gr.reduce((n, x) => n + x.rows.length, 0)} teams)` : 'missing: feed returned no table']);
     } catch (e) { r.items.push(['Standings', 'missing: ' + e.message]); }
-    for (const [label, url] of [['Team list', teamsUrl(lg)], ['Team schedule', null]]) {
-      try {
-        let u = url;
-        if (!u) { const t = (await getJSON(teamsUrl(lg), 1000)).sports?.[0]?.leagues?.[0]?.teams?.[0]?.team; u = t ? scheduleUrl(lg, t.id) : null; }
-        if (!u) { r.items.push([label, 'skipped (no team list)']); continue; }
-        await getJSON(u, 1000);
-        r.items.push([label, 'found']);
-      } catch (e) { r.items.push([label, 'missing: ' + e.message]); }
-    }
   } catch (e) {
     r.error = String(e.message).startsWith('Failed to fetch') ? 'Failed to fetch. The browser blocked the request (network or CORS). See the README on using the Worker proxy.' : e.message;
   }

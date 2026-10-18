@@ -32,6 +32,16 @@ export default {
       return new Response(res.body, { status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'application/json', 'cache-control': `public, max-age=${live ? 10 : 300}`, ...headers } });
     }
 
+    // Generic pass-through for the backup sources: /proxy?u=https://api-web.nhle.com/...
+    if (url.pathname === '/proxy' && req.method === 'GET') {
+      let target;
+      try { target = new URL(url.searchParams.get('u') || ''); } catch (e) { return json({ error: 'Bad address' }, 400, headers); }
+      const okHosts = ['api-web.nhle.com', 'statsapi.mlb.com', 'sports.core.api.espn.com', 'site.web.api.espn.com', 'site.api.espn.com'];
+      if (!okHosts.includes(target.hostname)) return json({ error: 'Host not allowed' }, 403, headers);
+      const res = await fetch(target.toString(), { cf: { cacheTtl: 60, cacheEverything: true } });
+      return new Response(res.body, { status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'application/json', 'cache-control': 'public, max-age=60', ...headers } });
+    }
+
     if (url.pathname === '/ask' && req.method === 'POST') {
       if (!env.ANTHROPIC_API_KEY) return json({ error: 'The Worker has no ANTHROPIC_API_KEY set yet.' }, 500, headers);
       let body;

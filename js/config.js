@@ -9,6 +9,10 @@ export const CONFIG = {
   // ('https://YOUR-WORKER.workers.dev/espnweb').
   espnWebBase: 'https://site.web.api.espn.com',
 
+  // Optional: a Worker address that forwards backup sources (NHL, MLB) if the browser blocks them.
+  // Looks like 'https://YOUR-WORKER.workers.dev/proxy'. Leave empty to call them directly.
+  proxy: '',
+
   // Ask the game. Leave empty until you deploy worker/worker.js, then set to
   // 'https://YOUR-WORKER.workers.dev/ask'
   askUrl: '',

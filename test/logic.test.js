@@ -247,4 +247,25 @@ t('bracket groups games into series and rounds', () => {
   assert.equal(r[1].name, 'ALCS');
 });
 
+t('leader props: nfl from season leaders', () => {
+  const leaders = [{ teamId: '7', cats: [
+    { name: 'Passing Yards', value: '112/172, 1,269 YDS, 12 TD, 4 INT', who: 'K Cousins', id: '1', face: '' },
+    { name: 'Rushing Yards', value: '88 CAR, 291 YDS', who: 'A Jeanty', id: '2', face: '' },
+    { name: 'Receiving Yards', value: '24 REC, 312 YDS, 3 TD', who: 'B Bowers', id: '3', face: '' }] }];
+  const p = B.leaderProps('nfl', leaders, '7', '5-1');
+  assert.ok(p.find((x) => x.stat === 'passyds' && x.line > 150 && x.line < 260));
+  assert.ok(p.find((x) => x.stat === 'recyds'));
+  assert.ok(p.every((x) => x.over > 1 && x.under > 1));
+});
+t('leader props: nba per game', () => {
+  const p = B.leaderProps('nba', [{ teamId: '28', cats: [{ name: 'Points Per Game', value: '27.8', who: 'S Barnes', id: '5', face: '' }] }], '28', '3-1');
+  assert.equal(p[0].stat, 'pts'); assert.ok(p[0].line >= 27.5 && p[0].line <= 28.5);
+});
+t('mlb best-of series closes when a team has enough wins', () => {
+  const T = (id, sc) => ({ id: String(id), abbr: 'T' + id, name: 'T' + id, score: sc });
+  const g = (id, hs, as) => ({ id: String(id), league: 'mlb', date: `2026-10-0${id}T20:00Z`, state: 'post', seriesTitle: 'Wild Card Series', bestOf: 3, home: T(1, hs), away: T(2, as), playoff: true });
+  const r = buildBracket([g(1, 3, 1), g(2, 4, 2)], 'mlb');
+  assert.equal(r[0].series[0].state, 'done'); assert.match(r[0].series[0].text, /won 2-0/);
+});
+
 console.log(`\n${passed} checks passed`);

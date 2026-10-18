@@ -66,6 +66,7 @@ export const PROP_DEFS = {
 };
 export const propDefsFor = (league) => PROP_DEFS[LEAGUES[league]?.group] || [];
 
+const nk = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
 const numOf = (v) => { const n = parseFloat(String(v).replace(/,/g, '')); return Number.isFinite(n) ? n : null; };
 
 /** Season average per game for one prop, from a list of stat blocks ({labels, values}). null if it can't be worked out. */
@@ -114,6 +115,45 @@ export function propCandidates(league, players, game) {
   }
   if (grp === 'mlb') return players.filter((p) => !/^(SP|RP|P|CP)$/.test(p.pos)).slice(0, 14);
   return [];
+}
+
+const gamesIn = (rec) => { const n = (String(rec || '').match(/\d+/g) || []).map(Number).reduce((a, b) => a + b, 0); return n > 0 ? n : null; };
+const grab = (txt, re) => { const m = String(txt).match(re); return m ? parseFloat(m[1].replace(/,/g, '')) : null; };
+
+/**
+ * Backup way to make props when rosters will not load: use the season leaders the game page already carries.
+ * leaders: [{ teamId, cats: [{ name, value, who, id, face }] }]. Returns markets like buildProps.
+ */
+export function leaderProps(league, leaders, teamId, record) {
+  const grp = LEAGUES[league]?.group;
+  const defs = PROP_DEFS[grp] || [];
+  const def = (k) => defs.find((d) => d.key === k);
+  const gp = gamesIn(record);
+  const mine = (leaders || []).find((t) => t.teamId === String(teamId));
+  const out = [];
+  const add = (c, key, avg) => {
+    const d = def(key);
+    const pr = d && priceProp(d, avg);
+    if (pr) out.push({ teamId, playerId: c.id, name: c.who, short: c.who, pos: '', face: c.face, stat: key, label: d.label, line: pr.line, over: pr.over, under: pr.under, box: d.box });
+  };
+  for (const c of mine ? mine.cats : []) {
+    const n = c.name, v = c.value;
+    if (grp === 'nba') {
+      const x = grab(v, /^([\d.,]+)/);
+      if (x == null) continue;
+      const per = x > 70 && gp ? x / gp : x;
+      if (/point/i.test(n)) add(c, 'pts', per); else if (/rebound/i.test(n)) add(c, 'reb', per); else if (/assist/i.test(n)) add(c, 'ast', per);
+    } else if (grp === 'nfl' && gp) {
+      const yds = grab(v, /([\d,]+)\s*YDS/i);
+      if (/passing/i.test(n) && yds != null) { add(c, 'passyds', yds / gp); const td = grab(v, /(\d+)\s*TD/i); if (td != null) add(c, 'passtd', td / gp); }
+      else if (/rushing/i.test(n) && yds != null) add(c, 'rushyds', yds / gp);
+      else if (/receiving/i.test(n) && yds != null) { add(c, 'recyds', yds / gp); const rec = grab(v, /(\d+)\s*REC/i); if (rec != null) add(c, 'rec', rec / gp); }
+    } else if (grp === 'nhl' && gp) {
+      const x = grab(v, /^([\d.,]+)/);
+      if (x != null && /^points/i.test(n)) add(c, 'pts', x / gp);
+    }
+  }
+  return out;
 }
 
 /** Turn players + their stat blocks into prop markets for one team. */
@@ -186,7 +226,7 @@ export function evalLeg(leg, data) {
         const L = grp.labels.map((x) => String(x).toUpperCase());
         const idx = spec.l.map((x) => L.indexOf(x)).find((i) => i >= 0);
         if (idx == null || idx < 0) continue;
-        const row = grp.rows.find((r) => r.id === leg.prop.playerId);
+        const row = grp.rows.find((r) => r.id === leg.prop.playerId) || grp.rows.find((r) => leg.prop.name && nk(r.name) === nk(leg.prop.name));
         if (!row) continue;
         const v = numOf(row.stats[idx]);
         if (v != null) { total += v; found = true; }

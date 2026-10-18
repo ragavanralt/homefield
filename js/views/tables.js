@@ -5,6 +5,7 @@ import { LEAGUES, isSoccer } from '../leagues.js';
 import { getStandings, getPlayoffGames, playoffWindow } from '../espn.js';
 import { sortRows, recordOf, playoffPicture, pictureNote, soccerZone, soccerLegend, buildBracket } from '../playoffs.js';
 import { fmtDay } from '../util.js';
+import { nhlBracket, mlbPostseasonGames } from '../alt.js';
 
 const COLS = {
   nba: ['wins', 'losses', 'winPercent', 'gamesBehind', 'streak'],
@@ -60,16 +61,29 @@ export async function renderStandings(body, league, mode) {
 function seriesCard(s, league) {
   const row = (t, w) => h('div', { class: 'sr-row' + (s.winner && s.winner.id === t.id ? ' win' : '') + (s.winner && s.winner.id !== t.id ? ' lose' : '') },
     crest(t, 24), h('span', { class: 'sr-n' }, t.abbr || t.name), h('span', { class: 'sr-w' }, String(w)));
-  return h('a', { class: 'series s-' + s.state, href: `#/game/${league}/${s.lastGame.id}` }, row(s.a, s.aw), row(s.b, s.bw), h('small', null, s.text));
+  return h(s.noLink ? 'div' : 'a', { class: 'series s-' + s.state, href: s.noLink ? null : `#/game/${league}/${s.lastGame.id}` }, row(s.a, s.aw), row(s.b, s.bw), h('small', null, s.text));
+}
+
+/** Rounds of series for a league: the league's own feed first (NHL, MLB), then ESPN. */
+async function loadRounds(league, win) {
+  const over = !(win && win.live);
+  const errs = [];
+  try {
+    if (league === 'nhl') { const r = await nhlBracket(win.from.getFullYear()); if (r.length) return { rounds: r, from: 'NHL' }; }
+    if (league === 'mlb') { const g = await mlbPostseasonGames(win.from, win.to); const r = buildBracket(g, 'mlb', { over }); if (r.length) return { rounds: r, from: 'MLB' }; }
+  } catch (e) { errs.push(e.message); }
+  const { games } = await getPlayoffGames(league);
+  const rounds = buildBracket(games, league, { over });
+  return { rounds, from: 'ESPN', errs };
 }
 
 export async function renderBracket(body, league) {
-  const { games, win } = await getPlayoffGames(league);
+  const win = playoffWindow(league);
+  const { rounds, errs } = await loadRounds(league, win);
   clear(body);
-  const rounds = buildBracket(games, league, { over: !(win && win.live) });
   const span = win ? `${fmtDay(win.from)} to ${fmtDay(win.to)}` : '';
-  if (!rounds.length) { body.append(emptyState('No playoff games found', win ? `Nothing in the feed for ${span}.` : 'No postseason for this competition.')); return; }
-  body.append(h('p', { class: 'muted pad' }, win && win.live ? 'Playoffs in progress. Tap a series to open its latest game.' : `The playoffs are not on right now. This is the last postseason (${span}).`),
-    h('div', { class: 'bracket' }, rounds.map((r) => h('div', { class: 'br-col' }, h('h3', { class: 'br-h' }, r.name), h('div', { class: 'br-list' }, r.series.map((s) => seriesCard(s, league)))))));
+  if (!rounds.length) { body.append(emptyState('No playoff games found', win ? `Nothing in the feed for ${span}.` : 'No postseason for this competition.'), errs && errs.length ? h('p', { class: 'muted pad' }, 'Backup source said: ' + errs.join('; ')) : null); return; }
+  body.append(h('p', { class: 'muted pad' }, win && win.live ? 'Playoffs in progress.' : `The playoffs are not on right now. This is the last postseason (${span}).`),
+    h('div', { class: 'bracket' }, rounds.map((r) => h('div', { class: 'br-col' }, h('h3', { class: 'br-h' }, r.name), h('div', { class: 'br-list' }, r.series.map((x) => seriesCard(x, league)))))));
 }
 export { playoffWindow };

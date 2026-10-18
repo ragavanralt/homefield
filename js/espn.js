@@ -385,7 +385,10 @@ export async function getTeams(league) {
 }
 
 export async function getTeamSchedule(league, teamId) {
-  const j = await getJSON(scheduleUrl(league, teamId), 900000);
+  let j;
+  try { j = await getJSON(scheduleUrl(league, teamId), 900000); } catch (e) {
+    try { j = await getJSON(`${CONFIG.espnWebBase}/apis/site/v2/sports/${LEAGUES[league].sport}/${LEAGUES[league].slug}/teams/${teamId}/schedule`, 900000); } catch (e2) { throw e; }
+  }
   const games = (j.events || []).map((e) => normEvent(e, league)).filter((g) => g.date);
   games.forEach(rememberGame);
   games.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -431,8 +434,16 @@ export function normRoster(j) {
 }
 
 export async function getRoster(league, teamId) {
-  const j = await getJSON(rosterUrl(league, teamId), 1800000);
-  return normRoster(j);
+  const L = LEAGUES[league];
+  let lastErr;
+  for (const url of [rosterUrl(league, teamId), `${CONFIG.espnWebBase}/apis/site/v2/sports/${L.sport}/${L.slug}/teams/${teamId}/roster`]) {
+    try {
+      const r = normRoster(await getJSON(url, 1800000));
+      if (r.players.length) return r;
+    } catch (e) { lastErr = lastErr || e; }
+  }
+  if (lastErr) throw lastErr;
+  return { players: [], coach: '' };
 }
 
 /** Season stat lines from an athlete overview. Each block is { title, labels, values, split }. */
