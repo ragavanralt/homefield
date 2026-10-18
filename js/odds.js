@@ -7,6 +7,7 @@ import { getState } from './store.js';
 import { LEAGUES } from './leagues.js';
 import { PROP_DEFS } from './bets.js';
 import { nameKey } from './alt.js';
+import { hasPapiKey, papiOut, papiLeft, papiProps, papiFirst, clearPapiCache } from './oddspapi.js';
 
 const API = 'https://api.the-odds-api.com';
 const SPORT = { nfl: 'americanfootball_nfl', nba: 'basketball_nba', nhl: 'icehockey_nhl', mlb: 'baseball_mlb' };
@@ -21,11 +22,17 @@ const FIRST_MARKET = { nfl: 'player_1st_td', nhl: 'player_goal_scorer_first', nb
 const PER_MARKET = 8;
 
 export const oddsKey = () => (getState().settings.oddsKey || '').trim();
-export const hasOddsKey = () => !!oddsKey();
+const hasMainKey = () => !!oddsKey();
+/** True if any odds source is set up (The Odds API or OddsPapi). */
+export const hasOddsKey = () => hasMainKey() || hasPapiKey();
 let remaining = null;
 let outUntil = 0; // when a 429 comes back, stop asking for a while
-export const creditsLeft = () => remaining;
-export const outOfCredits = () => Date.now() < outUntil;
+let lastSource = '';
+export const creditsLeft = () => (lastSource === 'papi' ? papiLeft() : remaining);
+/** ' · 12 credits left' for the source that answered last. */
+export const creditsText = () => { const n = creditsLeft(); return n == null ? '' : ` · ${n} ${lastSource === 'papi' ? 'requests' : 'credits'} left`; };
+const mainOut = () => !hasMainKey() || Date.now() < outUntil;
+export const outOfCredits = () => mainOut() && (!hasPapiKey() || papiOut());
 
 /* small on-device cache so reloads and re-opens cost nothing */
 const LS = 'homefield:odds';
@@ -46,7 +53,7 @@ const cacheGet = (k, ttl) => { const v = mem.get(k) || lsGet(k); return v && Dat
 const cacheSet = (k, data) => { const v = { t: Date.now(), data }; mem.set(k, v); lsSet(k, v); };
 // lines move more close to the game, so remember them for less time then
 const ttlFor = (game) => { const mins = (new Date(game.date).getTime() - Date.now()) / 60000; return mins > 360 ? 3 * 3600000 : mins > 60 ? 45 * 60000 : 10 * 60000; };
-export const clearOddsCache = () => { mem.clear(); try { localStorage.removeItem(LS); } catch (e) { /* ignore */ } };
+export const clearOddsCache = () => { clearPapiCache(); mem.clear(); try { localStorage.removeItem(LS); } catch (e) { /* ignore */ } };
 
 async function call(path, params = {}) {
   if (outOfCredits()) throw new Error('Out of Odds API credits for now');
@@ -94,10 +101,10 @@ async function eventOdds(game, sport, markets, ck) {
 }
 
 /** Over/under props for the given stat keys (for example ['passyds','passtd']). Returns { markets, book }. */
-export async function bookProps(game, stats) {
+async function oddsApiProps(game, stats) {
   const grp = LEAGUES[game.league]?.group;
   const sport = SPORT[grp];
-  if (!sport || !hasOddsKey()) return { markets: [], book: '' };
+  if (!sport || !hasMainKey()) return { markets: [], book: '' };
   const map = BOOK_MARKETS[grp];
   const want = Object.keys(map).filter((k) => !stats || stats.includes(map[k]));
   if (!want.length) return { markets: [], book: '' };
@@ -136,10 +143,10 @@ export async function bookProps(game, stats) {
 }
 
 /** First scorer prices. Returns { markets: [{ name, dec }], book }. */
-export async function bookFirst(game) {
+async function oddsApiFirst(game) {
   const grp = LEAGUES[game.league]?.group;
   const sport = SPORT[grp], market = FIRST_MARKET[grp];
-  if (!sport || !market || !hasOddsKey()) return { markets: [], book: '' };
+  if (!sport || !market || !hasMainKey()) return { markets: [], book: '' };
   const j = await eventOdds(game, sport, [market], `f:${game.key}`);
   const out = new Map();
   for (const bk of ['draftkings', 'fanduel']) {
@@ -155,4 +162,26 @@ export async function bookFirst(game) {
   }
   const list = [...out.values()].sort((a, b) => a.dec - b.dec);
   return { markets: list, book: [...new Set(list.map((x) => x.book))].join(' and ') };
+}
+
+/** Over/under props. The Odds API first; OddsPapi if there is no such key, it ran out, or it had nothing. */
+export async function bookProps(game, stats) {
+  let firstErr = null;
+  if (hasMainKey() && !mainOut()) {
+    try { const r = await oddsApiProps(game, stats); lastSource = 'main'; if (r.markets.length || !hasPapiKey()) return r; } catch (e) { firstErr = e; }
+  }
+  if (hasPapiKey() && !papiOut()) { const r = await papiProps(game, stats); lastSource = 'papi'; return r; }
+  if (firstErr) throw firstErr;
+  return { markets: [], book: '' };
+}
+
+/** First scorer prices, same order of sources. */
+export async function bookFirst(game) {
+  let firstErr = null;
+  if (hasMainKey() && !mainOut()) {
+    try { const r = await oddsApiFirst(game); lastSource = 'main'; if (r.markets.length || !hasPapiKey()) return r; } catch (e) { firstErr = e; }
+  }
+  if (hasPapiKey() && !papiOut()) { const r = await papiFirst(game); lastSource = 'papi'; return r; }
+  if (firstErr) throw firstErr;
+  return { markets: [], book: '' };
 }

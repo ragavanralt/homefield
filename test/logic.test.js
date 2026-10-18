@@ -572,4 +572,44 @@ import * as S from '../js/specials.js';
   });
 }
 
+// ---- OddsPapi fallback ----
+{
+  const store = {};
+  globalThis.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); }, removeItem: (k) => { delete store[k]; } };
+  const st = await import('../js/store.js');
+  st.setSetting('papiKey', 'k');
+  const pp = await import('../js/oddspapi.js');
+  const calls = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const u = String(url); calls.push(u);
+    const J = (b) => ({ ok: true, status: 200, json: async () => b });
+    if (u.includes('/sports')) return J([{ sportId: 11, sportName: 'Basketball' }]);
+    if (u.includes('/fixtures')) return J([{ fixtureId: 'f1', participant1Name: 'Boston Celtics', participant2Name: 'New York Knicks' }]);
+    if (u.includes('/markets')) return J([{ marketId: 101, marketName: 'Player Points', handicap: 24.5, playerProp: true, outcomes: [{ outcomeId: 1, outcomeName: 'Over' }, { outcomeId: 2, outcomeName: 'Under' }] },
+      { marketId: 102, marketName: 'Player Points + Rebounds', handicap: 30.5, playerProp: true, outcomes: [{ outcomeId: 3, outcomeName: 'Over' }] }]);
+    if (u.includes('/odds')) return J({ bookmakerOdds: { draftkings: { markets: { 101: { outcomes: { 1: { players: { a: { playerName: 'Tatum, Jayson', price: 1.9, active: true } } }, 2: { players: { a: { playerName: 'Tatum, Jayson', price: 1.9, active: true } } } } }, 102: { outcomes: { 3: { players: { a: { playerName: 'Tatum, Jayson', price: 1.9 } } } } } } } } });
+    return { ok: false, status: 404, json: async () => ({}) };
+  };
+  const game = { league: 'nba', key: 'nba:1', date: new Date(Date.now() + 3600000).toISOString(), home: { name: 'Boston Celtics' }, away: { name: 'New York Knicks' } };
+  t('oddspapi: reads props, flips names, skips combo markets', async () => {});
+  const r = await pp.papiProps(game, null);
+  t('oddspapi: one prop row with line, both prices and book', () => {
+    assert.equal(r.markets.length, 1);
+    const m = r.markets[0];
+    assert.equal(m.name, 'Jayson Tatum'); assert.equal(m.line, 24.5); assert.equal(m.over, 1.9); assert.equal(m.under, 1.9); assert.equal(m.book, 'DraftKings'); assert.equal(m.stat, 'pts');
+  });
+  const n = calls.length;
+  await pp.papiProps(game, null);
+  t('oddspapi: second look uses the saved answers', () => assert.equal(calls.length, n));
+  t('oddspapi: market names map to the right stat', () => {
+    assert.equal(pp.statOf('nba', 'Player Points'), 'pts');
+    assert.equal(pp.statOf('nba', 'Player Points + Rebounds'), null);
+    assert.equal(pp.statOf('nfl', 'Player Passing Yards'), 'passyds');
+    assert.equal(pp.statOf('nfl', 'Player Rushing Yards'), 'rushyds');
+    assert.equal(pp.statOf('nhl', 'Player Shots on Goal'), 'sog');
+  });
+  globalThis.fetch = realFetch;
+}
+
 console.log(`\n${passed} checks passed`);

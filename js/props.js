@@ -6,7 +6,7 @@ import { propCandidates, buildProps, propDefsFor, leaderProps, propCatsFor } fro
 import { scorerMarkets, scoreRate, hasFirst } from './specials.js';
 import { nhlTeam, mlbTeam, nameKey } from './alt.js';
 import { LEAGUES } from './leagues.js';
-import { bookProps, bookFirst, hasOddsKey, outOfCredits, creditsLeft } from './odds.js';
+import { bookProps, bookFirst, hasOddsKey, outOfCredits, creditsText } from './odds.js';
 
 const cache = new Map(); // key -> { t, value }
 const fresh = (k, ms = 600000) => { const h = cache.get(k); return h && Date.now() - h.t < ms ? h.value : null; };
@@ -95,11 +95,11 @@ export async function loadPropsCat(game, cat) {
       if (b.markets.length) {
         const sorted = await sortByTeam(game, b.markets);
         const cap = (arr) => arr.slice(0, 10);
-        return { ...Object.fromEntries(Object.entries(sorted).map(([k, v]) => [k, cap(v)])), source: `${b.book} prices${creditsLeft() != null ? ` · ${creditsLeft()} credits left` : ''}`, notes, supported: true, book: true };
+        return { ...Object.fromEntries(Object.entries(sorted).map(([k, v]) => [k, cap(v)])), source: `${b.book} prices${creditsText()}`, notes, supported: true, book: true };
       }
       notes.push('Sportsbook: no lines posted for this yet, showing simulated lines');
     } catch (e) { notes.push('Sportsbook: ' + e.message + '. Showing simulated lines.'); }
-  } else if (hasOddsKey()) notes.push('Out of Odds API credits for now. Showing simulated lines.');
+  } else if (hasOddsKey()) notes.push('Out of odds requests for now. Showing simulated lines.');
   const sim = await simProps(game);
   const keepStat = (arr) => arr.filter((m) => cat.stats.includes(m.stat));
   return { home: keepStat(sim.home), away: keepStat(sim.away), other: [], source: sim.source, notes: [...notes, ...sim.notes], supported: true };
@@ -116,7 +116,7 @@ export async function loadFirst(game) {
         const sorted = await sortByTeam(game, b.markets.map((m) => ({ ...m, stat: 'first', playerId: null })), (m) => m.name);
         const label = { nfl: 'First touchdown scorer', nhl: 'First goal scorer', nba: 'First basket' }[LEAGUES[game.league].group];
         const fix = (arr) => arr.slice(0, 10).map((m) => ({ ...m, short: m.name, label }));
-        return { home: fix(sorted.home), away: fix(sorted.away), other: fix(sorted.other), source: `${b.book} prices${creditsLeft() != null ? ` · ${creditsLeft()} credits left` : ''}`, notes, supported: true };
+        return { home: fix(sorted.home), away: fix(sorted.away), other: fix(sorted.other), source: `${b.book} prices${creditsText()}`, notes, supported: true };
       }
       notes.push('Sportsbook: no first scorer market posted yet, showing simulated prices');
     } catch (e) { notes.push('Sportsbook: ' + e.message + '. Showing simulated prices.'); }

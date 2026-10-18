@@ -17,7 +17,7 @@ const fresh = () => ({
   v: 1,
   onboarded: false,
   teams: [],
-  settings: { logos: true, spoilerFree: false, theme: 'auto', bgDark: 'noir', bgLight: 'ivory', accent: 'gold', teamMode: true, hidden: [], oddsKey: '' },
+  settings: { logos: true, spoilerFree: false, theme: 'auto', bgDark: 'noir', bgLight: 'ivory', accent: 'gold', teamMode: true, hidden: [], oddsKey: '', papiKey: '' },
   bank: { coins: START_COINS, xp: 0, streak: 0, bestStreak: 0, peak: START_COINS, lastDaily: '', dailyStreak: 0, rescued: '' },
   bets: {},
   slip: { legs: [], mode: 'single', stake: 50 },

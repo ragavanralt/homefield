@@ -5,6 +5,7 @@ import { leagueLabel } from '../leagues.js';
 import { pageHead, hideChips, appearanceCard } from '../components.js';
 import { applyTheme } from '../themes.js';
 import { testKey } from '../odds.js';
+import { testPapi } from '../oddspapi.js';
 
 export async function render(root) {
   root.append(pageHead('Settings'));
@@ -59,6 +60,20 @@ export async function render(root) {
           try { const r = await testKey(); keyMsg.textContent = `Key works.${r.remaining != null ? ' ' + r.remaining + ' credits left this month.' : ''}`; } catch (e) { keyMsg.textContent = 'Saved, but the test failed: ' + e.message; }
         } }, 'Save and test'),
         h('button', { type: 'button', class: 'btn', onclick: () => { keyIn.value = ''; setSetting('oddsKey', ''); keyMsg.textContent = 'Key removed. Using simulated lines.'; } }, 'Remove key'))));
+
+    const pIn = h('input', { class: 'search', type: 'password', id: 'papi-key', placeholder: 'Paste your OddsPapi key', autocomplete: 'off', value: getState().settings.papiKey || '' });
+    const pMsg = h('p', { class: 'muted small-note', id: 'papi-msg' }, getState().settings.papiKey ? 'A key is saved on this device.' : 'No key yet.');
+    host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Backup lines source (optional)'),
+      h('p', { class: 'muted' }, 'A second place to get DraftKings and FanDuel props, from OddsPapi (free key at oddspapi.io, about 250 requests a month). The app uses it when you have no Odds API key, when that one runs out, or when it has nothing for a game. Answers are saved on this device to save requests. The key stays on this device.'),
+      pIn, pMsg,
+      h('div', { class: 'row wrap' },
+        h('button', { type: 'button', class: 'btn main', id: 'papi-save', onclick: async () => {
+          setSetting('papiKey', pIn.value.trim());
+          if (!pIn.value.trim()) { pMsg.textContent = 'Key removed.'; return; }
+          pMsg.textContent = 'Testing…';
+          try { const r = await testPapi(); pMsg.textContent = r.steps.join(' '); } catch (e) { pMsg.textContent = 'Saved, but the test failed: ' + e.message; }
+        } }, 'Save and test'),
+        h('button', { type: 'button', class: 'btn', onclick: () => { pIn.value = ''; setSetting('papiKey', ''); pMsg.textContent = 'Key removed.'; } }, 'Remove key'))));
 
     const teams = myTeams();
     host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Your teams'),
