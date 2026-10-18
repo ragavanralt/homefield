@@ -574,3 +574,26 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
   .pf-mini .avatar.lg, .pf-mini .avatar.lg svg { height: 170px; }
   .pf-mini .pf-coins { font-size: 28px; }
 }
+
+/* ---------- home tabs, my teams ---------- */
+.home-tabs { margin-bottom: 4px; }
+.tab-n { margin-left: 6px; background: var(--hot); color: #fff; border-radius: 999px; font-size: 11px; padding: 1px 7px; font-weight: 800; }
+.day-tabs { margin-bottom: 2px; }
+.myteams { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.tcard { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tcard.is-live { border-color: color-mix(in srgb, var(--hot) 60%, var(--line)); }
+.tc-h { display: flex; align-items: center; gap: 10px; }
+.tc-h > div { flex: 1; min-width: 0; }
+.tc-n { font-weight: 800; font-size: 17px; line-height: 1.15; }
+.tc-next { display: flex; flex-direction: column; gap: 6px; }
+.tc-l, .fx-l { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+.fx { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "l l l" "d o r"; align-items: center; gap: 2px 10px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.fx-l { grid-area: l; }
+.fx-d { grid-area: d; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.fx-o { grid-area: o; display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 600; }
+.fx-o > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fx-r { grid-area: r; font-weight: 800; font-size: 14px; }
+.fx-r.w { color: var(--good); } .fx-r.l { color: var(--hot); }
+.tcard .gcard { margin: 0; }
+.tcard .g-main { flex-direction: column; align-items: stretch; gap: 8px; }
+.tcard .g-stat { flex-direction: row; justify-content: space-between; align-items: baseline; gap: 10px; text-align: left; border-top: 1px solid var(--line); padding-top: 8px; }

@@ -68,6 +68,12 @@ store.setOnboarded(true);
 
 text = await visit('#/', { wait: 300 });
 assert.ok(app().querySelector('.gcard'), 'home has game cards'); ok('home shows games');
+assert.ok(app().querySelectorAll('.tcard').length === 2, 'a card for every followed team'); ok('home lists every followed team');
+app().querySelector('.home-tabs [data-tab="live"]').click(); await sleep(50);
+assert.ok(app().querySelector('.gcard') || /Nothing live/.test(app().textContent), 'live tab'); ok('home live tab');
+app().querySelector('.home-tabs [data-tab="all"]').click(); await sleep(50);
+assert.ok(app().querySelector('.day-tabs') && app().querySelector('.gcard'), 'all tab'); ok('home all games tab');
+app().querySelector('.home-tabs [data-tab="mine"]').click(); await sleep(30);
 for (const lg of ['nhl', 'nba', 'nfl', 'mlb', 'soccer']) {
   text = await visit('#/league/' + lg, { wait: 250 });
   assert.ok(app().querySelector('.gcard'), lg + ' cards'); ok('league tab ' + lg);
