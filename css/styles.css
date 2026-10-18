@@ -407,3 +407,47 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 .reset-grid .btn { flex-direction: column; align-items: flex-start; text-align: left; height: auto; gap: 2px; }
 .reset-grid small { font-weight: 400; }
 .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+
+/* leaders fix */
+.ldr-row { align-items: flex-start; }
+.ldr-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ldr-n { font-weight: 600; overflow-wrap: anywhere; }
+.ldr-v { font-family: var(--display); font-weight: 800; font-size: 17px; line-height: 1.15; letter-spacing: .02em; text-transform: uppercase; overflow-wrap: anywhere; }
+
+/* hide-league chips */
+.hide-chip small { font-size: 11px; opacity: .8; }
+.chip.hide-chip[aria-pressed="true"] { background: transparent; color: var(--muted); border-style: dashed; border-color: var(--muted); text-decoration: line-through; }
+.chip.hide-chip[aria-pressed="true"] small { text-decoration: none; }
+
+/* playoff picture */
+.pic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+.pic { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.pic-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.pic-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-top: 1px solid var(--line); }
+.pic-row.mine { background: var(--surface-2); border-radius: 10px; }
+.pic-row.out { opacity: .7; }
+.pic-n { width: 18px; font-family: var(--display); font-weight: 800; font-size: 18px; color: var(--muted); }
+.pic-t { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pic-r { color: var(--muted); font-variant-numeric: tabular-nums; }
+.pic-tag { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; }
+.pic-tag.t-division { background: var(--good); color: #04210f; } .pic-tag.t-wild { background: var(--volt); color: #2a2200; } .pic-tag.t-play { background: var(--surface-2); }
+.cutline { display: flex; align-items: center; gap: 10px; margin: 8px 0 2px; color: var(--hot); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.cutline::before, .cutline::after { content: ""; flex: 1; border-top: 2px dashed var(--hot); }
+
+/* soccer zones */
+.tbl tr.z-in td:first-child { box-shadow: inset 4px 0 var(--good); } .tbl tr.z-mid td:first-child { box-shadow: inset 4px 0 var(--volt); } .tbl tr.z-out td:first-child { box-shadow: inset 4px 0 var(--hot); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 13px; padding: 4px 2px; }
+.lg { display: inline-flex; align-items: center; gap: 6px; } .lg-dot { width: 10px; height: 10px; border-radius: 3px; background: var(--muted); display: inline-block; }
+.lg-dot.z-in { background: var(--good); } .lg-dot.z-mid { background: var(--volt); } .lg-dot.z-out { background: var(--hot); }
+
+/* bracket */
+.bracket { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 10px; align-items: stretch; }
+.br-col { flex: 1 0 220px; display: flex; flex-direction: column; gap: 10px; min-width: 220px; }
+.br-h { font-family: var(--display); font-size: 18px; text-transform: uppercase; margin: 0; letter-spacing: .04em; }
+.br-list { display: flex; flex-direction: column; justify-content: space-around; gap: 12px; flex: 1; }
+.series { display: flex; flex-direction: column; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; color: inherit; text-decoration: none; }
+.series.s-live { border-color: var(--hot); }
+.series small { color: var(--muted); }
+.sr-row { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.sr-row.lose { opacity: .55; } .sr-row.win .sr-n { color: var(--good); }
+.sr-n { flex: 1; } .sr-w { font-family: var(--display); font-size: 20px; font-weight: 800; }

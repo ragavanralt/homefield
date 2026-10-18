@@ -45,7 +45,7 @@ export const summaryUrl = (lg, id) => `${base(lg)}/summary?event=${id}`;
 export const teamsUrl = (lg) => `${base(lg)}/teams?limit=300`;
 export const scheduleUrl = (lg, teamId) => `${base(lg)}/teams/${teamId}/schedule`;
 // The standings table lives on ESPN's "web" host; the plain host only returns a stub with a link.
-export const standingsUrl = (lg) => `${CONFIG.espnWebBase}/apis/v2/sports/${LEAGUES[lg].sport}/${LEAGUES[lg].slug}/standings`;
+export const standingsUrl = (lg, level) => `${CONFIG.espnWebBase}/apis/v2/sports/${LEAGUES[lg].sport}/${LEAGUES[lg].slug}/standings${level ? '?level=' + level : ''}`;
 export const standingsUrlAlt = (lg) => `${CONFIG.espnBase}/apis/v2/sports/${LEAGUES[lg].sport}/${LEAGUES[lg].slug}/standings`;
 
 /* ---------- remember games we have seen so a game page can open instantly ---------- */
@@ -132,6 +132,9 @@ export function normEvent(ev, league) {
     neutral: !!comp.neutralSite,
     broadcast: ((comp.broadcasts && comp.broadcasts[0] && comp.broadcasts[0].names) || []).join(', ') || (typeof comp.broadcast === 'string' ? comp.broadcast : ''),
     series: comp.series?.summary || (comp.notes && comp.notes[0] && comp.notes[0].headline) || '',
+    note: (comp.notes && comp.notes[0] && comp.notes[0].headline) || '',
+    seriesTitle: comp.series?.title || '',
+    seriesDone: !!comp.series?.completed,
     playoff: ev.season?.type === 3 || /playoff|final|quarter|semi/i.test((comp.notes && comp.notes[0] && comp.notes[0].headline) || ''),
     odds: parseOdds(comp.odds && comp.odds[0]),
     lastPlay: comp.situation?.lastPlay?.text || '',
@@ -311,6 +314,8 @@ export function normStandings(j) {
     const entries = node.standings?.entries || [];
     if (entries.length) {
       out.push({
+        conf: trail.length ? trail[0] : (node.name || ''),
+        div: trail.length ? (node.name || '') : '',
         name: [...trail, node.name || node.abbreviation || ''].filter(Boolean).slice(-2).join(' · '),
         rows: entries.map((e) => {
           const stats = {};
@@ -456,7 +461,8 @@ export async function getAthleteStats(league, athleteId) {
 
 export async function getStandings(league) {
   let lastErr, groups = [];
-  for (const url of [standingsUrl(league), standingsUrlAlt(league)]) {
+  const tries = [standingsUrl(league, 3), standingsUrl(league), standingsUrlAlt(league)];
+  for (const url of tries) {
     try {
       groups = normStandings(await getJSON(url, 300000));
       if (groups.length) return groups;
@@ -464,4 +470,32 @@ export async function getStandings(league) {
   }
   if (lastErr && !groups.length) throw lastErr;
   return groups;
+}
+
+/* ---------- playoffs ---------- */
+// Usual postseason window for each competition: [startMonth, startDay, endMonth, endDay] (1-based months).
+const WINDOWS = {
+  nhl: [4, 10, 6, 30], nba: [4, 12, 6, 25], nfl: [1, 9, 2, 15], mlb: [9, 28, 11, 5],
+  'uefa.champions': [2, 10, 6, 1], 'uefa.europa': [2, 10, 5, 31], 'usa.1': [10, 20, 12, 15],
+};
+export const hasPlayoffs = (lg) => !!WINDOWS[lg];
+
+/** The most recent postseason window that has started. Returns { from, to, live }. */
+export function playoffWindow(lg, now = new Date()) {
+  const w = WINDOWS[lg];
+  if (!w) return null;
+  const mk = (y) => ({ from: new Date(y, w[0] - 1, w[1]), to: new Date(y, w[2] - 1, w[3], 23, 59) });
+  let r = mk(now.getFullYear());
+  if (r.from > now) r = mk(now.getFullYear() - 1);
+  return { ...r, live: now >= r.from && now <= r.to };
+}
+
+export async function getPlayoffGames(league, now = new Date()) {
+  const win = playoffWindow(league, now);
+  if (!win) return { games: [], win: null };
+  const ymdOf = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  const url = `${base(league)}/scoreboard?dates=${ymdOf(win.from)}-${ymdOf(win.to)}&limit=1000`;
+  const j = await getJSON(url, win.live ? 120000 : 3600000);
+  const games = (j.events || []).map((e) => normEvent(e, league)).filter((g) => g.playoff);
+  return { games, win };
 }

@@ -2,7 +2,7 @@
 import { h, clear, crest, toast, downloadText } from '../ui.js';
 import { getState, setSetting, unfollow, myTeams, exportData, importData, resetAll, resetBets, resetTeams } from '../store.js';
 import { leagueLabel } from '../leagues.js';
-import { pageHead } from '../components.js';
+import { pageHead, hideChips } from '../components.js';
 import { BACKGROUNDS, ACCENTS, DEFAULT_APPEARANCE, applyTheme, resolveMode } from '../themes.js';
 
 export async function render(root) {
@@ -57,6 +57,9 @@ export async function render(root) {
         toggle('set-logos', 'Team logos and player photos', 'Loaded from the data feed. If off, you get colour badges and initials.', 'logos'),
         toggle('set-spoil', 'Spoiler-free mode', 'Hides scores and plays until you tap to reveal a game.', 'spoilerFree')),
     );
+
+    host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Hide leagues'),
+      h('p', { class: 'muted' }, 'A hidden league stops showing in Home, scores and Pick\'em. It keeps its own tab.'), hideChips()));
 
     const teams = myTeams();
     host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Your teams'),

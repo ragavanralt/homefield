@@ -6,6 +6,7 @@ import { buildRecap, playerOfTheGame } from '../js/recap.js';
 import * as B from '../js/bets.js';
 import { buildICS, googleUrl, gameTitle } from '../js/ics.js';
 import * as F from './fixtures.js';
+import { playoffPicture, buildBracket, soccerZone, sortRows } from '../js/playoffs.js';
 
 let passed = 0;
 const t = (name, fn) => { try { fn(); passed++; console.log('  ok  ' + name); } catch (e) { console.error('FAIL  ' + name + '\n', e); process.exitCode = 1; } };
@@ -208,6 +209,42 @@ t('titles and google link', () => {
   assert.equal(gameTitle(g), 'Flyers at Lightning');
   assert.match(googleUrl(g), /calendar\.google\.com/);
   assert.equal(gameTitle(normEvent(F.event('eng.1', 14), 'eng.1')), 'Madrid vs Barcelona');
+});
+
+/* ---------- playoff picture and bracket ---------- */
+const row = (id, w, l, extra = {}) => ({ team: { id: String(id), abbr: 'T' + id, name: 'Team ' + id }, stats: { wins: { v: String(w), value: w }, losses: { v: String(l), value: l }, winPercent: { v: String(w / (w + l)), value: w / (w + l) }, ...extra } });
+t('nfl picture: 4 division winners then 3 wild cards, bubble after', () => {
+  const div = (name, base) => ({ conf: 'AFC', div: name, name, rows: [row(base, 8, 1), row(base + 1, 5, 4), row(base + 2, 4, 5), row(base + 3, 1, 8)] });
+  const p = playoffPicture('nfl', [div('AFC East', 10), div('AFC North', 20), div('AFC South', 30), div('AFC West', 40)]);
+  assert.equal(p.length, 1); assert.equal(p[0].in.length, 7);
+  assert.equal(p[0].in.filter((x) => x.tag === 'Division leader').length, 4);
+  assert.equal(p[0].in.filter((x) => x.tag === 'Wild card').length, 3);
+  assert.equal(p[0].bubble.length, 3);
+});
+t('nba picture: 6 in, 4 play-in', () => {
+  const rows = Array.from({ length: 15 }, (_, i) => row(i + 1, 40 - i, 20 + i));
+  const p = playoffPicture('nba', [{ conf: 'East', div: '', name: 'East', rows }]);
+  assert.equal(p[0].in.length, 10); assert.equal(p[0].in[5].tag, 'In'); assert.equal(p[0].in[6].tag, 'Play-in');
+});
+t('nhl picture: top 3 per division plus 2 wild cards', () => {
+  const pts = (n) => ({ points: { v: String(n), value: n } });
+  const div = (name, base) => ({ conf: 'East', div: name, name, rows: Array.from({ length: 6 }, (_, i) => row(base + i, 8 - i, 2, pts(40 - i * 3 - (base % 5)))) });
+  const p = playoffPicture('nhl', [div('Atlantic', 10), div('Metropolitan', 20)]);
+  assert.equal(p[0].in.length, 8); assert.equal(p[0].in.filter((x) => /Wild/.test(x.tag)).length, 2);
+});
+t('sort uses points before win percent', () => {
+  const r = sortRows([row(1, 5, 5, { points: { v: '10', value: 10 } }), row(2, 4, 6, { points: { v: '12', value: 12 } })]);
+  assert.equal(r[0].team.id, '2');
+});
+t('soccer zones', () => { assert.equal(soccerZone('eng.1', 1, 20), 'z-in'); assert.equal(soccerZone('eng.1', 19, 20), 'z-out'); assert.equal(soccerZone('uefa.champions', 12, 36), 'z-mid'); });
+t('bracket groups games into series and rounds', () => {
+  const T = (id, abbr) => ({ id: String(id), abbr, name: abbr, score: 0 });
+  const mk = (id, day, hs, as, state, note, h = 1, a = 2) => ({ id: String(id), league: 'mlb', date: `2026-10-${day}T23:00Z`, state, note, seriesTitle: '', seriesDone: false, home: { ...T(h, 'H'), score: hs }, away: { ...T(a, 'A'), score: as }, playoff: true });
+  const games = [mk(1, 10, 3, 1, 'post', 'ALDS - Game 1'), mk(2, 11, 2, 4, 'post', 'ALDS - Game 2'), mk(3, 12, 5, 0, 'post', 'ALDS - Game 3'), mk(4, 20, 1, 0, 'pre', 'ALCS - Game 1', 1, 3)];
+  const r = buildBracket(games, 'mlb');
+  assert.equal(r.length, 2); assert.equal(r[0].name, 'ALDS'); assert.equal(r[0].series.length, 1);
+  assert.equal(r[0].series[0].aw, 2); assert.equal(r[0].series[0].bw, 1); assert.match(r[0].series[0].text, /leads 2-1/);
+  assert.equal(r[1].name, 'ALCS');
 });
 
 console.log(`\n${passed} checks passed`);

@@ -137,6 +137,16 @@ text = await visit('#/settings'); assert.ok(/Spoiler/.test(text)); ok('settings 
 w.document.getElementById('set-spoil').click(); await sleep(20);
 assert.equal(store.getState().settings.spoilerFree, true); ok('spoiler toggle');
 text = await visit('#/game/nhl/1002', { wait: 350 }); ok('game page in spoiler mode');
+// hide leagues
+text = await visit('#/settings'); assert.ok(/Hide leagues/.test(text)); w.document.getElementById('hide-nba').click(); await sleep(20);
+assert.deepEqual(store.getState().settings.hidden, ['nba']); ok('hide league chip');
+text = await visit('#/picks', { wait: 500 }); w.document.getElementById('scope-all').click(); await sleep(500);
+assert.ok(!/NBA/.test([...w.document.querySelectorAll('.pg-h small')].map((x) => x.textContent).join(' '))); ok('hidden league not in pick em all');
+text = await visit('#/league/nba', { wait: 300 }); assert.ok(w.document.querySelectorAll('.card, .gcard').length > 0 || /game/i.test(text)); ok('hidden league still has its tab');
+w.document.getElementById('view-playoffs').click(); await sleep(300); ok('playoffs view opens');
+w.document.querySelectorAll('.seg-b').forEach((b) => { if (b.textContent === 'Standings') b.click(); }); await sleep(300);
+assert.ok(w.document.getElementById('st-picture')); ok('standings has playoff picture toggle');
+store.toggleHidden('nba');
 text = await visit('#/league/nhl', { wait: 250 }); assert.ok(!/\b3\b.*\b2\b/.test('') ); ok('league in spoiler mode');
 store.setSetting('spoilerFree', false);
 text = await visit('#/check', { wait: 100 });

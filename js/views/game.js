@@ -165,7 +165,7 @@ export async function render(root, { league, id }) {
       const side = t.teamId === game.home.id ? 'home' : t.teamId === game.away.id ? 'away' : null;
       return h('div', { class: 'ldr' },
         h('div', { class: 'ldr-h' }, side ? crest(game[side], 22) : null, h('span', null, side ? game[side].name : '')),
-        t.cats.slice(0, 4).map((c) => h('div', { class: 'ldr-row' }, face(c, league, 34), h('div', { class: 'ldr-t' }, h('div', null, c.who), h('small', null, c.name)), h('div', { class: 'ldr-v' }, c.value))));
+        t.cats.slice(0, 4).map((c) => h('div', { class: 'ldr-row' }, face(c, league, 34), h('div', { class: 'ldr-t' }, h('div', { class: 'ldr-n' }, c.who), h('small', null, c.name), h('div', { class: 'ldr-v' }, c.value)))));
     })));
   }
 

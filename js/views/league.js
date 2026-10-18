@@ -3,18 +3,11 @@ import { h, clear, crest, errorBox, loading, emptyState, poll } from '../ui.js';
 import { CONFIG } from '../config.js';
 import { getState, update, myTeamIn } from '../store.js';
 import { LEAGUES, SOCCER_KEYS, isSoccer } from '../leagues.js';
-import { getScoreboard, getStandings } from '../espn.js';
+import { getScoreboard, hasPlayoffs } from '../espn.js';
+import { renderStandings, renderBracket, hasPicture } from './tables.js';
 import { gameCard, pageHead } from '../components.js';
 import { watchScore } from '../winprob.js';
 import { addDays, fmtDayLong, sameDay, ymd, pad } from '../util.js';
-
-const COLS = {
-  nba: ['wins', 'losses', 'winPercent', 'gamesBehind', 'streak'],
-  nhl: ['gamesPlayed', 'wins', 'losses', 'otLosses', 'points'],
-  nfl: ['wins', 'losses', 'ties', 'winPercent'],
-  mlb: ['wins', 'losses', 'winPercent', 'gamesBehind', 'streak'],
-  soccer: ['gamesPlayed', 'wins', 'ties', 'losses', 'pointDifferential', 'points'],
-};
 
 export async function render(root, { id }) {
   const soccerTab = id === 'soccer';
@@ -22,6 +15,7 @@ export async function render(root, { id }) {
   if (!LEAGUES[league]) { root.append(errorBox(new Error('Unknown league'))); return; }
   let date = new Date();
   let view = 'games';
+  let stMode = 'picture';
   let onlyMine = false;
   let anyLive = false;
 
@@ -33,12 +27,16 @@ export async function render(root, { id }) {
   function drawControls() {
     clear(controls);
     if (soccerTab) {
-      controls.append(h('select', { class: 'select', id: 'comp', 'aria-label': 'Competition', onchange: (e) => { league = e.target.value; update((s) => { s.soccerLeague = league; }); load(); } },
+      controls.append(h('select', { class: 'select', id: 'comp', 'aria-label': 'Competition', onchange: (e) => { league = e.target.value; update((s) => { s.soccerLeague = league; }); if (view === 'playoffs' && !hasPlayoffs(league)) view = 'games'; drawControls(); load(); } },
         SOCCER_KEYS.map((k) => h('option', { value: k, selected: k === league }, LEAGUES[k].label))));
     }
     controls.append(h('div', { class: 'seg' },
       h('button', { type: 'button', class: 'seg-b' + (view === 'games' ? ' on' : ''), onclick: () => { view = 'games'; drawControls(); load(); } }, 'Games'),
-      h('button', { type: 'button', class: 'seg-b' + (view === 'standings' ? ' on' : ''), onclick: () => { view = 'standings'; drawControls(); load(); } }, 'Standings')));
+      h('button', { type: 'button', class: 'seg-b' + (view === 'standings' ? ' on' : ''), onclick: () => { view = 'standings'; drawControls(); load(); } }, 'Standings'),
+      hasPlayoffs(league) ? h('button', { type: 'button', class: 'seg-b' + (view === 'playoffs' ? ' on' : ''), id: 'view-playoffs', onclick: () => { view = 'playoffs'; drawControls(); load(); } }, 'Playoffs') : null));
+    if (view === 'standings' && hasPicture(league)) {
+      controls.append(h('div', { class: 'seg' }, [['picture', 'Playoff picture'], ['tables', 'Divisions']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (stMode === k ? ' on' : ''), id: 'st-' + k, onclick: () => { stMode = k; drawControls(); load(); } }, l))));
+    }
     if (view === 'games') {
       const iso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
       controls.append(h('div', { class: 'datebar' },
@@ -56,33 +54,8 @@ export async function render(root, { id }) {
     const my = ++token;
     if (!quiet) clear(body).append(loading());
     try {
-      if (view === 'standings') {
-        const groups = await getStandings(league);
-        if (my !== token) return;
-        clear(body);
-        if (!groups.length) { body.append(emptyState('No standings yet', 'The feed has no table for this league right now.')); return; }
-        const cols = COLS[LEAGUES[league].group];
-        groups.forEach((gr) => {
-          const first = gr.rows[0]?.stats || {};
-          let use = cols.filter((c) => first[c]);
-          if (use.length < 3) use = Object.keys(first).filter((k) => !/rank|seed|clincher|note/i.test(k)).slice(0, 8);
-          const rows = [...gr.rows];
-          const num = (r, k) => parseFloat(r.stats[k]?.value ?? r.stats[k]?.v);
-          if (rows.every((r) => r.stats.rank)) rows.sort((a, b) => num(a, 'rank') - num(b, 'rank'));
-          else if (rows.every((r) => r.stats.playoffSeed)) rows.sort((a, b) => num(a, 'playoffSeed') - num(b, 'playoffSeed'));
-          else { const k = ['points', 'winPercent', 'wins'].find((x) => rows.every((r) => r.stats[x])); if (k) rows.sort((a, b) => num(b, k) - num(a, k)); }
-          body.append(h('section', { class: 'blk' }, gr.name ? h('h2', { class: 'blk-h' }, gr.name) : null,
-            h('div', { class: 'tbl-scroll' }, h('table', { class: 'tbl' },
-              h('thead', null, h('tr', null, h('th', null, '#'), h('th', { class: 'l' }, 'Team'), use.map((c) => h('th', null, first[c].abbr || c)))),
-              h('tbody', null, rows.map((r, i) => {
-                const mine = getState().teams.some((t) => t.id === r.team.id && (t.league === league || (isSoccer(t.league) && isSoccer(league))));
-                return h('tr', { class: mine ? 'mine' : '' }, h('td', null, i + 1),
-                  h('td', { class: 'l team-cell' }, crest(r.team, 22), h('span', null, r.team.name || r.team.abbr)),
-                  use.map((c) => h('td', null, r.stats[c] ? r.stats[c].v : '')));
-              }))))));
-        });
-        return;
-      }
+      if (view === 'standings') { await renderStandings(body, league, stMode); if (my !== token) return; return; }
+      if (view === 'playoffs') { await renderBracket(body, league); return; }
       const games = await getScoreboard(league, ymd(date));
       if (my !== token) return;
       anyLive = games.some((g) => g.state === 'in');

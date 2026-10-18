@@ -1,6 +1,6 @@
 // Pick'em: a play-money sportsbook. Winner bets and player props, singles or parlays.
 import { h, clear, crest, errorBox, loading, emptyState, toast } from '../ui.js';
-import { getState, update, myTeams, myTeamIn, onSlipChange } from '../store.js';
+import { getState, update, myTeams, myTeamIn, onSlipChange, leagueHidden } from '../store.js';
 import { LEAGUES, MAJOR_KEYS, SOCCER_KEYS, SOCCER_EXTRAS, isSoccer } from '../leagues.js';
 import { getScoreboard } from '../espn.js';
 import { pageHead } from '../components.js';
@@ -30,9 +30,9 @@ export async function render(root) {
     let list;
     if (scope === 'mine') {
       const set = new Set();
-      for (const t of mine) { set.add(t.league); if (isSoccer(t.league)) SOCCER_EXTRAS.forEach((l) => set.add(l)); }
+      for (const t of mine) { set.add(t.league); if (isSoccer(t.league)) SOCCER_EXTRAS.filter((l) => !leagueHidden(l)).forEach((l) => set.add(l)); }
       list = [...set];
-    } else list = [...MAJOR_KEYS, ...SOCCER_ALL];
+    } else list = [...MAJOR_KEYS, ...SOCCER_ALL].filter((l) => !leagueHidden(l));
     if (chip === 'soccer') list = list.filter(isSoccer);
     else if (chip !== 'all') list = list.filter((l) => l === chip);
     return list;

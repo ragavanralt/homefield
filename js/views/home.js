@@ -1,7 +1,7 @@
 // Home: live board, today and tomorrow for your teams, and each team's next game.
 import { h, clear, crest, errorBox, loading, emptyState, poll } from '../ui.js';
 import { CONFIG } from '../config.js';
-import { getState, myTeams, myTeamIn } from '../store.js';
+import { getState, myTeams, myTeamIn, leagueHidden } from '../store.js';
 import { isSoccer, SOCCER_EXTRAS } from '../leagues.js';
 import { getScoreboard, getTeamSchedule } from '../espn.js';
 import { gameCard, pageHead } from '../components.js';
@@ -24,7 +24,7 @@ export async function render(root) {
 
   async function load() {
     const leagues = new Set();
-    for (const t of teams) { leagues.add(t.league); if (isSoccer(t.league)) SOCCER_EXTRAS.forEach((l) => leagues.add(l)); }
+    for (const t of teams) { leagues.add(t.league); if (isSoccer(t.league)) SOCCER_EXTRAS.filter((l) => !leagueHidden(l)).forEach((l) => leagues.add(l)); }
     const now = new Date();
     const days = [-1, 0, 1].map((n) => ymd(addDays(now, n)));
     let fails = 0, total = 0;
@@ -41,7 +41,7 @@ export async function render(root) {
 
     const liveMine = live.filter((g) => myTeamIn(g)).sort((a, b) => (watchScore(b) ?? 0) - (watchScore(a) ?? 0));
     const myLeagues = new Set(teams.map((t) => t.league));
-    const liveOther = live.filter((g) => !myTeamIn(g) && (myLeagues.has(g.league) || (isSoccer(g.league) && teams.some((t) => isSoccer(t.league)))))
+    const liveOther = live.filter((g) => !myTeamIn(g) && !leagueHidden(g.league) && (myLeagues.has(g.league) || (isSoccer(g.league) && teams.some((t) => isSoccer(t.league)))))
       .filter((g) => (watchScore(g) ?? 0) >= 40).sort((a, b) => (watchScore(b) ?? 0) - (watchScore(a) ?? 0)).slice(0, 6);
 
     clear(body);

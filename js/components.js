@@ -1,6 +1,7 @@
 // Reusable pieces: game cards and the watch-worthy meter.
 import { h, crest, applySkin, isHidden, scoreText } from './ui.js';
-import { isSoccer, leagueLabel } from './leagues.js';
+import { isSoccer, leagueLabel, LEAGUES, MAJOR_KEYS, SOCCER_KEYS } from './leagues.js';
+import { getState, toggleHidden } from './store.js';
 import { watchScore, watchLabel, watchReason } from './winprob.js';
 import { fmtDay, fmtTime, sameDay } from './util.js';
 import { rememberGame } from './espn.js';
@@ -56,4 +57,19 @@ export function watchBlock(g) {
       h('div', { class: 'w-line' }, h('span', { class: 'w-label' }, watchLabel(ws)), ' · ', watchReason(g)),
     ),
   );
+}
+
+/** Chips to hide leagues from Home and Pick'em. A hidden league still has its own tab. */
+export function hideChips() {
+  const host = h('div', { class: 'chip-grid', id: 'hide-chips' });
+  const draw = () => {
+    host.replaceChildren(
+      ...[['Major leagues', MAJOR_KEYS], ['Soccer', SOCCER_KEYS]].map(([title, keys]) => h('div', { class: 'chip-row' }, h('span', { class: 'chip-label' }, title),
+        keys.map((k) => {
+          const hid = (getState().settings.hidden || []).includes(k);
+          return h('button', { type: 'button', class: 'chip hide-chip' + (hid ? ' is-hidden' : ''), id: 'hide-' + k.replace('.', '-'), 'aria-pressed': hid ? 'true' : 'false', onclick: () => { toggleHidden(k); draw(); } }, LEAGUES[k].label, hid ? h('small', null, 'hidden') : null);
+        }))));
+  };
+  draw();
+  return host;
 }

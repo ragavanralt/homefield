@@ -16,7 +16,7 @@ const fresh = () => ({
   v: 1,
   onboarded: false,
   teams: [],
-  settings: { logos: true, spoilerFree: false, theme: 'auto', bgDark: 'midnight', bgLight: 'paper', accent: 'coral' },
+  settings: { logos: true, spoilerFree: false, theme: 'auto', bgDark: 'midnight', bgLight: 'paper', accent: 'coral', hidden: [] },
   bank: { coins: START_COINS, xp: 0, streak: 0, bestStreak: 0, peak: START_COINS, lastDaily: '', dailyStreak: 0, rescued: '' },
   bets: {},
   slip: { legs: [], mode: 'single', stake: 50 },
@@ -73,6 +73,8 @@ export function myTeamIn(g) {
   return state.teams.find((t) => (t.league === g.league || (isSoccer(t.league) && isSoccer(g.league))) && (t.id === g.home.id || t.id === g.away.id)) || null;
 }
 
+export const leagueHidden = (lg) => (state.settings.hidden || []).includes(lg);
+export const toggleHidden = (lg) => update((s) => { const a = s.settings.hidden || []; s.settings.hidden = a.includes(lg) ? a.filter((x) => x !== lg) : [...a, lg]; });
 export const setSetting = (k, v) => update((s) => { s.settings[k] = v; });
 export const setOnboarded = (v = true) => update((s) => { s.onboarded = v; });
 
