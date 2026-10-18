@@ -164,24 +164,24 @@ async function oddsApiFirst(game) {
   return { markets: list, book: [...new Set(list.map((x) => x.book))].join(' and ') };
 }
 
-/** Over/under props. The Odds API first; OddsPapi if there is no such key, it ran out, or it had nothing. */
-export async function bookProps(game, stats) {
-  let firstErr = null;
-  if (hasMainKey() && !mainOut()) {
-    try { const r = await oddsApiProps(game, stats); lastSource = 'main'; if (r.markets.length || !hasPapiKey()) return r; } catch (e) { firstErr = e; }
+/** Tries the sources in order: The Odds API first, or OddsPapi first if that switch is on. A source is skipped if it has no key
+ *  or is out of requests, and the next one is tried if it errors or has nothing. */
+async function viaSources(mainFn, papiFn) {
+  const main = { id: 'main', ok: () => hasMainKey() && !mainOut(), run: mainFn };
+  const papi = { id: 'papi', ok: () => hasPapiKey() && !papiOut(), run: papiFn };
+  const order = getState().settings.papiFirst ? [papi, main] : [main, papi];
+  const usable = order.filter((x) => x.ok());
+  let err = null;
+  for (let n = 0; n < usable.length; n++) {
+    const x = usable[n];
+    try { const r = await x.run(); lastSource = x.id; if (r.markets.length || n === usable.length - 1) return r; } catch (e) { err = e; }
   }
-  if (hasPapiKey() && !papiOut()) { const r = await papiProps(game, stats); lastSource = 'papi'; return r; }
-  if (firstErr) throw firstErr;
+  if (err) throw err;
   return { markets: [], book: '' };
 }
 
-/** First scorer prices, same order of sources. */
-export async function bookFirst(game) {
-  let firstErr = null;
-  if (hasMainKey() && !mainOut()) {
-    try { const r = await oddsApiFirst(game); lastSource = 'main'; if (r.markets.length || !hasPapiKey()) return r; } catch (e) { firstErr = e; }
-  }
-  if (hasPapiKey() && !papiOut()) { const r = await papiFirst(game); lastSource = 'papi'; return r; }
-  if (firstErr) throw firstErr;
-  return { markets: [], book: '' };
-}
+/** Over/under props. */
+export const bookProps = (game, stats) => viaSources(() => oddsApiProps(game, stats), () => papiProps(game, stats));
+
+/** First scorer prices. */
+export const bookFirst = (game) => viaSources(() => oddsApiFirst(game), () => papiFirst(game));

@@ -65,6 +65,9 @@ export async function render(root) {
     const pMsg = h('p', { class: 'muted small-note', id: 'papi-msg' }, getState().settings.papiKey ? 'A key is saved on this device.' : 'No key yet.');
     host.append(h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Backup lines source (optional)'),
       h('p', { class: 'muted' }, 'A second place to get DraftKings and FanDuel props, from OddsPapi (free key at oddspapi.io, about 250 requests a month). The app uses it when you have no Odds API key, when that one runs out, or when it has nothing for a game. Answers are saved on this device to save requests. The key stays on this device.'),
+      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Which first'),
+        h('div', { class: 'seg', id: 'papi-first' }, [[false, 'The Odds API'], [true, 'OddsPapi']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (!!getState().settings.papiFirst === k ? ' on' : ''), id: 'first-' + (k ? 'papi' : 'main'), onclick: (e) => { setSetting('papiFirst', k); e.currentTarget.parentNode.querySelectorAll('.seg-b').forEach((b) => b.classList.toggle('on', b === e.currentTarget)); } }, l))),
+        h('small', null, 'Both keys stay saved. The other one is the backup.')),
       pIn, pMsg,
       h('div', { class: 'row wrap' },
         h('button', { type: 'button', class: 'btn main', id: 'papi-save', onclick: async () => {

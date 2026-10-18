@@ -609,6 +609,14 @@ import * as S from '../js/specials.js';
     assert.equal(pp.statOf('nfl', 'Player Rushing Yards'), 'rushyds');
     assert.equal(pp.statOf('nhl', 'Player Shots on Goal'), 'sog');
   });
+  st.setSetting('oddsKey', 'main'); st.setSetting('papiFirst', true);
+  const od = await import('../js/odds.js');
+  const seen = []; const f2 = globalThis.fetch; globalThis.fetch = async (u) => { seen.push(String(u)); return f2(u); };
+  pp.clearPapiCache();
+  await od.bookProps(game, null);
+  t('odds: OddsPapi first switch asks OddsPapi before The Odds API', () => { assert.ok(seen.length > 0 && seen.every((u) => u.includes('oddspapi'))); });
+  st.setSetting('papiFirst', false); st.setSetting('oddsKey', '');
+  globalThis.fetch = f2;
   globalThis.fetch = realFetch;
 }
 
