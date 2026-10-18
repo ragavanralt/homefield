@@ -2,6 +2,7 @@ import { hexToRgb, contrast, mix, lighten, darken, colorDistance } from './util.
 // Appearance: light/dark mode, background colour and accent colour. Saved in settings, applied as CSS variables.
 export const BACKGROUNDS = {
   dark: [
+    { id: 'noir', name: 'Noir', bg: '#0B0B0D', surface: '#141416', surface2: '#1D1B17', line: '#34301F' },
     { id: 'midnight', name: 'Midnight', bg: '#0A0E1C', surface: '#121831', surface2: '#1A2142', line: '#262E52' },
     { id: 'black', name: 'Black', bg: '#000000', surface: '#0E0E12', surface2: '#18181E', line: '#2A2A33' },
     { id: 'graphite', name: 'Graphite', bg: '#111316', surface: '#1A1D21', surface2: '#23272D', line: '#333941' },
@@ -10,6 +11,7 @@ export const BACKGROUNDS = {
     { id: 'navy', name: 'Navy', bg: '#06122B', surface: '#0C1D40', surface2: '#122855', line: '#1D3A72' },
   ],
   light: [
+    { id: 'ivory', name: 'Ivory', bg: '#FAF7EF', surface: '#FFFFFF', surface2: '#F1EBDB', line: '#E2D8BE' },
     { id: 'paper', name: 'Paper', bg: '#F2F4FB', surface: '#FFFFFF', surface2: '#EAEDF8', line: '#D5DAEE' },
     { id: 'white', name: 'White', bg: '#FFFFFF', surface: '#F6F7FA', surface2: '#ECEEF3', line: '#DADDE6' },
     { id: 'warm', name: 'Warm', bg: '#FAF5EC', surface: '#FFFDF8', surface2: '#F1E9DA', line: '#E3D8C3' },
@@ -19,6 +21,7 @@ export const BACKGROUNDS = {
 };
 
 export const ACCENTS = [
+  { id: 'gold', name: 'Gold', a: '#E8C45A', b: '#B8892B', ink: '#1B1500' },
   { id: 'coral', name: 'Coral', a: '#FF4D66', b: '#FF8A4D', ink: '#FFFFFF' },
   { id: 'volt', name: 'Volt', a: '#FFD43B', b: '#FF9F1C', ink: '#1B1500' },
   { id: 'aqua', name: 'Aqua', a: '#2BD9EC', b: '#3B82F6', ink: '#04202A' },
@@ -27,7 +30,7 @@ export const ACCENTS = [
   { id: 'blue', name: 'Blue', a: '#3B82F6', b: '#6366F1', ink: '#FFFFFF' },
 ];
 
-export const DEFAULT_APPEARANCE = { theme: 'auto', bgDark: 'midnight', bgLight: 'paper', accent: 'coral', teamMode: true };
+export const DEFAULT_APPEARANCE = { theme: 'auto', bgDark: 'noir', bgLight: 'ivory', accent: 'gold', teamMode: true };
 
 
 /* ---------- team mode ---------- */

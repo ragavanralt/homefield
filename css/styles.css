@@ -1,7 +1,7 @@
 /* Homefield. Dark first. Team colours arrive as --t1 --t2 --tink --tacc on skinned elements. */
 :root {
-  --bg: #0A0E1C; --surface: #121831; --surface-2: #1A2142; --fg: #F3F5FC; --muted: #98A2C3; --line: #262E52;
-  --accent: #FF4D66; --accent2: #FF8A4D; --accent-ink: #FFFFFF;
+  --bg: #0B0B0D; --surface: #141416; --surface-2: #1D1B17; --fg: #F3F5FC; --muted: #98A2C3; --line: #34301F;
+  --accent: #E8C45A; --accent2: #B8892B; --accent-ink: #1B1500;
   --hot: #FF4D66; --volt: #FFD43B; --aqua: #2BD9EC; --violet: #8F74FF; --good: #3DDC97;
   --t1: #2BD9EC; --t2: #8F74FF; --tink: #07101e; --tacc: #FFD43B;
   --radius: 16px; --shadow: 0 8px 28px rgba(0,0,0,.35);
