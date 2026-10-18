@@ -5,7 +5,8 @@ import { mountSlip, slipHidden } from './slip.js';
 import { toast } from './ui.js';
 import { TABS } from './leagues.js';
 import { settleAll } from './settle.js';
-import { applyTheme, watchSystem } from './themes.js';
+import { applyTheme, watchSystem, bindSettings } from './themes.js';
+import { startBrand, setContextTeam, teamForRoute } from './brand.js';
 
 const ROUTES = [
   { re: /^\/?$/, view: () => import('./views/home.js'), nav: 'home', params: () => ({}) },
@@ -62,6 +63,11 @@ export async function route() {
   slipHidden(navId === 'none');
   document.body.removeAttribute('style');
 
+  // team and game pages take on that team's colours; everything else uses the team playing next
+  const kind = /^\/team\//.test(path) ? 'team' : /^\/game\//.test(path) ? 'game' : '';
+  if (kind) teamForRoute(kind, found.r.params(found.m)).then((t) => { if (my === token) setContextTeam(t); }).catch(() => {});
+  else setContextTeam(null);
+
   clear(app);
   const root = h('div', { class: 'view' });
   app.append(root);
@@ -85,12 +91,14 @@ function drawNav(nav, active) {
 }
 
 export function start() {
+  bindSettings(() => getState().settings);
   applyTheme(getState().settings);
   watchSystem(() => getState().settings);
   window.addEventListener('hashchange', route);
   const slip = document.getElementById('slip');
   if (slip) mountSlip(slip);
   route();
+  try { startBrand(); } catch (e) { /* the logo is optional */ }
   try {
     settleAll().then(() => {
       for (const n of takeNotices()) {

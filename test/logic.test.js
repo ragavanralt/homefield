@@ -483,4 +483,19 @@ import * as S from '../js/specials.js';
   });
 }
 
+// ---- team colour theme ----
+{
+  const th = await import('../js/themes.js');
+  const { contrast } = await import('../js/util.js');
+  t('team theme: readable accents in dark and light for light, dark and clashing team colours', () => {
+    for (const [c, a] of [['003e7e', 'ffffff'], ['fcb514', '000000'], ['000000', 'fdb927'], ['ffffff', 'c8102e'], ['007a33', 'ba9653'], ['', '']]) {
+      const d = th.teamPalette(c, a, 'dark'), l = th.teamPalette(c, a, 'light');
+      assert.ok(contrast(d.accent, d.bg) >= 4.4, `dark accent ${c}`);
+      assert.ok(contrast(l.accent, '#FFFFFF') >= 4.4, `light accent ${c}`);
+      assert.ok(contrast(d.bg, '#F3F5FC') >= 12 && contrast(l.bg, '#0E1330') >= 12, `text on bg ${c}`);
+      assert.notEqual(d.bg, l.bg);
+    }
+  });
+}
+
 console.log(`\n${passed} checks passed`);

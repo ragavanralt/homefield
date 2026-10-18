@@ -84,13 +84,18 @@ export function appearanceCard(title = 'Appearance') {
     const mode = resolveMode(s.theme);
     const key = mode === 'dark' ? 'bgDark' : 'bgLight';
     const swatch = (label, bg, on, onclick, id) => h('button', { type: 'button', class: 'swatch', id, 'aria-pressed': on ? 'true' : 'false', onclick }, h('i', { style: { background: bg } }), label);
+    const team = s.teamMode !== false;
+    const teamRow = h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Team colours'),
+      h('div', { class: 'seg' }, [[true, 'On'], [false, 'Off']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (team === k ? ' on' : ''), id: 'team-' + (k ? 'on' : 'off'), onclick: () => { setSetting('teamMode', k); repaint(); draw(); } }, l))),
+      h('small', null, team ? 'The whole app takes the colours of whichever of your teams plays next. Open a team or game and it matches that team. Dark and light each get their own version.' : 'Pick your own background and accent below.'));
     host.replaceChildren(h('h2', { class: 'card-h' }, title),
       h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Theme'),
         h('div', { class: 'seg' }, [['auto', 'Auto'], ['dark', 'Dark'], ['light', 'Light']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (s.theme === k ? ' on' : ''), id: 'theme-' + k, onclick: () => { setSetting('theme', k); repaint(); draw(); } }, l))),
         h('small', null, s.theme === 'auto' ? 'Follows your phone or computer.' : '')),
-      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, `Background (${mode})`),
+      teamRow,
+      team ? null : h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, `Background (${mode})`),
         h('div', { class: 'swatches' }, BACKGROUNDS[mode].map((b) => swatch(b.name, `linear-gradient(135deg, ${b.bg} 50%, ${b.surface} 50%)`, s[key] === b.id, () => { setSetting(key, b.id); repaint(); draw(); }, 'bg-' + b.id)))),
-      h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Accent colour'),
+      team ? null : h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Accent colour'),
         h('div', { class: 'swatches' }, ACCENTS.map((a) => swatch(a.name, `linear-gradient(135deg, ${a.a}, ${a.b})`, s.accent === a.id, () => { setSetting('accent', a.id); repaint(); draw(); }, 'acc-' + a.id)))),
       h('div', { class: 'set-row' }, h('button', { type: 'button', class: 'btn small', id: 'reset-look', onclick: () => { Object.entries(DEFAULT_APPEARANCE).forEach(([k, v]) => setSetting(k, v)); repaint(); draw(); } }, 'Reset to default')));
   };
