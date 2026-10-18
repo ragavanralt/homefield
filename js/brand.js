@@ -6,14 +6,14 @@ import { setThemeTeam } from './themes.js';
 import { findTeam, myTeamIn } from './store.js';
 
 const KEY = 'homefield:brand';
-const FALLBACK = { t1: '#FF6B4A', t2: '#7C5CFF', tink: '#FFFFFF', tacc: '#FFD43B' };
+const FALLBACK = { t1: '#FF6B4A', t2: '#7C5CFF', tink: '#FFFFFF', tacc: '#E8C45A' };
 
 const readCache = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
 const writeCache = (v) => { try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch (e) { /* ignore */ } };
 
 /** The Homefield mark: a poker chip (betting) with a basketball's seams inside (sports). Fixed colours, it never changes. */
 export function badgeSvg(size = 32) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="${size}" height="${size}" aria-hidden="true"><circle cx="20" cy="20" r="18.5" fill="#FF6B4A"/><circle cx="20" cy="20" r="18.5" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.4"/><circle cx="20" cy="20" r="15.6" fill="none" stroke="#fff" stroke-width="3.6" stroke-dasharray="5.1 6.12" stroke-dashoffset="2.5"/><circle cx="20" cy="20" r="11.6" fill="#14172B"/><circle cx="20" cy="20" r="11.6" fill="none" stroke="#FFD43B" stroke-width="1.2"/><g fill="none" stroke="#FFD43B" stroke-width="1.5" stroke-linecap="round"><path d="M20 8.6 V31.4"/><path d="M8.6 20 H31.4"/><path d="M11.6 11.6 C16.6 15.6 16.6 24.4 11.6 28.4"/><path d="M28.4 11.6 C23.4 15.6 23.4 24.4 28.4 28.4"/></g><circle cx="20" cy="20" r="2.3" fill="#FF6B4A" stroke="#14172B" stroke-width=".8"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="${size}" height="${size}" aria-hidden="true"><defs><linearGradient id="hfg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F9EBB0"/><stop offset=".5" stop-color="#D9B445"/><stop offset="1" stop-color="#8A6619"/></linearGradient></defs><circle cx="20" cy="20" r="18.5" fill="url(#hfg)"/><circle cx="20" cy="20" r="18.5" fill="none" stroke="#F9EBB0" stroke-opacity=".9" stroke-width="1.4"/><circle cx="20" cy="20" r="15.6" fill="none" stroke="#0B0B0D" stroke-width="3.6" stroke-dasharray="5.1 6.12" stroke-dashoffset="2.5"/><circle cx="20" cy="20" r="11.6" fill="#0B0B0D"/><circle cx="20" cy="20" r="11.6" fill="none" stroke="#E8C45A" stroke-width="1.2"/><g fill="none" stroke="#E8C45A" stroke-width="1.5" stroke-linecap="round"><path d="M20 8.6 V31.4"/><path d="M8.6 20 H31.4"/><path d="M11.6 11.6 C16.6 15.6 16.6 24.4 11.6 28.4"/><path d="M28.4 11.6 C23.4 15.6 23.4 24.4 28.4 28.4"/></g><circle cx="20" cy="20" r="2.3" fill="url(#hfg)" stroke="#0B0B0D" stroke-width=".8"/></svg>`;
 }
 
 // Two teams can set the app's theme: the one with the next game (main), and the one on screen (context).
