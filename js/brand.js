@@ -11,9 +11,9 @@ const FALLBACK = { t1: '#FF6B4A', t2: '#7C5CFF', tink: '#FFFFFF', tacc: '#FFD43B
 const readCache = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
 const writeCache = (v) => { try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch (e) { /* ignore */ } };
 
-/** The Homefield mark: a poker chip (betting) with a basketball's seams inside (sports). Fixed colours, it never changes. */
+/** The Homefield mark: a gold H on black. Fixed colours, it never changes with your team. */
 export function badgeSvg(size = 32) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="${size}" height="${size}" aria-hidden="true"><circle cx="20" cy="20" r="18.5" fill="#FF6B4A"/><circle cx="20" cy="20" r="18.5" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.4"/><circle cx="20" cy="20" r="15.6" fill="none" stroke="#fff" stroke-width="3.6" stroke-dasharray="5.1 6.12" stroke-dashoffset="2.5"/><circle cx="20" cy="20" r="11.6" fill="#14172B"/><circle cx="20" cy="20" r="11.6" fill="none" stroke="#FFD43B" stroke-width="1.2"/><g fill="none" stroke="#FFD43B" stroke-width="1.5" stroke-linecap="round"><path d="M20 8.6 V31.4"/><path d="M8.6 20 H31.4"/><path d="M11.6 11.6 C16.6 15.6 16.6 24.4 11.6 28.4"/><path d="M28.4 11.6 C23.4 15.6 23.4 24.4 28.4 28.4"/></g><circle cx="20" cy="20" r="2.3" fill="#FF6B4A" stroke="#14172B" stroke-width=".8"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="${size}" height="${size}" aria-hidden="true"><defs><linearGradient id="hfg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7E7A9"/><stop offset=".5" stop-color="#D4AF37"/><stop offset="1" stop-color="#8C6A1C"/></linearGradient></defs><rect width="40" height="40" rx="9.5" fill="#0B0B0D"/><rect x="1.6" y="1.6" width="36.8" height="36.8" rx="8.4" fill="none" stroke="#D4AF37" stroke-opacity=".55" stroke-width=".8"/><path d="M11 12.6 L16.4 9 V31 H11 Z" fill="url(#hfg)"/><path d="M23.6 9 L29 12.6 V31 H23.6 Z" fill="url(#hfg)"/><rect x="16.4" y="18.2" width="7.2" height="3.6" fill="url(#hfg)"/></svg>`;
 }
 
 // Two teams can set the app's theme: the one with the next game (main), and the one on screen (context).
