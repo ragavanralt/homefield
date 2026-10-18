@@ -168,6 +168,12 @@ const capBtn = app().querySelector('.buy[data-id="cap"]'); assert.ok(capBtn, 'ca
 capBtn.click(); await sleep(50);
 assert.ok(store.getBank().coins < coinsBefore && store.getState().avatar.owned.includes('cap')); ok('buying an item takes coins');
 assert.ok(app().querySelector('.pf-me svg').innerHTML.includes('#003e7e') || app().querySelector('.pf-me svg').innerHTML.toLowerCase().includes('#003e7e'), 'team colours'); ok('cap wears followed team colours');
+// colour menu: blanks tab, open the + on the free tee, pick black
+app().querySelectorAll('.pf-tabs .seg-b')[2].click(); await sleep(30);
+const teeMore = app().querySelector('[data-item="tee"] .dot.more'); assert.ok(teeMore, 'tee colour button'); teeMore.click(); await sleep(30);
+assert.ok(app().querySelector('.cs-panel'), 'colour menu'); app().querySelector('.cs-sw[data-ci="2"]').click(); await sleep(30);
+assert.equal(store.getState().avatar.col.tee, 2); app().querySelector('#cs-done').click(); await sleep(30);
+assert.ok(!app().querySelector('.cs-panel')); ok('colour menu switches a free item colour');
 text = await visit('#/check', { wait: 100 });
 app().querySelector('#run-check').click(); await sleep(1500);
 assert.ok(app().querySelector('.checklist'), 'check ran'); ok('data check runs');

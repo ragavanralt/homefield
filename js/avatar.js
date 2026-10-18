@@ -47,8 +47,8 @@ export const ITEMS = [
 
   // ---- Blanks: plain basics
   I('tee', 'top', 'Plain tee', 'blank', 0), I('tank', 'top', 'Tank top', 'blank', 40), I('jeans', 'bottom', 'Jeans', 'blank', 0), I('joggers', 'bottom', 'Joggers', 'blank', 80),
-  I('shorts', 'bottom', 'Denim shorts', 'blank', 60), I('cargo', 'bottom', 'Cargo pants', 'blank', 120), I('sneakers', 'shoes', 'White sneakers', 'blank', 0), I('slides', 'shoes', 'Slides', 'blank', 40),
-  I('runners', 'shoes', 'Runners', 'blank', 90), I('plaincap', 'hat', 'Plain black cap', 'blank', 100), I('denim', 'outer', 'Denim jacket', 'blank', 300), I('ball', 'hand', 'Ball', 'blank', 100),
+  I('shorts', 'bottom', 'Denim shorts', 'blank', 60), I('cargo', 'bottom', 'Cargo pants', 'blank', 120), I('sneakers', 'shoes', 'Sneakers', 'blank', 0), I('slides', 'shoes', 'Slides', 'blank', 40),
+  I('runners', 'shoes', 'Runners', 'blank', 90), I('plaincap', 'hat', 'Plain cap', 'blank', 100), I('denim', 'outer', 'Denim jacket', 'blank', 300), I('ball', 'hand', 'Ball', 'blank', 100),
   I('shades', 'face', 'Shades', 'blank', 150), I('boots', 'shoes', 'Work boots', 'blank', 180),
 
   // ---- Streetwear
@@ -74,11 +74,15 @@ export const ITEMS = [
   I('cuban', 'chain', 'Cuban link chain', 'brand', 8000), I('tennis', 'chain', 'Iced tennis chain', 'brand', 12000), I('diamond', 'chain', 'Diamond cuban', 'brand', 25000),
   I('royalwatch', 'wrist', 'Aurelle royal watch', 'brand', 20000), I('goldwatch', 'wrist', 'Iced-out watch', 'brand', 35000), I('goldpants', 'bottom', 'Gold pants', 'brand', 9000),
   I('wings', 'back', 'Gold wings', 'brand', 25000), I('trophy', 'hand', 'Trophy', 'brand', 15000),
+  I('techhood', 'top', 'Vantage tech fleece hoodie', 'brand', 3500), I('techjog', 'bottom', 'Vantage tech fleece joggers', 'brand', 3000),
+  I('sixhood', 'top', 'Sixside crest hoodie', 'brand', 4200), I('sixvarsity', 'outer', 'Sixside varsity', 'brand', 8500), I('duffel', 'hand', 'Maison monogram duffel', 'brand', 9000),
+  I('cs_red', 'bottom', 'Courtside mesh shorts, red and black', 'brand', 4000), I('cs_purple', 'bottom', 'Courtside mesh shorts, purple and gold', 'brand', 4000),
+  I('cs_green', 'bottom', 'Courtside mesh shorts, green and white', 'brand', 4000), I('cs_royal', 'bottom', 'Courtside mesh shorts, royal and white', 'brand', 4000),
 
   // ---- Team shop
   I('cap', 'hat', 'Team cap', 'team', 250, T), I('beanie', 'hat', 'Team beanie', 'team', 250, T), I('headband', 'hat', 'Headband', 'team', 150, T), I('durag', 'hat', 'Durag', 'team', 200, T),
   I('bucket', 'hat', 'Bucket hat', 'team', 450, T), I('snapback', 'hat', 'Snapback', 'team', 450, T), I('helmet', 'hat', 'Team helmet', 'team', 900, T),
-  I('jersey', 'top', 'Team jersey', 'team', 400, T), I('polo', 'top', 'Team polo', 'team', 300, T), I('hoodie', 'top', 'Team hoodie', 'team', 700, T),
+  I('jersey', 'top', 'Team jersey', 'team', 400, T), I('swingman', 'top', 'Swingman tank jersey', 'team', 450, T), I('polo', 'top', 'Team polo', 'team', 300, T), I('hoodie', 'top', 'Team hoodie', 'team', 700, T),
   I('track', 'outer', 'Track jacket', 'team', 600, T), I('varsity', 'outer', 'Varsity jacket', 'team', 1200, T),
   I('tshorts', 'bottom', 'Team shorts', 'team', 250, T), I('trackp', 'bottom', 'Track pants', 'team', 700, T),
   I('hightops', 'shoes', 'Team high tops', 'team', 500, T), I('retros', 'shoes', 'Team retros', 'team', 1200, T),
@@ -89,6 +93,76 @@ export const ITEMS = [
   I('ghost', 'top', 'Ghost sheet', 'team', 0, { ach: 'Get rescued with free coins once' }), I('goldscarf', 'scarf', 'Golden scarf', 'team', 0, { ach: 'Win 5 bets in a row' }), I('trophycape', 'back', 'Trophy cape', 'team', 0, { ach: 'Hit a parlay' }),
 ];
 export const itemById = (id) => ITEMS.find((i) => i.id === id);
+// Colour options. The first entry is the colour the item is drawn in; picking another swaps it in,
+// and the listed shade colours (cuffs, collars, pockets) follow it, darker or lighter by the amount.
+const W = '#ECEBE7', BK = '#1C1C21', HG = '#8E9196', NV = '#1F2A44', OL = '#4F5A3A', CR = '#E9E4D8';
+const COLS = {
+  tee: [['Slate', '#64748B'], ['White', W], ['Black', BK], ['Heather', HG], ['Navy', NV], ['Olive', '#5B6440'], ['Burgundy', '#6B1E2A'], ['Cream', CR], ['Sky', '#8DB4D8'], ['Forest', '#2F4F3A']],
+  tank: [['Black', '#1F2937'], ['White', W], ['Heather', HG], ['Navy', NV], ['Olive', OL]],
+  jeans: [['Mid wash', '#3A5A93'], ['Light wash', '#7FA0C9'], ['Dark wash', '#22324F'], ['Black', '#2A2B30'], ['Grey', '#6B7280']],
+  joggers: [['Charcoal', '#46546A'], ['Black', '#1E1F23'], ['Heather', HG], ['Navy', NV], ['Olive', OL], ['Oat', '#CDBFA6']],
+  cargo: [['Khaki', '#9C8B63'], ['Black', '#26272B'], ['Olive', OL], ['Stone', '#B9B09A'], ['Navy', '#2A3550']],
+  shorts: [['Light wash', '#6B8FC9'], ['Mid wash', '#3A5A93'], ['Black', '#2A2B30'], ['Khaki', '#B9A37A'], ['White', '#E8E6E0']],
+  sneakers: [['White', '#F8FAFC'], ['Black', BK], ['Cream', '#EEE6D3'], ['Grey', '#9AA0A6'], ['Navy', '#22305A']],
+  slides: [['Black', '#1F2937'], ['White', W], ['Cream', '#EEE6D3'], ['Olive', OL]],
+  boots: [['Brown', '#7C4A21'], ['Wheat', '#C08A4A'], ['Black', BK]],
+  plaincap: [['Black', BK], ['White', W], ['Navy', NV], ['Beige', '#CDBFA6'], ['Olive', OL], ['Red', '#8E2A2A']],
+  denim: [['Mid wash', '#4F78B5'], ['Light wash', '#8DAED6'], ['Dark wash', '#22324F'], ['Black', '#2A2B30']],
+  boxy: [['Cream', CR], ['Black', BK], ['White', W], ['Heather', HG], ['Sage', '#9AA58C'], ['Brown', '#6B4E3A'], ['Navy', NV]],
+  graphic: [['Black', '#1C1C22'], ['White', W], ['Heather', HG], ['Navy', NV], ['Forest', '#2F4F3A']],
+  washed: [['Washed black', '#3A3D44'], ['Washed grey', '#7A7D84'], ['Washed brown', '#6B5546'], ['Washed blue', '#4D6280'], ['Washed green', '#56604A']],
+  baggy: [['Mid wash', '#4F6E9F'], ['Light wash', '#8DAED6'], ['Dark wash', '#22324F'], ['Black', '#2A2B30'], ['Grey', '#6B7280']],
+  techp: [['Black', '#22252C'], ['Grey', '#6B7078'], ['Olive', OL], ['Sand', '#B9AC92']],
+  bomber: [['Olive', '#4E5A3F'], ['Black', '#1E1F23'], ['Navy', NV], ['Sage', '#8E9A80'], ['Burgundy', '#5E1E26']],
+  leather: [['Black', '#17171F'], ['Brown', '#4A2E1E'], ['Oxblood', '#3E1418']],
+  puffer: [['Black', '#2A3142'], ['Cream', '#E6DFD0'], ['Olive', OL], ['Red', '#8E2A2A'], ['Royal', '#264A99'], ['Silver', '#B8BCC4']],
+  chunky: [['Cream', '#EFEAE0'], ['Black', '#26272B'], ['Grey', '#9AA0A6'], ['White', '#FAFAF8']],
+  dressshirt: [['White', '#F2F1EC'], ['Light blue', '#BFD3EA'], ['Pink', '#E8C8CC'], ['Lavender', '#CFC6E6'], ['Black', BK]],
+  turtleneck: [['Black', '#1C1C21'], ['Cream', CR], ['Grey', HG], ['Camel', '#B98B58'], ['Navy', NV]],
+  blazer: [['Charcoal', '#3A3E46'], ['Navy', '#1E2B47'], ['Camel', '#A8865C'], ['Black', '#16161A'], ['Olive', OL]],
+  suit: [['Navy', '#1E2B47'], ['Charcoal', '#3A3E46'], ['Black', '#16161A'], ['Light grey', '#9EA3AA'], ['Brown', '#5A4232'], ['Burgundy', '#4E1C24']],
+  overcoat: [['Camel', '#B98B58'], ['Charcoal', '#3A3E46'], ['Black', '#1E1E22'], ['Navy', NV], ['Cream', '#DCD3C2']],
+  slacks: [['Grey', '#6E737B'], ['Navy', NV], ['Black', '#16161A'], ['Khaki', '#B9A37A'], ['Cream', '#DCD3C2']],
+  suitp: [['Navy', '#1E2B47'], ['Charcoal', '#3A3E46'], ['Black', '#16161A'], ['Light grey', '#9EA3AA'], ['Brown', '#5A4232'], ['Burgundy', '#4E1C24']],
+  tie: [['Burgundy', '#6B1E2A'], ['Navy', NV], ['Black', '#121216'], ['Forest', '#2F4F3A'], ['Silver', '#9EA3AA'], ['Gold', '#B08D3A']],
+  foghoodie: [['Heather', '#8E9196'], ['Black', '#1E1F23'], ['Oat', '#CDBFA6'], ['Moss', '#4A5240'], ['Cement', '#B4B1AA'], ['Dark navy', '#1F2433']],
+  fogsweats: [['Heather', '#8E9196'], ['Black', '#1E1F23'], ['Oat', '#CDBFA6'], ['Moss', '#4A5240'], ['Cement', '#B4B1AA'], ['Dark navy', '#1F2433']],
+  techhood: [['Grey', '#8A8F96'], ['Black', '#1E1F23'], ['Navy', NV], ['Olive', OL], ['Dark grey', '#4A4E55']],
+  techjog: [['Grey', '#8A8F96'], ['Black', '#1E1F23'], ['Navy', NV], ['Olive', OL], ['Dark grey', '#4A4E55']],
+  sixhood: [['Black', '#141418'], ['Cream', CR], ['Forest', '#2F4F3A']],
+};
+const SHADES = {
+  joggers: { '#2B3445': 0.35 }, cargo: { '#877748': 0.12, '#6B5E3C': 0.3 }, shorts: { '#4F73AD': 0.2 }, boots: { '#5A3516': 0.25 }, plaincap: { '#141418': 0.25 },
+  denim: { '#3E6199': 0.2, '#456CA6': 0.1 }, washed: { '#31343A': 0.12, '#34373D': 0.08 }, techp: { '#1A1C22': 0.2 }, bomber: { '#2F3626': 0.38, '#46513A': 0.08 },
+  leather: { '#0F0F15': 0.3 }, dressshirt: { '#FAFAF7': -0.3 }, turtleneck: { '#16161A': 0.2 }, blazer: { '#30343B': 0.15 }, suit: { '#18233B': 0.15 }, overcoat: { '#A57A4A': 0.12 },
+  foghoodie: { '#7D8085': 0.12, '#878A8F': 0.05, '#666A70': 0.3 }, fogsweats: { '#7D8085': 0.12 }, techhood: { '#6F747B': 0.18 }, techjog: { '#6F747B': 0.18 }, sixhood: { '#0E0E12': 0.25 },
+};
+for (const it of ITEMS) if (COLS[it.id]) { it.colors = COLS[it.id].map(([n, k]) => ({ n, k })); it.shades = SHADES[it.id] || {}; }
+
+/** Darken (amt > 0) or lighten (amt < 0) a #rrggbb colour. */
+export function shadeHex(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const f = (x) => Math.max(0, Math.min(255, Math.round(amt > 0 ? x * (1 - amt) : x + (255 - x) * -amt)));
+  return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(f).map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+/** Recolour an item's drawing for the chosen colour option. */
+function tint(svg, id, idx) {
+  if (!idx) return svg;
+  const it = itemById(id);
+  const k = it && it.colors && it.colors[idx] && it.colors[idx].k;
+  if (!k) return svg;
+  let out = svg.split(it.colors[0].k).join(k);
+  for (const [hex, amt] of Object.entries(it.shades)) out = out.split(hex).join(shadeHex(k, amt));
+  return out;
+}
+export const colourIndex = (av, id) => (av.col && av.col[id]) || 0;
+export function setColour(id, i) {
+  const it = itemById(id);
+  const a = getState().avatar;
+  if (!it || !it.colors || !it.colors[i] || !a.owned.includes(id)) return false;
+  setAvatar((av) => { av.col = av.col || {}; av.col[id] = i; av.eq[it.slot] = id; });
+  return true;
+}
 const NEUTRAL = { t1: '#4B5BA8', t2: '#2F3B7A', tink: '#FFFFFF', tacc: '#FFD43B' };
 
 /** Earned items. Checked against your stats. */
@@ -161,12 +235,16 @@ const PV = (d, f, x = '') => `<path d="${d}" fill="${f}" ${OUT} ${x}/><path d="$
 const L = (d, s = 'rgba(0,0,0,.3)', w = 1.2) => `<path d="${d}" fill="none" stroke="${s}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
 const C = (cx, cy, r, f, x = '') => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${f}" ${OUT} ${x}/><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#hf-sh)"/>`;
 const M = (s) => `<g transform="matrix(-1 0 0 1 120 0)">${s}</g>`;
-const both = (s) => s + M(s);
+const BOTH = (s) => s + M(s);
+// both() draws a left-side part and its mirror. While the legs are drawn it is swapped for a version
+// that angles each leg out a little, so the figure stands with feet apart instead of like a block.
+let both = BOTH;
+const LEG_SKIN = 'M40.6 128 C40 140 40.4 152 41.8 160 C41 166 41.4 173 42.4 180 L43.2 194 L57.8 194 L58.2 180 C59 173 59 166 58.4 160 C59.2 150 59.6 140 59.6 128 Z';
 
-const TORSO = 'M38 77 Q60 71 82 77 L84 112 L83 131 Q60 137 37 131 L36 112 Z';
-const ARM = 'M38 77.6 L31 77.4 Q23.8 78.4 23.4 87 Q23.2 95 24.6 101 Q23 110 22.8 121 L33.8 122 Q35.4 112 35.2 106 Q37.6 100 38.8 92 Z';
-const SLEEVE_S = 'M38 77.6 L31 77.4 Q24.6 78.4 24.2 87 L23 106 L37 108 L39 96 Z';
-const SLEEVE_L = 'M38 77.6 L31 77.4 Q24.6 78.4 24.2 87 L22 119 L34 121 L39 98 Z';
+const TORSO = 'M38 77 Q60 71 82 77 C84.4 88 84.6 100 83 112 L81.6 131 Q60 137 38.4 131 L37 112 C35.4 100 35.6 88 38 77 Z';
+const ARM = 'M38 77.6 C33 76.6 26.4 77.2 24.2 82 C22.4 86 22.6 90 23.2 94 C22.4 98 22.4 102 23.6 106 C22.4 111 22 116 22.8 121 L33.8 122 C34.6 117 35 112 35.6 108 C37.8 104 38.8 100 39 94 Z';
+const SLEEVE_S = 'M38 77.6 C33 76.6 26.4 77.2 24.2 82 C22.4 86 22.4 90 22.8 94 L22.8 106 L37 108 L39 96 Z';
+const SLEEVE_L = 'M38 77.6 C33 76.6 26.4 77.2 24.2 82 C22.4 86 22.4 90 22.6 94 L22 119 L34 121 L39 98 Z';
 const CUFF_S = 'M23.4 100 L37.6 102 L37 108 L23 106 Z';
 const CUFF_L = 'M22.4 113.5 L34.6 115.5 L34 121 L22 119 Z';
 const JACKET = 'M36 77 Q60 70 84 77 L86 112 L85 137 Q60 143 35 137 L34 112 Z';
@@ -187,7 +265,7 @@ const TOP = {
   tank: (c, h, skin) => `<path d="M44 76 Q47 70 51 74 Q60 94 69 74 Q73 70 76 76 L84 88 L84 112 L83 131 Q60 137 37 131 L36 112 L36 88 Z" fill="#1F2937" ${OUT}/><path d="M44 76 Q47 70 51 74 Q60 94 69 74 Q73 70 76 76 L84 88 L84 112 L83 131 Q60 137 37 131 L36 112 L36 88 Z" fill="url(#hf-sh)"/>` + L('M44 118 Q60 124 76 118', 'rgba(255,255,255,.1)'),
   polo: (c) => P(TORSO, '#E2E8F0') + both(P(SLEEVE_S, '#E2E8F0') + P(CUFF_S, c.t1)) + P('M49 74 L59 84 L55 90 L46 79 Z', c.t1) + P('M71 74 L61 84 L65 90 L74 79 Z', c.t1) + L('M60 84 V100', 'rgba(0,0,0,.3)') + C(60, 92, 1.1, '#94A3B8') + C(60, 99, 1.1, '#94A3B8'),
   jersey: (c, h, skin) => P(TORSO, c.t1) + both(P(SLEEVE_S, c.t1) + P(CUFF_S, c.t2)) + `<path d="M50 74 L60 90 L70 74 Z" fill="${skin}" stroke="${c.tacc}" stroke-width="2.4" stroke-linejoin="round"/>`
-    + L('M37 100 L38 130', c.t2, 3) + L('M83 100 L82 130', c.t2, 3) + `<text x="60" y="121" font-family="Arial Black, Impact, sans-serif" font-size="22" font-weight="900" text-anchor="middle" fill="${c.tink}" stroke="${c.t2}" stroke-width=".8">7</text>`,
+    + L('M37 100 L38 130', c.t2, 3) + L('M83 100 L82 130', c.t2, 3) + `<text x="60" y="121" font-family="'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif" font-size="22" font-weight="900" text-anchor="middle" fill="${c.tink}" stroke="${c.t2}" stroke-width=".8">7</text>`,
   hoodie: (c) => P(TORSO, c.t1) + both(P(SLEEVE_L, c.t1) + P(CUFF_L, c.t2)) + P('M42 78 C46 70 74 70 78 78 C75 90 45 90 42 78 Z', c.t2) + L('M55 86 L54 106', c.tink, 1.8) + L('M65 86 L66 106', c.tink, 1.8)
     + P('M44 114 H76 L80 130 Q60 134 40 130 Z', c.t2) + L('M45 122 L50 128 M75 122 L70 128', 'rgba(0,0,0,.3)'),
   ghost: () => P('M24 84 C24 74 40 70 60 70 C80 70 96 74 96 84 L100 178 L90 170 L80 180 L70 170 L60 180 L50 170 L40 180 L30 170 L20 178 Z', '#F1F5F9') + L('M40 100 Q42 140 38 168 M80 100 Q78 140 82 168 M60 96 V170', 'rgba(100,116,139,.35)', 1.4),
@@ -195,7 +273,7 @@ const TOP = {
 const OUTER = {
   denim: () => both(P(PANEL, '#4F78B5') + P(SLEEVE_L, '#4F78B5') + P(CUFF_L, '#3E6199') + P('M38 100 H50 V112 H38 Z', '#456CA6') + L('M38 104 H50', '#F1D17A', 1)) + P('M46 74 L53 74 L56 88 L48 80 Z', '#3E6199') + M(P('M46 74 L53 74 L56 88 L48 80 Z', '#3E6199')),
   track: (c) => both(P(PANEL, c.t1) + P(SLEEVE_L, c.t1) + P(CUFF_L, c.t2) + L('M24 90 L22.6 118', c.tacc, 2.4) + L('M37 80 L38 130', c.tacc, 2.4)) + P('M47 73 Q60 80 73 73 L73 79 Q60 86 47 79 Z', c.t2) + L('M56 80 L56 136', 'rgba(255,255,255,.5)', 1.4),
-  varsity: (c) => P(JACKET, c.t2) + both(P(SLEEVE_L, c.t1) + P(CUFF_L, '#F8FAFC') + L('M23.2 108 L35.2 110', c.t2, 1.6)) + P('M46 74 Q60 82 74 74 L74 79 Q60 87 46 79 Z', c.t1) + P('M35 131 Q60 138 85 131 L85 139 Q60 145 35 139 Z', c.t1) + L('M60 82 V136', 'rgba(255,255,255,.55)', 1.5) + C(73, 96, 5.5, c.tacc) + `<text x="73" y="99.3" font-family="Arial Black, Impact, sans-serif" font-size="8" font-weight="900" text-anchor="middle" fill="${c.t2}">H</text>`,
+  varsity: (c) => P(JACKET, c.t2) + both(P(SLEEVE_L, c.t1) + P(CUFF_L, '#F8FAFC') + L('M23.2 108 L35.2 110', c.t2, 1.6)) + P('M46 74 Q60 82 74 74 L74 79 Q60 87 46 79 Z', c.t1) + P('M35 131 Q60 138 85 131 L85 139 Q60 145 35 139 Z', c.t1) + L('M60 82 V136', 'rgba(255,255,255,.55)', 1.5) + C(73, 96, 5.5, c.tacc) + `<text x="73" y="99.3" font-family="'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif" font-size="8" font-weight="900" text-anchor="middle" fill="${c.t2}">H</text>`,
   leather: () => both(P(PANEL, '#17171F') + P(SLEEVE_L, '#17171F') + P(CUFF_L, '#0F0F15') + L('M30 90 L27 110', 'rgba(255,255,255,.28)', 2) + L('M40 90 L41 120', 'rgba(255,255,255,.2)', 2) + P('M43 74 L53 74 L57 96 L47 86 Z', '#0F0F15') + L('M56 80 L56 136', GOLD, 1.4)),
   puffer: () => P('M35 77 Q60 69 85 77 L88 114 L87 138 Q60 145 33 138 L32 114 Z', '#2A3142') + both(P('M38 78 C29 77 23 83 22 92 L19 119 C19 125 33 126 35 121 L40 98 Z', '#2A3142')) + L('M33 94 Q60 100 87 94 M32 110 Q60 116 88 110 M33 125 Q60 131 87 125', 'rgba(0,0,0,.45)', 1.8) + L('M60 76 V140', 'rgba(255,255,255,.3)', 1.4)
     + P('M44 72 Q60 80 76 72 L76 80 Q60 88 44 80 Z', '#2A3142') + both(L('M21 100 Q28 103 36 100 M20 112 Q28 115 36 112', 'rgba(0,0,0,.4)', 1.6)),
@@ -224,8 +302,8 @@ const BOTTOM = {
     + P('M38.5 130 H81.5 V137 H38.5 Z', '#1F2937') + `<rect x="56.4" y="131" width="7.2" height="5" rx="1" fill="none" stroke="${GOLD}" stroke-width="1.4"/>`,
   joggers: () => legs('#46546A', 190, both(P('M42 183 L58.6 183 L58.5 191 L42 191 Z', '#2B3445') + L('M41 134 L43 182', 'rgba(255,255,255,.45)', 2.2))) + P('M38.5 130 H81.5 V136 H38.5 Z', '#2B3445') + L('M56 132 L55 140 M64 132 L65 140', '#E5E9F0', 1.2),
   cargo: () => legs('#9C8B63', 192, both(P('M41 146 H53 V162 H41 Z', '#877748') + L('M41 150 H53', 'rgba(0,0,0,.3)') + L('M43.4 187 H58.4', 'rgba(0,0,0,.25)'))) + P('M38.5 130 H81.5 V136 H38.5 Z', '#6B5E3C'),
-  shorts: () => both(P('M41 128 L59 128 L58 194 L43 194 Z', 'var(--sk)')) + legs('#6B8FC9', 160, both(L('M41 154 L58.5 156', 'rgba(255,255,255,.4)'))) + P('M38.5 130 H81.5 V136 H38.5 Z', '#4F73AD'),
-  tshorts: (c) => both(P('M41 128 L59 128 L58 194 L43 194 Z', 'var(--sk)')) + legs(c.t1, 163, both(L('M41.4 132 L42 162', c.t2, 3.2))) + P('M38.5 130 H81.5 V136 H38.5 Z', c.t2),
+  shorts: () => both(P(LEG_SKIN, 'var(--sk)')) + legs('#6B8FC9', 160, both(L('M41 154 L58.5 156', 'rgba(255,255,255,.4)'))) + P('M38.5 130 H81.5 V136 H38.5 Z', '#4F73AD'),
+  tshorts: (c) => both(P(LEG_SKIN, 'var(--sk)')) + legs(c.t1, 163, both(L('M41.4 132 L42 162', c.t2, 3.2))) + P('M38.5 130 H81.5 V136 H38.5 Z', c.t2),
   trackp: (c) => legs(c.t1, 191, both(L('M41.4 134 L43 188', c.tacc, 2.6) + P('M42 184 L58.6 184 L58.5 192 L42 192 Z', c.t2))) + P('M38.5 130 H81.5 V136 H38.5 Z', c.t2),
   leatherp: () => legs('#17171F', 192, both(L('M44 136 L45 186', 'rgba(255,255,255,.28)', 2.4) + L('M50 150 L51 180', 'rgba(255,255,255,.12)', 2))) + P('M38.5 130 H81.5 V136 H38.5 Z', '#0F0F15'),
   goldpants: () => legs(GOLD, 192, both(L('M44 136 L45 186', '#FFF3B0', 2.4) + L('M52 150 L52.6 182', '#FFF3B0', 1.4))) + P('M38.5 130 H81.5 V136 H38.5 Z', GOLD2),
@@ -244,7 +322,7 @@ const SHOES = {
 };
 const HAND = {
   ball: () => C(94, 138, 10, '#E8772E') + L('M84 138 H104 M94 128 V148 M86.5 131 Q94 138 86.5 145 M101.5 131 Q94 138 101.5 145', '#5B2A0A', 1.2),
-  finger: (c) => `<g transform="translate(80 76) rotate(-16 15 60)" stroke="${c.t2}" stroke-width="2.2" stroke-linejoin="round"><ellipse cx="-1" cy="44" rx="5.5" ry="9" transform="rotate(-30 -1 44)" fill="${c.t1}"/><rect x="0" y="30" width="31" height="36" rx="9" fill="${c.t1}"/><rect x="14" y="16" width="16" height="22" rx="8" fill="${c.t1}"/><rect x="1" y="-2" width="14" height="38" rx="7" fill="${c.t1}"/><rect x="0" y="30" width="31" height="36" rx="9" fill="url(#hf-sh)" stroke="none"/><text x="15.5" y="53" font-family="Arial Black, Impact, sans-serif" font-size="13" font-weight="900" text-anchor="middle" fill="${c.tink}" stroke="none">#1</text></g>`,
+  finger: (c) => `<g transform="translate(80 76) rotate(-16 15 60)" stroke="${c.t2}" stroke-width="2.2" stroke-linejoin="round"><ellipse cx="-1" cy="44" rx="5.5" ry="9" transform="rotate(-30 -1 44)" fill="${c.t1}"/><rect x="0" y="30" width="31" height="36" rx="9" fill="${c.t1}"/><rect x="14" y="16" width="16" height="22" rx="8" fill="${c.t1}"/><rect x="1" y="-2" width="14" height="38" rx="7" fill="${c.t1}"/><rect x="0" y="30" width="31" height="36" rx="9" fill="url(#hf-sh)" stroke="none"/><text x="15.5" y="53" font-family="'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif" font-size="13" font-weight="900" text-anchor="middle" fill="${c.tink}" stroke="none">#1</text></g>`,
   pennant: (c) => `<rect x="90.5" y="62" width="3.6" height="76" rx="1.6" fill="#E2E8F0" ${OUT}/>` + P('M94 64 L94 90 L118 77 Z', c.t1) + `<path d="M94 71 L94 83 L108 77 Z" fill="${c.tacc}"/>`,
   trophy: () => `<g transform="translate(79 94) scale(.82)">` + `<path d="M4 0 H28 V14 C28 22 22 28 16 28 C10 28 4 22 4 14 Z" fill="${GOLD}" ${OUT}/><path d="M4 0 H28 V14 C28 22 22 28 16 28 C10 28 4 22 4 14 Z" fill="url(#hf-sh)"/><path d="M4 4 C-6 4 -4 18 6 18 M28 4 C38 4 36 18 26 18" fill="none" stroke="${GOLD2}" stroke-width="3"/><rect x="13" y="28" width="6" height="8" fill="${GOLD2}"/><rect x="7" y="36" width="18" height="6" rx="2" fill="${GOLD}" ${OUT}/></g>`,
 };
@@ -334,7 +412,7 @@ Object.assign(TOP, {
   boxy: () => P(BOXY, '#E9E4D8') + both(P(SLEEVE_SW, '#E9E4D8')) + L('M49 75 Q60 85 71 75', 'rgba(0,0,0,.35)', 2.6) + L('M44 100 Q46 120 42 134 M76 100 Q74 120 78 134', 'rgba(0,0,0,.12)', 1.4),
   graphic: () => P(TORSO, '#1C1C22') + both(P(SLEEVE_S, '#1C1C22')) + L('M50 75 Q60 84 70 75', 'rgba(255,255,255,.18)', 2)
     + `<circle cx="60" cy="104" r="10" fill="#C8432E"/><path d="M50.4 108 Q60 92 69.6 108" fill="none" stroke="#F1E9D8" stroke-width="2.2"/><path d="M53 112 H67" stroke="#F1E9D8" stroke-width="1.6"/>`
-    + `<text x="60" y="124" font-family="Arial Black, Impact, sans-serif" font-size="5.6" text-anchor="middle" fill="#F1E9D8" letter-spacing=".5">NIGHT GAME</text>`,
+    + `<text x="60" y="124" font-family="'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif" font-size="5.6" text-anchor="middle" fill="#F1E9D8" letter-spacing=".5">NIGHT GAME</text>`,
   washed: () => P(BOXY, '#3A3D44') + both(P(SLEEVE_LW, '#3A3D44') + P(CUFF_LW, '#31343A')) + P('M40 78 C44 68 76 68 80 78 C76 92 44 92 40 78 Z', '#34373D')
     + L('M44 100 L46 114 M74 104 L72 120 M28 96 L26 108', 'rgba(255,255,255,.07)', 6) + L('M55 86 L54 104 M65 86 L66 104', '#C9CED8', 1.4) + P('M44 116 H76 L79 132 Q60 136 41 132 Z', '#34373D'),
   dressshirt: () => P(TORSO, '#F2F1EC') + both(P(SLEEVE_L, '#F2F1EC') + P(CUFF_L, '#FAFAF7') + P('M50 72 L60 80 L55 87 L46 76 Z', '#FAFAF7'))
@@ -407,6 +485,42 @@ Object.assign(WRIST, {
   royalwatch: () => P('M22.2 113 L34.6 115 L34 120 L21.8 118 Z', GOLD) + L('M25 113.6 L24.6 118.6 M28 114 L27.8 119 M31 114.6 L30.8 119.4', GOLD2, .8) + C(28, 116.4, 4.8, GOLD) + `<circle cx="28" cy="116.4" r="3.1" fill="#123C7A"/>` + L('M28 116.4 V114 M28 116.4 L29.8 117.2', '#F5F5F5', .8),
 });
 
+/* ----- tech fleece, Sixside, Courtside shorts, duffel, swingman ----- */
+const TF2 = '#6F747B', ZIP = '#2A2D33';
+const chevron = (x, y) => L(`M${x} ${y} l2 2.6 l3 -4`, 'rgba(255,255,255,.6)', 1.1);
+const courtside = (body, panel, trim) => () => both(P(LEG_SKIN, 'var(--sk)')) + legs(body, 166, both(L('M41.2 132 L42.2 165', panel, 4.2)
+  + L('M45 136 V160 M49 136 V161 M53 136 V161 M57 136 V160', 'rgba(255,255,255,.16)', 1.2).replace('fill="none"', 'fill="none" stroke-dasharray=".1 2.2"') + L('M42.2 161.6 L58.6 161.8', trim, 1.6)))
+  + P('M38.5 128.5 H81.5 V136 H38.5 Z', panel) + L('M38.5 132.2 H81.5', trim, 1.2) + `<circle cx="47.4" cy="154" r="2.6" fill="${GOLD}" stroke="${GOLD2}" stroke-width=".8"/>`;
+Object.assign(TOP, {
+  techhood: () => P(TORSO, '#8A8F96') + both(P(SLEEVE_L, '#8A8F96') + P(CUFF_L, TF2) + L('M37 96 Q47 92 53 100 Q56.6 110 56 134', 'rgba(0,0,0,.22)', 1.2))
+    + P('M42 78 C46 70 74 70 78 78 C75 88 45 88 42 78 Z', TF2) + P('M37 128 Q60 134 83 128 L83 134 Q60 140 37 134 Z', TF2)
+    + L('M60 82 V136', ZIP, 1.6) + `<rect x="58.8" y="84" width="2.4" height="5" rx=".8" fill="#C9CED8"/>` + L('M66 93 L74.4 89', ZIP, 1.4) + chevron(43, 91),
+  sixhood: () => P(BOXY, '#141418') + both(P(SLEEVE_LW, '#141418') + P(CUFF_LW, '#0E0E12')) + P('M40 78 C44 67 76 67 80 78 C76 93 44 93 40 78 Z', '#0E0E12')
+    + L('M55 87 L54 104 M65 87 L66 104', GOLD, 1.2) + `<path d="M54.6 96 H65.4 V103 Q65.4 108.4 60 110.6 Q54.6 108.4 54.6 103 Z" fill="none" stroke="${GOLD}" stroke-width="1.4"/><text x="60" y="106.2" font-family="Georgia, serif" font-size="8" font-weight="700" text-anchor="middle" fill="${GOLD}">6</text>`
+    + P('M44 116 H76 L79 132 Q60 136 41 132 Z', '#0E0E12') + P('M33 132 Q60 139 87 132 L87 138 Q60 145 33 138 Z', '#0E0E12'),
+  swingman: (c, h, skin) => `<path d="M45 76 Q47.6 70.6 51 74 Q60 92 69 74 Q72.4 70.6 75 76 L83 86 L84 112 L83 131 Q60 137 37 131 L36 112 L37 86 Z" fill="${c.t1}" ${OUT}/><path d="M45 76 Q47.6 70.6 51 74 Q60 92 69 74 Q72.4 70.6 75 76 L83 86 L84 112 L83 131 Q60 137 37 131 L36 112 L37 86 Z" fill="url(#hf-sh)"/>`
+    + L('M51 74 Q60 92 69 74', c.t2, 2.6) + L('M45 76 Q41 80 37 86 M75 76 Q79 80 83 86', c.t2, 2.6) + L('M37.4 128.6 Q60 134.4 82.6 128.6', c.t2, 2.2)
+    + `<text x="60" y="118" font-family="'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif" font-size="20" font-weight="900" text-anchor="middle" fill="${c.tink}" stroke="${c.t2}" stroke-width="1">8</text>`,
+});
+Object.assign(OUTER, {
+  sixvarsity: () => P(JACKET, '#141418') + both(P(SLEEVE_L, '#E9E4D8') + P(CUFF_L, '#141418') + L('M22.6 115 L34.6 117', GOLD, 1.2) + L('M26 88 Q24.4 100 23.6 110', 'rgba(255,255,255,.35)', 2))
+    + P('M46 74 Q60 82 74 74 L74 79 Q60 87 46 79 Z', '#141418') + L('M46.6 77 Q60 84.6 73.4 77', GOLD, 1.1) + P('M35 131 Q60 138 85 131 L85 139 Q60 145 35 139 Z', '#141418') + L('M35 134.6 Q60 141.4 85 134.6', GOLD, 1.1)
+    + L('M60 82 V136', 'rgba(255,255,255,.4)', 1.3) + C(46, 96, 6, '#141418', `stroke="${GOLD}"`) + `<text x="46" y="99.4" font-family="Georgia, serif" font-size="9" font-weight="700" text-anchor="middle" fill="${GOLD}">6</text>`,
+});
+Object.assign(BOTTOM, {
+  techjog: () => legs('#8A8F96', 190, both(L('M42 134 Q50 150 46 172', 'rgba(0,0,0,.2)', 1.2) + L('M43 140 L50 150', ZIP, 1.3) + P('M42.4 183 L58.6 183 L58.5 190 L42 190 Z', TF2)))
+    + P('M38.5 130 H81.5 V136 H38.5 Z', TF2) + L('M56 132 L55 140 M64 132 L65 140', '#E5E9F0', 1.1) + chevron(66, 142),
+  cs_red: courtside('#B3202A', '#111114', '#F4F4F2'),
+  cs_purple: courtside('#4B2A7B', '#E0B43A', '#F4F4F2'),
+  cs_green: courtside('#1E6B45', '#F4F4F2', '#111114'),
+  cs_royal: courtside('#1F4FA8', '#F4F4F2', '#C8102E'),
+});
+Object.assign(HAND, {
+  duffel: () => L('M82 132 Q92 114 102 132', '#3B2A1A', 2.6) + P('M72 131 H112 Q116 142 112 154 H72 Q68 142 72 131 Z', MONO)
+    + monoDots([[78, 137], [86, 136], [94, 136], [102, 136], [108, 138], [80, 146], [88, 147], [96, 147], [104, 146]])
+    + P('M72 131 H77 V154 H72 Q68 142 72 131 Z', '#3B2A1A') + P('M107 131 H112 Q116 142 112 154 H107 Z', '#3B2A1A') + L('M77 134 H107', GOLD, 1.2),
+});
+
 /** Returns the SVG markup for a character. vb overrides the view box (used for shop previews and busts). */
 export function avatarSvg(av, team, vb) {
   const c = palette(team);
@@ -414,7 +528,7 @@ export function avatarSvg(av, team, vb) {
   const skin = SKINS[av.skin] ?? SKINS[2];
   const hair = HAIR_COLORS[av.hairColor] ?? HAIR_COLORS[0];
   const hd = eq.hair || 'short';
-  const pick = (map, id, fallback) => (map[id] ? map[id](c, hair, skin) : fallback ? map[fallback](c, hair, skin) : '');
+  const pick = (map, id, fallback) => { const use = map[id] ? id : fallback; return use && map[use] ? tint(map[use](c, hair, skin), use, av.col && av.col[use]) : ''; };
   const sk = (s) => s.replace(/var\(--sk\)/g, skin);
   const body = BODIES[av.body ?? 1] || BODIES[1];
   const sx = (k) => `translate(60 0) scale(${k} 1) translate(-60 0)`;
@@ -423,13 +537,24 @@ export function avatarSvg(av, team, vb) {
   // a closed fist with a thumb, not a ball
   const FIST = 'M22.4 120.6 L34 121.6 Q34.8 127 33.2 130.4 Q30.6 133.4 27 133 Q23.4 132.4 22.4 128.6 Q21.8 124.6 22.4 120.6 Z';
   const hand = P(FIST, skin) + L('M30.6 123.4 Q33.4 125 32.4 128.6', 'rgba(0,0,0,.28)', 1) + L('M24 127.6 H30', 'rgba(0,0,0,.14)', 1);
-  const muscle = body.up >= 1.1 ? L('M26.6 86 Q29.6 92 28.6 100', 'rgba(0,0,0,.16)', 1.2) : '';
+  const muscle = L('M25.4 84.6 Q29.2 87.6 31.4 86', 'rgba(0,0,0,.12)', 1.1) + L('M24.6 96 Q28.4 100.6 26.6 105.6', `rgba(0,0,0,${body.up >= 1.1 ? .2 : .1})`, 1.2) + L('M24.4 106.4 Q27 107.6 29.4 106.8', 'rgba(0,0,0,.12)', 1);
   const out = [];
   out.push(`<svg viewBox="${vb || '-12 12 144 202'}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="filter:saturate(.82) contrast(1.04)">`, DEFS);
   out.push(LOW('<ellipse cx="60" cy="208" rx="38" ry="5" fill="rgba(0,0,0,.3)"/>'));
   out.push(UP(pick(BACK, eq.back)));
   out.push(`<g transform="translate(60 76) scale(.76 .8) translate(-60 -76)">${HAIR_BACK[hd] ? HAIR_BACK[hd](hair) : ''}</g>`);
-  out.push(LOW(sk(both(P('M41 128 L59 128 L58 194 L43 194 Z', skin))) + sk(pick(SHOES, eq.shoes, 'sneakers')) + sk(pick(BOTTOM, eq.bottom, 'jeans'))));
+  const lean = (s) => `<g transform="rotate(2.4 50 130)">${s}</g>`;
+  const shift = (s) => `<g transform="translate(-2.9 .1)">${s}</g>`;
+  let lower = '';
+  try {
+    both = (s) => lean(s) + M(lean(s));
+    const skinLegs = both(P(LEG_SKIN, skin) + L('M44.4 160 Q50 162.6 55.8 160', 'rgba(0,0,0,.14)', 1.1) + L('M44 170 Q46 176 45.4 184', 'rgba(0,0,0,.08)', 1.4));
+    both = (s) => shift(s) + M(shift(s));
+    const shoes = sk(pick(SHOES, eq.shoes, 'sneakers'));
+    both = (s) => lean(s) + M(lean(s));
+    lower = sk(skinLegs) + shoes + sk(pick(BOTTOM, eq.bottom, 'jeans'));
+  } finally { both = BOTH; }
+  out.push(LOW(lower));
   const upper = [];
   upper.push(both(P(ARM, skin) + muscle) + both(hand));
   // neck with a little trapezius slope into the shoulders
@@ -476,6 +601,7 @@ export function renderAvatar(av = getState().avatar, team = avatarTeam(av), cls 
 const BUST = '20 12 80 80';
 const VB = { hair: BUST, hat: BUST, face: BUST, beard: BUST, ear: BUST, top: '0 62 120 100', outer: '0 62 120 120', scarf: '8 58 104 80', chain: '20 60 80 66', wrist: '4 92 48 48', bottom: '16 118 88 96', shoes: '14 164 92 52', back: '-12 12 144 202', hand: '-12 12 144 202' };
 /** Preview of just one item on the current character, zoomed to where it is worn. */
-export function previewSvg(item, av = getState().avatar, team = avatarTeam(av)) {
-  return avatarSvg({ ...av, eq: { ...av.eq, [item.slot]: item.id } }, team, VB[item.slot]);
+export function previewSvg(item, av = getState().avatar, team = avatarTeam(av), ci) {
+  const col = ci == null ? av.col : { ...(av.col || {}), [item.id]: ci };
+  return avatarSvg({ ...av, col, eq: { ...av.eq, [item.slot]: item.id } }, team, VB[item.slot]);
 }

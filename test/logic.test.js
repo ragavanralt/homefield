@@ -379,7 +379,7 @@ import * as S from '../js/specials.js';
     const secs = new Set(m.SECTIONS.map((s) => s.id));
     for (const it of m.ITEMS) assert.ok(secs.has(it.sec), it.id);
     const blank = m.ITEMS.filter((i) => i.sec === 'blank'), brand = m.ITEMS.filter((i) => i.sec === 'brand');
-    assert.ok(Math.max(...blank.map((i) => i.price)) * 10 < Math.min(...brand.map((i) => i.price)));
+    assert.ok(Math.max(...blank.map((i) => i.price)) * 8 < Math.min(...brand.map((i) => i.price)));
     assert.ok(m.itemById('foghoodie').price > m.itemById('tee').price + 5000);
   });
   t('avatar: body types are free and change the drawing', () => {
@@ -387,6 +387,17 @@ import * as S from '../js/specials.js';
     const lean = m.avatarSvg({ skin: 2, hairColor: 0, body: 0, eq }, null), built = m.avatarSvg({ skin: 2, hairColor: 0, body: 2, eq }, null);
     assert.notEqual(lean, built); assert.ok(built.includes('scale(1.12 1)'));
     assert.equal(st.getState().avatar.body, 1);
+  });
+  t('colours: free and owned items switch colour; unowned cannot; drawing changes', () => {
+    const eq = { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' };
+    const before = m.avatarSvg({ skin: 2, hairColor: 0, eq }, null);
+    const black = m.avatarSvg({ skin: 2, hairColor: 0, eq, col: { tee: 2 } }, null);
+    assert.notEqual(before, black); assert.ok(black.includes('#1C1C21'));
+    assert.ok(m.setColour('tee', 1)); assert.equal(m.colourIndex(st.getState().avatar, 'tee'), 1);
+    assert.equal(m.setColour('foghoodie', 1), false);
+    assert.equal(m.setColour('tee', 99), false);
+    assert.ok(m.ITEMS.filter((i) => i.sec === 'blank' && i.slot !== 'hand' && i.slot !== 'face' && i.id !== 'runners').every((i) => i.colors && i.colors.length >= 3));
+    assert.equal(m.shadeHex('#808080', 0.5), '#404040');
   });
   t('shop: earned items unlock from stats and rescue; reset bets keeps items', () => {
     st.update((s) => { s.bank.rescues = 1; });

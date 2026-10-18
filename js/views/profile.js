@@ -3,7 +3,7 @@ import { h, clear, toast } from '../ui.js';
 import { getState, getBank, myTeams, setAvatar, onSlipChange } from '../store.js';
 import { pageHead } from '../components.js';
 import { levelFor, rankFor, betStats } from '../bets.js';
-import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, syncUnlocks, renderAvatar, avatarTeam, previewSvg } from '../avatar.js';
+import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, syncUnlocks, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
@@ -12,6 +12,7 @@ export async function render(root) {
   if (unlocked.length) toast(`New item unlocked: ${unlocked.map((i) => itemById(i)?.name).join(', ')}`);
   let sec = 'team';
   let only = false;
+  let picking = null; // item id whose colour menu is open
   const host = h('div', { class: 'profile' });
   root.append(pageHead('Your fan', 'Dress your character with coins you win. Looks only. Nothing here changes your odds.'), host);
 
@@ -56,6 +57,7 @@ export async function render(root) {
       tabs, h('p', { class: 'muted pf-blurb' }, cur.blurb), body);
 
     host.append(left, right);
+    if (picking) host.append(colourSheet(itemById(picking), av, team));
 
     host.append(h('section', { class: 'card pf-wide' }, h('h2', { class: 'card-h' }, 'Earned items'),
       h('p', { class: 'muted' }, 'These cannot be bought. Do the thing and they unlock.'),
@@ -75,14 +77,42 @@ export async function render(root) {
     else if (it.ach) act = h('small', null, it.ach);
     else act = h('button', { type: 'button', class: 'btn small main buy', 'data-id': it.id, disabled: bank.coins < price ? '' : null, onclick: () => {
       const r = buy(it.id);
-      if (r.ok) toast(`Bought ${it.name}`); else toast(r.why === 'coins' ? 'Not enough coins yet' : 'Cannot buy that');
+      if (r.ok) { toast(`Bought ${it.name}`); if (it.colors) picking = it.id; } else toast(r.why === 'coins' ? 'Not enough coins yet' : 'Cannot buy that');
       draw();
     } }, h('i', { class: 'coin' }), sale ? h('s', null, fmt(it.price)) : null, ' ' + fmt(price));
     return h('article', { class: `item t-${it.tier}` + (worn ? ' worn' : '') + (owned ? ' owned' : ''), 'data-item': it.id },
       svg,
       h('div', { class: 'it-n' }, it.name),
       h('small', { class: 'it-t' }, TIERS[it.tier].label),
+      it.colors ? colourDots(it, av, owned) : null,
       act);
+  }
+
+  // Small swatches on the card. Owned items switch colour right there; the + opens the full menu.
+  function colourDots(it, av, owned) {
+    const cur = colourIndex(av, it.id);
+    const shown = it.colors.slice(0, 5);
+    return h('div', { class: 'it-cols' + (owned ? ' can' : '') },
+      shown.map((col, i) => owned
+        ? h('button', { type: 'button', class: 'dot' + (i === cur ? ' on' : ''), style: { background: col.k }, title: col.n, 'aria-label': `${it.name} in ${col.n}`, onclick: () => { setColour(it.id, i); draw(); } })
+        : h('i', { class: 'dot', style: { background: col.k }, title: col.n })),
+      owned ? h('button', { type: 'button', class: 'dot more', 'aria-label': `All colours for ${it.name}`, onclick: () => { picking = it.id; draw(); } }, '+')
+        : h('small', null, `${it.colors.length} colours`));
+  }
+
+  // The colour menu: opens after you buy something that comes in colours, or from the + on a card.
+  function colourSheet(it, av, team) {
+    const cur = colourIndex(av, it.id);
+    const close = () => { picking = null; draw(); };
+    const pv = document.createElement('span');
+    pv.className = 'avatar cs-pv'; pv.innerHTML = previewSvg(it, av, team, cur);
+    return h('div', { class: 'cs-back', onclick: (e) => { if (e.target === e.currentTarget) close(); } },
+      h('div', { class: 'cs-panel', role: 'dialog', 'aria-label': `Colours for ${it.name}` },
+        h('div', { class: 'cs-h' }, h('div', null, h('small', null, 'Pick a colour'), h('div', { class: 'cs-n' }, it.name)), h('button', { type: 'button', class: 'btn small', id: 'cs-done', onclick: close }, 'Done')),
+        pv,
+        h('div', { class: 'cs-grid' }, it.colors.map((col, i) => h('button', { type: 'button', class: 'cs-sw' + (i === cur ? ' on' : ''), 'data-ci': i, onclick: () => { setColour(it.id, i); draw(); } },
+          h('i', { style: { background: col.k } }), h('small', null, col.n)))),
+        h('small', { class: 'muted' }, 'Every colour is included. Switch any time.')));
   }
 
   draw();
