@@ -362,7 +362,7 @@ import * as S from '../js/specials.js';
     assert.ok(equip('buzz')); assert.equal(st.getState().avatar.eq.hair, 'buzz');
     assert.equal(unequip('hair'), false);
   });
-  t('shop: daily deal is 20% off and stable within a day', () => {
+  t('shop: daily deal is on sale and stable within a day', () => {
     const d = dealToday(new Date(2026, 9, 18));
     assert.equal(d.id, dealToday(new Date(2026, 9, 18)).id);
     assert.ok(priceOf(d, new Date(2026, 9, 18)) < d.price);
@@ -406,6 +406,80 @@ import * as S from '../js/specials.js';
     st.resetBets();
     assert.ok(st.getState().avatar.owned.includes('afro'));
     assert.equal(st.getBank().coins, 1000);
+  });
+}
+
+// ---- quests, deals and the daily/weekly refresh ----
+{
+  const st = await import('../js/store.js');
+  const gen = await import('../js/live-gen.js');
+  const per = await import('../js/period.js');
+  const av = await import('../js/avatar.js');
+  const dayAt = (s) => per.parseDay(s);
+  t('period: weeks start on Friday', () => {
+    assert.equal(per.weekKey(dayAt('2026-10-16')), '2026-10-16'); // Friday
+    assert.equal(per.weekKey(dayAt('2026-10-18')), '2026-10-16'); // Sunday
+    assert.equal(per.weekKey(dayAt('2026-10-22')), '2026-10-16'); // Thursday
+    assert.equal(per.weekKey(dayAt('2026-10-23')), '2026-10-23'); // next Friday
+  });
+  t('gen: same date, same quests; valid; three per day and week; one weekly item', () => {
+    const a = gen.genLive('2026-10-18'), b = gen.genLive('2026-10-18');
+    assert.deepEqual(a, b);
+    assert.equal(a.daily.quests.length, 3); assert.equal(a.weekly.quests.length, 3);
+    assert.ok(gen.validQuests(a.daily.quests) && gen.validQuests(a.weekly.quests));
+    assert.equal(new Set(a.daily.quests.map((x) => x.metric)).size, 3);
+    assert.ok(a.weekly.quests.filter((x) => x.item).length === 1 && av.itemById(a.weekly.quests[2].item));
+    assert.ok(a.weekly.quests.every((x) => x.coins >= 250) && a.daily.quests.every((x) => x.coins <= 300));
+    assert.equal(a.weekly.featured.length, 6);
+  });
+  t('gen: deal is a real item, changes every day, and a broken file is rejected', () => {
+    let prev = '';
+    for (let i = 1; i <= 40; i++) {
+      const d = gen.genDaily(per.addDay('2026-10-01', i));
+      assert.ok(av.itemById(d.deal.itemId) && d.deal.pct >= 15 && d.deal.pct <= 30);
+      assert.notEqual(d.deal.itemId, prev); prev = d.deal.itemId;
+    }
+    assert.equal(gen.validQuests([{ id: 'x', metric: 'nope', target: 1, coins: 1 }]), false);
+    assert.equal(gen.validQuests([]), false);
+  });
+  t('deal: override from the data file applies on its own day only', () => {
+    const day = new Date(2026, 9, 18, 12);
+    av.setDealOverride({ date: '2026-10-18', itemId: 'crown', pct: 40 });
+    assert.equal(av.dealToday(day).id, 'crown');
+    assert.equal(av.priceOf(av.itemById('crown'), day), Math.round(av.itemById('crown').price * 0.6 / 10) * 10);
+    assert.notEqual(av.dealToday(new Date(2026, 9, 19, 12)).id, undefined);
+    av.setDealOverride(null);
+  });
+  t('quests: progress counts, claims once, pays coins and an item, resets by day and week', () => {
+    st.resetAll();
+    const fri = new Date(2026, 9, 16, 9), sat = new Date(2026, 9, 17, 9), nextFri = new Date(2026, 9, 23, 9);
+    const dq = { id: 'dt', metric: 'bets_placed', target: 2, coins: 100 };
+    const wq = { id: 'wt', metric: 'bets_placed', target: 3, coins: 400, item: 'afro' };
+    st.track('bets_placed', 1, null, fri);
+    assert.equal(st.claimQuest('daily', dq, fri).ok, false);
+    st.track('bets_placed', 1, null, fri);
+    const c0 = st.getBank().coins;
+    const r = st.claimQuest('daily', dq, fri);
+    assert.ok(r.ok && st.getBank().coins === c0 + 100);
+    assert.equal(st.claimQuest('daily', dq, fri).ok, false);
+    assert.equal(st.questCount('daily', 'bets_placed', sat), 0); // new day, daily resets
+    assert.equal(st.questCount('weekly', 'bets_placed', sat), 2); // same week keeps counting
+    st.track('bets_placed', 1, null, sat);
+    const w = st.claimQuest('weekly', wq, sat);
+    assert.ok(w.ok && w.item === 'afro' && st.getState().avatar.owned.includes('afro'));
+    const c1 = st.getBank().coins;
+    assert.equal(st.questCount('weekly', 'bets_placed', nextFri), 0); // new week
+    st.track('bets_placed', 3, null, nextFri);
+    const again = st.claimQuest('weekly', { ...wq, id: 'wt2' }, nextFri);
+    assert.ok(again.swapped && st.getBank().coins === c1 + 400 + 250); // already owned: extra coins instead
+  });
+  t('quests: keyed counts only once; real actions are counted', () => {
+    st.resetAll();
+    st.track('games_opened', 1, 'nhl:1'); st.track('games_opened', 1, 'nhl:1'); st.track('games_opened', 1, 'nhl:2');
+    assert.equal(st.questCount('daily', 'games_opened'), 2);
+    st.claimDaily(); assert.equal(st.questCount('daily', 'daily_claimed'), 1);
+    st.buyItem('crown', 10); assert.equal(st.questCount('weekly', 'items_bought'), 1);
+    av.equip('crown'); assert.ok(st.questCount('daily', 'outfit_changed') >= 1);
   });
 }
 

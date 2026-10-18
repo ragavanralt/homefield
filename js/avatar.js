@@ -1,8 +1,9 @@
 // Your fan character: a full-body figure with shading and outlines, the item catalog, and the shop rules.
 // Everything here is cosmetic. Nothing changes odds or payouts.
-import { getState, myTeams, buyItem, grantItem, setAvatar } from './store.js';
+import { getState, myTeams, buyItem, grantItem, setAvatar, track } from './store.js';
 import { betStats } from './bets.js';
 import { skinFromColors } from './util.js';
+import { dayKey, seeded } from './period.js';
 
 export const SKINS = ['#E3B85B', '#F0D3B5', '#DDAE86', '#C58B5E', '#A06A44', '#7A4A2E', '#523320'];
 export const HAIR_COLORS = ['#1A1410', '#3D281B', '#6E4A2A', '#B8935A', '#B7BBC4', '#A8402B', '#2C57A8', '#5E3FA6', '#B23F7F', '#2F8A57'];
@@ -188,16 +189,31 @@ export function syncUnlocks() {
   return got;
 }
 
-/** One featured item a day is 20% off. Same item all day, picked from what can be bought. */
-export function dealToday(date = new Date()) {
-  const pool = ITEMS.filter((i) => i.price > 0 && i.price <= 2500);
-  const n = date.getFullYear() * 400 + date.getMonth() * 32 + date.getDate();
-  return pool[(n * 7) % pool.length];
+/** One featured item a day is on sale. The pick is seeded by the date, so it is the same all day and
+ *  never the same item two days running. data/live.json can override it (see setDealOverride). */
+const DEAL_PCTS = [15, 20, 20, 25, 30];
+export function dealFor(day) {
+  const pool = ITEMS.filter((i) => i.price > 0 && i.price <= 2500 && !i.ach);
+  const pick = (d) => pool[Math.floor(seeded('deal:' + d)() * pool.length)];
+  const [y, m, d] = day.split('-').map(Number);
+  const prev = new Date(y, m - 1, d - 1, 12);
+  const yesterday = pick(dayKey(prev));
+  let it = pick(day);
+  if (it.id === yesterday.id) it = pool[(pool.indexOf(it) + 1) % pool.length];
+  return { itemId: it.id, pct: DEAL_PCTS[Math.floor(seeded('pct:' + day)() * DEAL_PCTS.length)] };
 }
+let dealOverride = null;
+export function setDealOverride(o) { dealOverride = o && o.date && o.itemId ? o : null; }
+export function dealInfo(date = new Date()) {
+  const day = dayKey(date);
+  const o = dealOverride && dealOverride.date === day && itemById(dealOverride.itemId) ? dealOverride : null;
+  return o ? { itemId: o.itemId, pct: o.pct || 20, date: day } : { ...dealFor(day), date: day };
+}
+export function dealToday(date = new Date()) { return itemById(dealInfo(date).itemId) || null; }
 export function priceOf(item, date) {
   if (!item.price) return 0;
-  const d = dealToday(date);
-  return d && d.id === item.id ? Math.round((item.price * 0.8) / 10) * 10 : item.price;
+  const d = dealInfo(date);
+  return d.itemId === item.id ? Math.round((item.price * (1 - d.pct / 100)) / 10) * 10 : item.price;
 }
 
 export function buy(id) {
@@ -213,6 +229,7 @@ export function equip(id) {
   const a = getState().avatar;
   if (!item || !a.owned.includes(id)) return false;
   setAvatar((av) => { av.eq[item.slot] = id; });
+  track('outfit_changed');
   return true;
 }
 export function unequip(slot) {

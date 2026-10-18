@@ -16,6 +16,7 @@ const ROUTES = [
   { re: /^\/season$/, view: () => import('./views/season.js'), nav: 'season', params: () => ({}) },
   { re: /^\/profile$/, view: () => import('./views/profile.js'), nav: 'profile', params: () => ({ mode: 'fan' }) },
   { re: /^\/shop$/, view: () => import('./views/profile.js'), nav: 'shop', params: () => ({ mode: 'shop' }) },
+  { re: /^\/quests$/, view: () => import('./views/quests.js'), nav: 'quests', params: () => ({}) },
   { re: /^\/onboarding$/, view: () => import('./views/onboarding.js'), nav: 'none', params: () => ({}) },
   { re: /^\/settings$/, view: () => import('./views/settings.js'), nav: 'settings', params: () => ({}) },
   { re: /^\/check$/, view: () => import('./views/check.js'), nav: 'settings', params: () => ({}) },
@@ -28,6 +29,7 @@ const NAV = [
   { id: 'season', label: 'Season', href: '#/season' },
   { id: 'profile', label: 'Fan', href: '#/profile' },
   { id: 'shop', label: 'Shop', href: '#/shop' },
+  { id: 'quests', label: 'Quests', href: '#/quests' },
   { id: 'settings', label: 'Settings', href: '#/settings' },
 ];
 

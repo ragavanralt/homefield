@@ -1,7 +1,7 @@
 // The game page: story (matchup, recap, win chance with replay), plays, box score, lineups, ask.
 import { h, clear, crest, face, applySkin, errorBox, loading, downloadText, toast, isHidden, reveal, scoreText, poll } from '../ui.js';
 import { CONFIG } from '../config.js';
-import { getState, myTeamIn, markWatched, isWatched, askLeft, useAsk } from '../store.js';
+import { getState, myTeamIn, markWatched, isWatched, askLeft, useAsk, track } from '../store.js';
 import { LEAGUES, groupOf, isSoccer, leagueLabel } from '../leagues.js';
 import { getSummary, rememberGame, recallGame } from '../espn.js';
 import { statusInfo, watchBlock } from '../components.js';
@@ -19,6 +19,7 @@ const titleCase = (s) => String(s || '').replace(/([a-z])([A-Z])/g, '$1 $2').rep
 
 export async function render(root, { league, id }) {
   const key = `${league}:${id}`;
+  track('games_opened', 1, key);
   let data = null;
   let game = recallGame(key) || null;
   let tab = 'story';

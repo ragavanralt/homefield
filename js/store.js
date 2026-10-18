@@ -1,5 +1,6 @@
 // Everything the app remembers lives on this device in localStorage. No accounts.
 import { isSoccer } from './leagues.js';
+import { dayKey, weekKey } from './period.js';
 import { START_COINS, MIN_STAKE, MAX_LEGS, conflicts, parlayDec, xpFor } from './bets.js';
 
 const KEY = 'homefield:v1';
@@ -25,6 +26,7 @@ const fresh = () => ({
   ask: { day: '', n: 0 },
   soccerLeague: 'uefa.champions',
   lastMode: 'classic',
+  quests: { day: '', week: '', daily: { n: {}, once: {}, claimed: [] }, weekly: { n: {}, once: {}, claimed: [] } },
   avatar: { skin: 2, hairColor: 0, body: 1, team: '', col: {}, eq: { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' }, owned: ['short', 'buzz', 'curly', 'tee', 'jeans', 'sneakers'], spent: 0 },
 });
 
@@ -133,6 +135,8 @@ export function placeSlip(now = Date.now()) {
     s.bank.coins -= total;
     s.slip.legs = [];
   });
+  track('bets_placed', made.length);
+  if (mode === 'parlay') track('parlays_placed');
   ping();
   return { ok: true, bets: made, total };
 }
@@ -152,6 +156,7 @@ export function resolveBet(id, results, decision) {
     s.bank.xp += decision.status === 'void' ? 0 : xpFor(b, decision.status === 'won');
     s.notices.push({ id, status: decision.status, payout: decision.payout, stake: b.stake, title: b.mode === 'parlay' ? `${b.legs.length}-leg parlay` : b.legs[0].label });
   });
+  if (decision && decision.status === 'won') track('bets_won');
   ping();
 }
 export function takeNotices() { const n = state.notices; if (n.length) update((s) => { s.notices = []; }); return n; }
@@ -164,6 +169,7 @@ export function claimDaily() {
   const streakDays = b.lastDaily === localDay(y) ? b.dailyStreak + 1 : 1;
   const bonus = 150 + 50 * Math.min(streakDays, 7);
   update((s) => { s.bank.coins += bonus; s.bank.lastDaily = today; s.bank.dailyStreak = streakDays; s.bank.peak = Math.max(s.bank.peak, s.bank.coins); });
+  track('daily_claimed');
   ping();
   return { ok: true, bonus, streakDays };
 }
@@ -175,12 +181,62 @@ export function rescue() {
   ping(); return true;
 }
 
+/* ---------- quests ---------- */
+// Progress is counted by what you do (bets placed, games opened...). What the quests ask for each day and
+// week comes from js/live.js. Counters reset when the day (or the Friday-to-Thursday week) changes.
+const emptyPeriod = () => ({ n: {}, once: {}, claimed: [] });
+function rollQuests(s, now = new Date()) {
+  if (!s.quests || typeof s.quests !== 'object') s.quests = {};
+  const q = s.quests, d = dayKey(now), w = weekKey(now);
+  if (q.day !== d || !q.daily) { q.day = d; q.daily = emptyPeriod(); }
+  if (q.week !== w || !q.weekly) { q.week = w; q.weekly = emptyPeriod(); }
+  return q;
+}
+/** Count something you did. Pass a key to count each thing only once per day and week (a game, say). */
+export function track(metric, n = 1, key = null, now = new Date()) {
+  const q = rollQuests(state, now);
+  for (const p of [q.daily, q.weekly]) {
+    if (key != null) { const k = metric + '|' + key; if (p.once[k]) continue; p.once[k] = 1; }
+    p.n[metric] = (p.n[metric] || 0) + n;
+  }
+  save();
+}
+/** This period's counters, without changing anything. which is 'daily' or 'weekly'. */
+export function questPeriod(which, now = new Date()) {
+  const q = state.quests || {};
+  const ok = which === 'daily' ? q.day === dayKey(now) : q.week === weekKey(now);
+  return ok && q[which] ? q[which] : emptyPeriod();
+}
+export const questCount = (which, metric, now) => questPeriod(which, now).n[metric] || 0;
+export const questDone = (which, quest, now) => questCount(which, quest.metric, now) >= quest.target;
+export const questClaimed = (which, quest, now) => questPeriod(which, now).claimed.includes(quest.id);
+/** Pay out a finished quest: coins, plus an item if it has one (coins instead if you already own it). */
+export function claimQuest(which, quest, now = new Date()) {
+  if (!quest || !quest.id) return { ok: false, why: 'unknown' };
+  if (questClaimed(which, quest, now)) return { ok: false, why: 'claimed' };
+  if (!questDone(which, quest, now)) return { ok: false, why: 'not done' };
+  const out = { ok: true, coins: quest.coins || 0, item: null, swapped: false };
+  update((s) => {
+    const p = rollQuests(s, now)[which];
+    p.claimed.push(quest.id);
+    if (quest.item) {
+      if (s.avatar.owned.includes(quest.item)) { out.coins += 250; out.swapped = true; }
+      else { s.avatar.owned.push(quest.item); out.item = quest.item; }
+    }
+    s.bank.coins += out.coins;
+    s.bank.peak = Math.max(s.bank.peak, s.bank.coins);
+  });
+  ping();
+  return out;
+}
+
 /** Avatar and shop. Cosmetics only. The catalog and prices live in avatar.js; this just moves coins and items. */
 export function buyItem(id, price) {
   const st = state;
   if (st.avatar.owned.includes(id)) return { ok: false, why: 'owned' };
   if (st.bank.coins < price) return { ok: false, why: 'coins' };
   update((s) => { s.bank.coins -= price; s.avatar.owned.push(id); s.avatar.spent = (s.avatar.spent || 0) + price; });
+  track('items_bought');
   ping(); return { ok: true };
 }
 export function grantItem(id) { if (state.avatar.owned.includes(id)) return false; update((s) => { s.avatar.owned.push(id); }); ping(); return true; }
@@ -188,7 +244,7 @@ export function setAvatar(fn) { update((s) => fn(s.avatar)); ping(); }
 
 export const markWatched = (g) => update((s) => {
   if (s.watched[g.key]) delete s.watched[g.key];
-  else s.watched[g.key] = { ts: Date.now(), league: g.league, date: g.date, home: g.home.abbr, away: g.away.abbr, homeScore: g.home.score, awayScore: g.away.score };
+  else track('games_marked', 1, g.key), s.watched[g.key] = { ts: Date.now(), league: g.league, date: g.date, home: g.home.abbr, away: g.away.abbr, homeScore: g.home.score, awayScore: g.away.score };
 });
 export const isWatched = (key) => !!state.watched[key];
 

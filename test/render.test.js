@@ -186,6 +186,21 @@ const teeMore = app().querySelector('[data-item="tee"] .dot.more'); assert.ok(te
 assert.ok(app().querySelector('.cs-panel'), 'colour menu'); app().querySelector('.cs-sw[data-ci="2"]').click(); await sleep(30);
 assert.equal(store.getState().avatar.col.tee, 2); app().querySelector('#cs-done').click(); await sleep(30);
 assert.ok(!app().querySelector('.cs-panel')); ok('colour menu switches a free item colour');
+// quests page: three daily, three weekly, claim pays once
+store.resetAll(); store.setOnboarded();
+text = await visit('#/quests', { wait: 300 });
+assert.equal(app().querySelectorAll('.quest').length, 6, 'six quests'); ok('quests page lists three daily and three weekly');
+{
+  const live = (await import('../js/live.js')).currentLive();
+  const first = live.daily.quests[0];
+  store.track(first.metric, first.target, null);
+  text = await visit('#/quests', { wait: 300 });
+  const btn = app().querySelector(`[data-claim="${first.id}"]`); assert.ok(btn && !btn.disabled, 'claim enabled');
+  const before = store.getBank().coins; btn.click(); await sleep(30);
+  assert.equal(store.getBank().coins, before + first.coins); assert.ok(app().querySelector(`[data-q="${first.id}"].claimed`)); ok('finished quest claims once and pays coins');
+}
+text = await visit('#/shop', { wait: 200 });
+assert.ok(app().querySelector('.featured .item'), 'featured row'); ok('shop shows the weekly featured row');
 text = await visit('#/check', { wait: 100 });
 app().querySelector('#run-check').click(); await sleep(1500);
 assert.ok(app().querySelector('.checklist'), 'check ran'); ok('data check runs');

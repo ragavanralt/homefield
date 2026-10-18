@@ -1,0 +1,71 @@
+{
+  "v": 1,
+  "updated": "2026-10-18",
+  "daily": {
+    "date": "2026-10-18",
+    "quests": [
+      {
+        "id": "d2026-10-18-1",
+        "metric": "shop_visits",
+        "target": 1,
+        "coins": 40,
+        "title": "Check out the shop"
+      },
+      {
+        "id": "d2026-10-18-2",
+        "metric": "parlays_placed",
+        "target": 1,
+        "coins": 120,
+        "title": "Build a parlay"
+      },
+      {
+        "id": "d2026-10-18-3",
+        "metric": "games_opened",
+        "target": 6,
+        "coins": 120,
+        "title": "Open 6 different games"
+      }
+    ],
+    "deal": {
+      "itemId": "hightops",
+      "pct": 25
+    }
+  },
+  "weekly": {
+    "week": "2026-10-16",
+    "endsBefore": "2026-10-23",
+    "quests": [
+      {
+        "id": "w2026-10-16-1",
+        "metric": "games_marked",
+        "target": 5,
+        "coins": 350,
+        "title": "Mark 5 games as watched"
+      },
+      {
+        "id": "w2026-10-16-2",
+        "metric": "parlays_placed",
+        "target": 2,
+        "coins": 500,
+        "title": "Build 2 parlays"
+      },
+      {
+        "id": "w2026-10-16-3",
+        "metric": "bets_won",
+        "target": 5,
+        "coins": 700,
+        "title": "Win 5 bets",
+        "item": "flares"
+      }
+    ],
+    "featured": [
+      "techjog",
+      "paint",
+      "leatherp",
+      "hightops",
+      "carpenter",
+      "braids"
+    ],
+    "note": ""
+  }
+}

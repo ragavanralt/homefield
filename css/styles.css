@@ -597,3 +597,18 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 .tcard .gcard { margin: 0; }
 .tcard .g-main { flex-direction: column; align-items: stretch; gap: 8px; }
 .tcard .g-stat { flex-direction: row; justify-content: space-between; align-items: baseline; gap: 10px; text-align: left; border-top: 1px solid var(--line); padding-top: 8px; }
+
+/* quests */
+.quests { display: grid; gap: 14px; max-width: 720px; }
+.q-bank { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 20px; } .q-bank small { color: var(--muted); font-weight: 500; font-size: 13px; }
+.quest-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.quest { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.quest.ready { border-color: color-mix(in srgb, var(--volt) 60%, var(--line)); }
+.quest.claimed { opacity: .6; }
+.q-main { display: grid; gap: 6px; min-width: 0; } .q-main small { color: var(--muted); }
+.q-rew { display: grid; justify-items: end; gap: 2px; } .q-rew small { color: var(--muted); }
+.q-coins { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; } .q-coins .coin { width: 16px; height: 16px; }
+.q-done { color: var(--muted); font-size: 13px; }
+@media (max-width: 560px) { .quest { grid-template-columns: minmax(0, 1fr) auto; } .q-rew { grid-column: 1; justify-items: start; grid-row: 2; } .quest .btn, .q-done { grid-row: 1 / span 2; grid-column: 2; } }
+.featured { margin-bottom: 8px; }
+.quest .xp { background: var(--line); }

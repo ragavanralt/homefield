@@ -1,15 +1,18 @@
 // Your fan: customise the character, spend coins in the shop, wear what you own.
 import { h, clear, toast } from '../ui.js';
-import { getState, getBank, myTeams, setAvatar, onSlipChange } from '../store.js';
+import { getState, getBank, myTeams, setAvatar, onSlipChange, track } from '../store.js';
+import { ensureLive } from '../live.js';
 import { pageHead } from '../components.js';
 import { levelFor, rankFor, betStats } from '../bets.js';
-import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, syncUnlocks, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
+import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
 // Two pages share this file: #/profile (your character and closet) and #/shop (buying).
 export async function render(root, params = {}) {
   const shop = params.mode === 'shop';
+  const live = await ensureLive();
+  if (shop) track('shop_visits', 1, 'v');
   const unlocked = syncUnlocks();
   if (unlocked.length) toast(`New item unlocked: ${unlocked.map((i) => itemById(i)?.name).join(', ')}`);
   let sec = 'team';
@@ -57,13 +60,15 @@ export async function render(root, params = {}) {
     }
     if (!items.length) body.append(h('p', { class: 'muted' }, shop ? 'You do not own anything here yet.' : 'Nothing yet.'));
     const dealSec = deal && SECTIONS.find((s) => s.id === deal.sec);
+    const featured = (live.weekly.featured || []).map(itemById).filter(Boolean);
     const right = !shop ? h('section', { class: 'card pf-shop pf-closet' },
       h('div', { class: 'pf-shop-h' }, h('h2', { class: 'card-h' }, 'Your closet', h('small', null, `${av.owned.length} items`)), h('a', { class: 'btn main', href: '#/shop' }, 'Go to the shop')),
       h('p', { class: 'muted pf-blurb' }, 'Tap Wear to put something on. The dots switch colours.'), body)
       : h('section', { class: 'card pf-shop' },
       h('div', { class: 'pf-shop-h' }, h('h2', { class: 'card-h' }, 'Shop'),
         h('label', { class: 'pf-only' }, h('input', { type: 'checkbox', id: 'pf-owned', checked: only ? '' : null, onchange: (e) => { only = e.target.checked; draw(); } }), ' Owned only')),
-      deal ? h('div', { class: 'deal' }, h('i', null, 'Today only:'), ` ${deal.name} is 20% off (${fmt(priceOf(deal))} coins, normally ${fmt(deal.price)}). It is in ${dealSec ? dealSec.label : 'the shop'}.`) : null,
+      deal ? h('div', { class: 'deal' }, h('i', null, 'Today only:'), ` ${deal.name} is ${dealInfo().pct}% off (${fmt(priceOf(deal))} coins, normally ${fmt(deal.price)}). It is in ${dealSec ? dealSec.label : 'the shop'}.`) : null,
+      featured.length ? h('div', { class: 'featured' }, h('h3', { class: 'shop-slot' }, 'Featured this week', h('small', null, 'changes every Friday')), h('div', { class: 'shop-grid' }, featured.map((it) => itemCard(it, av, bank, team, deal)))) : null,
       tabs, h('p', { class: 'muted pf-blurb' }, cur.blurb), body);
 
     host.append(left, right);
