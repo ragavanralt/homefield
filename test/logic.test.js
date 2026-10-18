@@ -552,4 +552,24 @@ import * as S from '../js/specials.js';
   });
 }
 
+// ---- Sleeper lineups ----
+{
+  const sl = await import('../js/sleeper.js');
+  const P = (id, name, team, pos, dp, o, extra = {}) => ({ player_id: id, full_name: name, team, position: pos, depth_chart_position: dp, depth_chart_order: o, active: true, number: 7, ...extra });
+  const raw = {};
+  [['1', 'Quarter Back', 'WAS', 'QB', 'QB', 1], ['2', 'Backup QB', 'WAS', 'QB', 'QB', 2], ['3', 'Left Tackle', 'WAS', 'OT', 'LT', 1], ['4', 'Wide One', 'WAS', 'WR', 'LWR', 1], ['5', 'Tackler', 'WAS', 'DE', 'LDE', 1], ['6', 'Corner', 'WAS', 'CB', 'LCB', 1],
+    ['7', 'Other Team QB', 'DAL', 'QB', 'QB', 1], ['8', 'Retired', 'WAS', 'RB', 'RB', 1, { active: false }], ['9', 'Free Agent', null, 'WR', 'WR', 1]].forEach(([i, n, t_, p, dp, o, e]) => { raw[i] = P(i, n, t_, p, dp, o, e || {}); });
+  t('sleeper: trims the list, matches ESPN team spellings, first name per spot', () => {
+    const rows = sl.slim(raw);
+    assert.equal(rows.length, 7); // no free agent, no retired
+    const r = sl.buildLineup(rows, 'nfl', 'WSH'); // ESPN says WSH, Sleeper says WAS
+    assert.deepEqual(r.map((g) => g.name), ['Offense', 'Defense']);
+    assert.deepEqual(r[0].players.map((p) => p.name), ['Quarter Back', 'Left Tackle', 'Wide One']);
+    assert.equal(r[1].players.length, 2);
+    assert.ok(r[0].players[0].face.includes('sleepercdn.com/content/nfl/'));
+    assert.deepEqual(sl.buildLineup(rows, 'nfl', 'PHI'), []);
+    assert.ok(sl.sameTeam('GS', 'GSW', 'nba') && sl.sameTeam('TB', 'TBL', 'nhl') && !sl.sameTeam('LA', 'LV', 'nfl'));
+  });
+}
+
 console.log(`\n${passed} checks passed`);

@@ -4,6 +4,7 @@ import { CONFIG } from '../config.js';
 import { getState, myTeamIn, markWatched, isWatched, track } from '../store.js';
 import { LEAGUES, groupOf, isSoccer, leagueLabel } from '../leagues.js';
 import { getSummary, rememberGame, recallGame, getDepthChart } from '../espn.js';
+import { getSleeperLineup } from '../sleeper.js';
 import { statusInfo, watchBlock } from '../components.js';
 import { marketTabs } from '../markets.js';
 import { betCard } from '../bankroll.js';
@@ -328,26 +329,31 @@ export async function render(root, { league, id }) {
     const wrap = h('div', { class: 'stack gcols' });
     const probables = sides.map((sd) => game[sd].probable ? [sd, game[sd].probable] : null).filter(Boolean);
     if (probables.length) wrap.append(card('Probable starters', h('div', { class: 'probs' }, probables.map(([sd, p]) => h('div', { class: 'prob' }, face(p, league, 44), h('div', null, h('small', null, game[sd].name), h('div', null, p.name)))))));
-    if (!L && league === 'nfl') { // football feeds carry no starters, so use each team's depth chart
+    if (!L && ['nfl', 'nba', 'nhl', 'mlb'].includes(league)) { // these feeds carry no starters before the game, so use Sleeper's expected lineups
       const holder = h('div', { class: 'stack gcols' });
       const drawDepth = () => {
         clear(holder);
         const person = (p) => h('li', { class: 'pl-row' }, face(p, league, 34), h('span', { class: 'jn' }, p.jersey ? '#' + p.jersey : ''), h('span', { class: 'pn' }, p.name), p.injury ? h('small', { class: 'inj' }, String(p.injury)) : null, p.pos ? h('small', null, p.pos) : null);
         for (const sd of sides) {
-          const rows = depthCache.get(`${league}:${game[sd].id}`);
-          holder.append(card(null, h('div', { class: 'ldr-h' }, crest(game[sd], 26), h('span', null, game[sd].name), h('small', null, ' · expected starters')),
-            rows === undefined ? loading('Loading depth chart')
-              : !rows || !rows.length ? note('No depth chart is posted for this team yet.')
-                : rows.map((grp) => h('div', null, h('h4', { class: 'dc-h' }, grp.name), h('ul', { class: 'pl-list' }, grp.players.map(person))))));
+          const res = depthCache.get(`${league}:${game[sd].id}`);
+          holder.append(card(null, h('div', { class: 'ldr-h' }, crest(game[sd], 26), h('span', null, game[sd].name), h('small', null, ' · expected')),
+            res === undefined ? loading('Loading expected lineup')
+              : !res ? note('No expected lineup is available for this team yet.')
+                : [h('small', { class: 'muted' }, `Source: ${res.src}`), ...res.groups.map((grp) => h('div', null, h('h4', { class: 'dc-h' }, grp.name), h('ul', { class: 'pl-list' }, grp.players.map(person))))]));
         }
       };
       drawDepth();
+      const loadSide = async (sd) => {
+        try { const s = await getSleeperLineup(league, game[sd].abbr); if (s && s.length) return { src: 'Sleeper', groups: s }; } catch (e) { /* fall through */ }
+        if (league === 'nfl') { try { const d = await getDepthChart(league, game[sd].id); if (d.length) return { src: 'ESPN depth chart', groups: d }; } catch (e) { /* none */ } }
+        return null;
+      };
       sides.forEach((sd) => {
         const k = `${league}:${game[sd].id}`;
         if (depthCache.has(k)) return;
-        getDepthChart(league, game[sd].id).then((r) => depthCache.set(k, r)).catch(() => depthCache.set(k, null)).then(() => { if (tab === 'lineups') drawDepth(); });
+        loadSide(sd).then((r) => depthCache.set(k, r)).then(() => { if (tab === 'lineups') drawDepth(); });
       });
-      wrap.append(holder, note('Football feeds do not publish game-day starters, so this is each team\'s depth chart: the first name listed at each spot. Injury tags come from the feed.'));
+      wrap.append(holder, note('These are expected lineups from depth charts, not the official game-day list. They fill in with the real starters once the feed posts them.'));
       return wrap;
     }
     if (!L) {

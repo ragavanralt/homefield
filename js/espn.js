@@ -254,7 +254,7 @@ const POS = {
   Defense: new Set(['DE', 'DT', 'NT', 'DL', 'LB', 'OLB', 'ILB', 'MLB', 'CB', 'S', 'SS', 'FS', 'DB', 'EDGE']),
   'Special teams': new Set(['K', 'P', 'PK', 'LS', 'KR', 'PR', 'H']),
 };
-function posGroup(...cands) {
+export function posGroup(...cands) {
   for (const raw of cands) {
     const a = String(raw || '').toUpperCase().replace(/[0-9]/g, '');
     if (!a) continue;
