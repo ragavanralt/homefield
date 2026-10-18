@@ -3,6 +3,8 @@
 import { CONFIG } from './config.js';
 import { LEAGUES, isSoccer } from './leagues.js';
 import { num } from './util.js';
+import { staticTeams } from './teams-static.js';
+import { refreshFollowed } from './store.js';
 
 /* ---------- fetch with a small cache ---------- */
 const cache = new Map();
@@ -324,7 +326,7 @@ export function normStandings(j) {
 export async function getScoreboard(league, ymdStr, ttl = 15000) {
   const j = await getJSON(scoreboardUrl(league, ymdStr), ttl);
   const games = (j.events || []).map((e) => normEvent(e, league));
-  games.forEach(rememberGame);
+  games.forEach((g) => { rememberGame(g); refreshFollowed(g); });
   return games;
 }
 
@@ -346,6 +348,8 @@ const mapTeams = (league, raw) => raw.map((x) => x.team || x).filter((t) => t &&
 
 /** Team list. Tries a few addresses because the feed is picky; the standings table is the last resort. */
 export async function getTeams(league) {
+  const built = staticTeams(league);
+  if (built) return built;
   const L = LEAGUES[league];
   const tries = [
     () => getJSON(teamsUrl(league), 3600000),

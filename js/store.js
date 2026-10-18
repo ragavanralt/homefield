@@ -47,6 +47,20 @@ export function follow(team) {
   if (isFollowing(team.league, team.id)) return;
   update((s) => { s.teams.push({ league: team.league, id: String(team.id), abbr: team.abbr, name: team.name, short: team.short || team.name, color: team.color, alt: team.alt, logo: team.logo }); });
 }
+/** Fill in colours and logos for followed teams from live game data (the built-in lists have none). */
+export function refreshFollowed(g) {
+  if (!state.teams.length) return;
+  let changed = false;
+  for (const side of [g.home, g.away]) {
+    if (!side || !side.id) continue;
+    for (const t of state.teams) {
+      if (t.id !== side.id || !(t.league === g.league || (isSoccer(t.league) && isSoccer(g.league)))) continue;
+      if (side.color && (t.color !== side.color || t.alt !== side.alt)) { t.color = side.color; t.alt = side.alt || t.alt; changed = true; }
+      if (side.logo && t.logo !== side.logo) { t.logo = side.logo; changed = true; }
+    }
+  }
+  if (changed) save();
+}
 export function unfollow(league, id) { update((s) => { s.teams = s.teams.filter((t) => !(t.league === league && t.id === String(id))); }); }
 export function findTeam(league, id) { return state.teams.find((t) => t.league === league && t.id === String(id)); }
 export function findTeamAnyLeague(id) { return state.teams.find((t) => t.id === String(id)); }
