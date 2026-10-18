@@ -14,6 +14,7 @@ const ROUTES = [
   { re: /^\/game\/([^/]+)\/([^/]+)$/, view: () => import('./views/game.js'), nav: 'home', params: (m) => ({ league: decodeURIComponent(m[1]), id: decodeURIComponent(m[2]) }) },
   { re: /^\/picks$/, view: () => import('./views/picks.js'), nav: 'picks', params: () => ({}) },
   { re: /^\/season$/, view: () => import('./views/season.js'), nav: 'season', params: () => ({}) },
+  { re: /^\/profile$/, view: () => import('./views/profile.js'), nav: 'profile', params: () => ({}) },
   { re: /^\/onboarding$/, view: () => import('./views/onboarding.js'), nav: 'none', params: () => ({}) },
   { re: /^\/settings$/, view: () => import('./views/settings.js'), nav: 'settings', params: () => ({}) },
   { re: /^\/check$/, view: () => import('./views/check.js'), nav: 'settings', params: () => ({}) },
@@ -24,6 +25,7 @@ const NAV = [
   ...TABS.map((t) => ({ id: t.id, label: t.label, href: `#/league/${t.id}` })),
   { id: 'picks', label: "Pick'em", href: '#/picks' },
   { id: 'season', label: 'Season', href: '#/season' },
+  { id: 'profile', label: 'Fan', href: '#/profile' },
   { id: 'settings', label: 'Settings', href: '#/settings' },
 ];
 

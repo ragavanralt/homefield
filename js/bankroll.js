@@ -2,6 +2,7 @@
 import { h, clear, toast } from './ui.js';
 import { getState, getBank, claimDaily, dailyReady, canRescue, rescue, onSlipChange } from './store.js';
 import { levelFor, xpForLevel, rankFor, streakBoost, betStats, american, fmtX } from './bets.js';
+import { renderAvatar, syncUnlocks } from './avatar.js';
 import { fmtDay, fmtTime } from './util.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
@@ -15,7 +16,9 @@ export function bankStrip() {
     const lo = xpForLevel(lvl), hi = xpForLevel(lvl + 1);
     const pct = Math.max(0, Math.min(100, ((bank.xp - lo) / (hi - lo)) * 100));
     const boost = streakBoost(bank.streak);
+    syncUnlocks();
     clear(el).append(
+      h('a', { class: 'bk-av', href: '#/profile', title: 'Your fan and shop' }, renderAvatar(undefined, undefined, 'sm'), h('small', null, 'Shop')),
       h('div', { class: 'bk-main' }, h('small', null, 'Bankroll'), h('div', { class: 'bk-coins' }, h('i', { class: 'coin' }), fmt(bank.coins))),
       h('div', { class: 'bk-lvl' }, h('div', { class: 'bk-rank' }, `Level ${lvl} · ${rankFor(lvl)}`), h('div', { class: 'xp' }, h('i', { style: { width: pct + '%' } })), h('small', null, `${fmt(bank.xp)} / ${fmt(hi)} XP`)),
       h('div', { class: 'bk-streak' + (bank.streak >= 2 ? ' hot' : '') }, h('small', null, 'Hot streak'), h('div', { class: 'bk-big' }, bank.streak ? `🔥 ${bank.streak}` : '0'), h('small', null, boost ? `+${Math.round(boost * 100)}% on wins` : 'Win bets to build a boost')),

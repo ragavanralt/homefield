@@ -333,4 +333,55 @@ import * as S from '../js/specials.js';
   });
 }
 
+// ---- avatar and shop ----
+{
+  const { ITEMS, buy, equip, unequip, priceOf, dealToday, avatarSvg, syncUnlocks, itemById } = await import('../js/avatar.js');
+  const st = await import('../js/store.js');
+  st.resetAll();
+  t('shop: starter items owned, hair and top equipped', () => {
+    const a = st.getState().avatar;
+    assert.equal(a.eq.hair, 'short'); assert.equal(a.eq.top, 'tee');
+    assert.ok(a.owned.includes('curly'));
+  });
+  t('shop: buying takes coins, owns and wears the item; no double buy', () => {
+    const start = st.getBank().coins;
+    const price = priceOf(itemById('afro'));
+    const r = buy('afro');
+    assert.ok(r.ok); assert.equal(st.getBank().coins, start - price);
+    assert.equal(st.getState().avatar.eq.hair, 'afro');
+    assert.equal(buy('afro').ok, false); assert.equal(st.getBank().coins, start - price);
+  });
+  t('shop: cannot buy without coins or buy earned items', () => {
+    st.update((s) => { s.bank.coins = 10; });
+    assert.equal(buy('crown').why, 'coins'); assert.equal(buy('ghost').why, 'earned');
+    assert.equal(st.getBank().coins, 10);
+  });
+  t('shop: equip needs ownership; hair and top stay on', () => {
+    assert.equal(equip('crown'), false);
+    assert.ok(equip('buzz')); assert.equal(st.getState().avatar.eq.hair, 'buzz');
+    assert.equal(unequip('hair'), false);
+  });
+  t('shop: daily deal is 20% off and stable within a day', () => {
+    const d = dealToday(new Date(2026, 9, 18));
+    assert.equal(d.id, dealToday(new Date(2026, 9, 18)).id);
+    assert.ok(priceOf(d, new Date(2026, 9, 18)) < d.price);
+  });
+  t('avatar: svg draws every item and uses team colours', () => {
+    const team = { color: 'FF0000', alt: '', league: 'nhl', id: '1' };
+    for (const it of ITEMS) {
+      const svg = avatarSvg({ skin: 2, hairColor: 1, eq: { hair: 'short', top: 'tee', [it.slot]: it.id } }, team);
+      assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>') && !svg.includes('undefined'), it.id);
+    }
+    assert.ok(avatarSvg({ skin: 2, hairColor: 0, eq: { top: 'jersey' } }, team).includes('#FF0000'));
+  });
+  t('shop: earned items unlock from stats and rescue; reset bets keeps items', () => {
+    st.update((s) => { s.bank.rescues = 1; });
+    syncUnlocks();
+    assert.ok(st.getState().avatar.owned.includes('ghost'));
+    st.resetBets();
+    assert.ok(st.getState().avatar.owned.includes('afro'));
+    assert.equal(st.getBank().coins, 1000);
+  });
+}
+
 console.log(`\n${passed} checks passed`);

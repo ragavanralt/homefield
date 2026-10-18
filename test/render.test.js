@@ -159,6 +159,15 @@ assert.ok(w.document.getElementById('st-picture')); ok('standings has playoff pi
 store.toggleHidden('nba');
 text = await visit('#/league/nhl', { wait: 250 }); assert.ok(!/\b3\b.*\b2\b/.test('') ); ok('league in spoiler mode');
 store.setSetting('spoilerFree', false);
+text = await visit('#/season', { wait: 300 }); assert.ok(app().querySelector('.bk-av svg'), 'avatar on season'); ok('avatar shows on season');
+text = await visit('#/profile', { wait: 200 });
+assert.ok(app().querySelector('.pf-me svg') && /Shop/.test(text), 'profile'); ok('profile page draws avatar and shop');
+app().querySelectorAll('.pf-tabs .seg-b')[1].click();
+const coinsBefore = store.getBank().coins;
+const capBtn = app().querySelector('.buy[data-id="cap"]'); assert.ok(capBtn, 'cap for sale');
+capBtn.click(); await sleep(50);
+assert.ok(store.getBank().coins < coinsBefore && store.getState().avatar.owned.includes('cap')); ok('buying an item takes coins');
+assert.ok(app().querySelector('.pf-me svg').innerHTML.includes('#003e7e') || app().querySelector('.pf-me svg').innerHTML.toLowerCase().includes('#003e7e'), 'team colours'); ok('cap wears followed team colours');
 text = await visit('#/check', { wait: 100 });
 app().querySelector('#run-check').click(); await sleep(1500);
 assert.ok(app().querySelector('.checklist'), 'check ran'); ok('data check runs');

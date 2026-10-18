@@ -25,7 +25,13 @@ const fresh = () => ({
   ask: { day: '', n: 0 },
   soccerLeague: 'uefa.champions',
   lastMode: 'classic',
+  avatar: { skin: 2, hairColor: 0, team: '', eq: { hair: 'short', top: 'tee' }, owned: ['short', 'buzz', 'curly', 'tee'], spent: 0 },
 });
+
+function mergeAvatar(d, a) {
+  a = a || {};
+  return { ...d, ...a, eq: { ...d.eq, ...(a.eq || {}) }, owned: [...new Set([...d.owned, ...(Array.isArray(a.owned) ? a.owned : [])])] };
+}
 
 let state = load();
 
@@ -35,7 +41,7 @@ function load() {
     if (!raw) return fresh();
     const s = JSON.parse(raw);
     const f = fresh();
-    return { ...f, ...s, settings: { ...f.settings, ...(s.settings || {}) }, bank: { ...f.bank, ...(s.bank || {}) }, slip: { ...f.slip, ...(s.slip || {}) } };
+    return { ...f, ...s, settings: { ...f.settings, ...(s.settings || {}) }, bank: { ...f.bank, ...(s.bank || {}) }, slip: { ...f.slip, ...(s.slip || {}) }, avatar: mergeAvatar(f.avatar, s.avatar) };
   } catch (e) { return fresh(); }
 }
 function save() { try { storage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage full */ } }
@@ -163,7 +169,22 @@ export function claimDaily() {
 }
 export const dailyReady = () => state.bank.lastDaily !== localDay();
 export const canRescue = () => state.bank.coins < MIN_STAKE && !openBets().length && state.bank.rescued !== localDay();
-export function rescue() { if (!canRescue()) return false; update((s) => { s.bank.coins += 200; s.bank.rescued = localDay(); }); ping(); return true; }
+export function rescue() {
+  if (!canRescue()) return false;
+  update((s) => { s.bank.coins += 200; s.bank.rescued = localDay(); s.bank.rescues = (s.bank.rescues || 0) + 1; if (!s.avatar.owned.includes('ghost')) s.avatar.owned.push('ghost'); });
+  ping(); return true;
+}
+
+/** Avatar and shop. Cosmetics only. The catalog and prices live in avatar.js; this just moves coins and items. */
+export function buyItem(id, price) {
+  const st = state;
+  if (st.avatar.owned.includes(id)) return { ok: false, why: 'owned' };
+  if (st.bank.coins < price) return { ok: false, why: 'coins' };
+  update((s) => { s.bank.coins -= price; s.avatar.owned.push(id); s.avatar.spent = (s.avatar.spent || 0) + price; });
+  ping(); return { ok: true };
+}
+export function grantItem(id) { if (state.avatar.owned.includes(id)) return false; update((s) => { s.avatar.owned.push(id); }); ping(); return true; }
+export function setAvatar(fn) { update((s) => fn(s.avatar)); ping(); }
 
 export const markWatched = (g) => update((s) => {
   if (s.watched[g.key]) delete s.watched[g.key];
@@ -185,12 +206,12 @@ export function importData(text) {
   const s = JSON.parse(text);
   if (!s || typeof s !== 'object' || !Array.isArray(s.teams)) throw new Error('That file does not look like Homefield data.');
   const f = fresh();
-  state = { ...f, ...s, settings: { ...f.settings, ...(s.settings || {}) } };
+  state = { ...f, ...s, settings: { ...f.settings, ...(s.settings || {}) }, avatar: mergeAvatar(f.avatar, s.avatar) };
   save();
 }
 export function resetBets() {
   const f = fresh();
-  update((s) => { s.bank = f.bank; s.bets = {}; s.slip = f.slip; s.notices = []; s.lastMode = f.lastMode; });
+  update((s) => { s.bank = f.bank; s.bets = {}; s.slip = f.slip; s.notices = []; s.lastMode = f.lastMode; /* avatar and owned items are kept */ });
   ping();
 }
 export function resetTeams() { update((s) => { s.teams = []; }); }

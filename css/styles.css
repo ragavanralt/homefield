@@ -494,3 +494,45 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 }
 .mk-types { display: flex; flex-wrap: wrap; overflow: visible; } .mk-types .seg-b { flex: 1 1 auto; }
 @media (max-width: 560px) { .mk-types { display: grid; grid-template-columns: 1fr 1fr; } .bk-streak small:last-child { display: none; } .bk-lvl .xp { display: none; } }
+
+/* ---------- fan: avatar, profile, shop ---------- */
+.avatar { display: inline-block; line-height: 0; }
+.avatar svg { width: 100%; height: auto; display: block; overflow: visible; }
+.avatar.sm { width: 64px; } .avatar.lg { width: min(260px, 70%); }
+.bk-av { display: flex; flex-direction: column; align-items: center; gap: 2px; justify-self: start; }
+.bk-av .avatar { width: 64px; background: var(--surface-2); border-radius: 18px; padding: 4px 4px 0; overflow: hidden; }
+.profile { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: 16px; align-items: start; }
+.pf-wide { grid-column: 1 / -1; }
+.profile > * { min-width: 0; }
+.pf-me { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 12px; }
+.pf-stage { display: grid; place-items: center; border-radius: 14px; padding: 14px 0 0; overflow: hidden;
+  background: radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--stage, var(--violet)) 40%, var(--surface-2)), var(--surface-2) 75%); }
+.pf-name { display: flex; flex-direction: column; }
+.pf-coins { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1; }
+.pf-row { display: flex; flex-direction: column; gap: 6px; }
+.pf-row select { padding: 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); padding: 0; }
+.sw.on { outline: 3px solid var(--fg); outline-offset: 2px; }
+.pf-worn { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-worn .chip { padding: 4px 10px; font-size: 12px; }
+.pf-shop-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pf-tabs { margin: 8px 0 12px; }
+.deal { background: color-mix(in srgb, var(--volt) 22%, var(--surface)); border: 1px solid color-mix(in srgb, var(--volt) 55%, var(--line)); border-radius: 12px; padding: 8px 12px; font-size: 14px; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.item { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.item .avatar { width: 96px; }
+.item.worn { border-color: var(--good); }
+.item.t-rare { border-color: color-mix(in srgb, var(--aqua) 60%, var(--line)); }
+.item.t-legend { border-color: var(--volt); box-shadow: 0 0 0 1px var(--volt) inset; }
+.item.t-earned { border-style: dashed; }
+.it-n { font-weight: 700; font-size: 14px; }
+.it-t { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+.item .btn { margin-top: auto; width: 100%; }
+.item .btn .coin { width: 16px; height: 16px; }
+@media (max-width: 760px) {
+  .profile { grid-template-columns: minmax(0, 1fr); }
+  .pf-me { position: static; }
+  .shop-grid { grid-template-columns: repeat(2, 1fr); }
+  .bk-av .avatar { width: 52px; }
+}
