@@ -6,6 +6,7 @@ import { BACKGROUNDS, ACCENTS, DEFAULT_APPEARANCE, applyTheme, resolveMode } fro
 import { watchScore, watchLabel, watchReason } from './winprob.js';
 import { fmtDay, fmtTime, sameDay } from './util.js';
 import { rememberGame } from './espn.js';
+import { themeMatch, repaintBrand, onBrandChange } from './brand.js';
 
 export const pageHead = (title, sub) => h('div', { class: 'page-head' }, h('h1', null, title), sub ? h('p', null, sub) : null);
 
@@ -78,7 +79,7 @@ export function hideChips() {
 /** Theme, background and accent pickers. Applies changes straight away. */
 export function appearanceCard(title = 'Appearance') {
   const host = h('section', { class: 'card', id: 'appearance' });
-  const repaint = () => applyTheme(getState().settings);
+  const repaint = () => { applyTheme(getState().settings); repaintBrand(); };
   const draw = () => {
     const s = getState().settings;
     const mode = resolveMode(s.theme);
@@ -88,17 +89,20 @@ export function appearanceCard(title = 'Appearance') {
     const teamRow = h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Team colours'),
       h('div', { class: 'seg' }, [[true, 'On'], [false, 'Off']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (team === k ? ' on' : ''), id: 'team-' + (k ? 'on' : 'off'), onclick: () => { setSetting('teamMode', k); repaint(); draw(); } }, l))),
       h('small', null, team ? 'The whole app takes the colours of whichever of your teams plays next. Open a team or game and it matches that team. Dark and light each get their own version.' : 'Pick your own background and accent below.'));
-    host.replaceChildren(h('h2', { class: 'card-h' }, title),
+    const m = team ? themeMatch() : null;
+    const matchRow = m ? h('div', { class: 'set-row match', id: 'theme-match' }, h('div', { class: 'set-l' }, 'Matched to'), h('div', { class: 'match-v' }, m.team ? crest(m.team, 26) : null, h('span', null, m.text))) : null;
+    host.replaceChildren(...[h('h2', { class: 'card-h' }, title),
       h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Theme'),
         h('div', { class: 'seg' }, [['auto', 'Auto'], ['dark', 'Dark'], ['light', 'Light']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (s.theme === k ? ' on' : ''), id: 'theme-' + k, onclick: () => { setSetting('theme', k); repaint(); draw(); } }, l))),
         h('small', null, s.theme === 'auto' ? 'Follows your phone or computer.' : '')),
-      teamRow,
+      teamRow, matchRow,
       team ? null : h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, `Background (${mode})`),
         h('div', { class: 'swatches' }, BACKGROUNDS[mode].map((b) => swatch(b.name, `linear-gradient(135deg, ${b.bg} 50%, ${b.surface} 50%)`, s[key] === b.id, () => { setSetting(key, b.id); repaint(); draw(); }, 'bg-' + b.id)))),
       team ? null : h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, 'Accent colour'),
         h('div', { class: 'swatches' }, ACCENTS.map((a) => swatch(a.name, `linear-gradient(135deg, ${a.a}, ${a.b})`, s.accent === a.id, () => { setSetting('accent', a.id); repaint(); draw(); }, 'acc-' + a.id)))),
-      h('div', { class: 'set-row' }, h('button', { type: 'button', class: 'btn small', id: 'reset-look', onclick: () => { Object.entries(DEFAULT_APPEARANCE).forEach(([k, v]) => setSetting(k, v)); repaint(); draw(); } }, 'Reset to default')));
+      h('div', { class: 'set-row' }, h('button', { type: 'button', class: 'btn small', id: 'reset-look', onclick: () => { Object.entries(DEFAULT_APPEARANCE).forEach(([k, v]) => setSetting(k, v)); repaint(); draw(); } }, 'Reset to default'))].filter(Boolean));
   };
   draw();
+  const off = onBrandChange(() => { if (host.isConnected) draw(); else off(); });
   return host;
 }

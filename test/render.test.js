@@ -201,6 +201,8 @@ assert.equal(app().querySelectorAll('.quest').length, 6, 'six quests'); ok('ques
 }
 text = await visit('#/shop', { wait: 200 });
 assert.ok(app().querySelector('.featured .item'), 'featured row'); ok('shop shows the weekly featured row');
+text = await visit('#/settings', { wait: 200 });
+assert.ok(app().querySelector('#theme-match') && /Matched to/.test(app().textContent), 'theme match row'); ok('settings says what the theme is matched to');
 text = await visit('#/check', { wait: 100 });
 app().querySelector('#run-check').click(); await sleep(1500);
 assert.ok(app().querySelector('.checklist'), 'check ran'); ok('data check runs');
