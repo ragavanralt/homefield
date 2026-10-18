@@ -254,8 +254,7 @@ export function palette(team) {
 // so it reads as a small figure rather than a flat icon. Light comes from the top left.
 const GOLD = '#F5C542', GOLD2 = '#B8860B', INK = '#14172B';
 const OUT = 'stroke="rgba(8,10,28,.55)" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round"';
-const DEFS = '<defs><linearGradient id="hf-sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#000" stop-opacity=".1"/><stop offset="1" stop-color="#000" stop-opacity=".34"/></linearGradient>'
-  + '<linearGradient id="hf-sv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient></defs>';
+const DEFS = '<defs><linearGradient id="hf-sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="0.3" stop-color="#fff" stop-opacity=".16"/><stop offset="0.3" stop-color="#fff" stop-opacity="0"/><stop offset="0.62" stop-color="#fff" stop-opacity="0"/><stop offset="0.62" stop-color="#000" stop-opacity=".09"/><stop offset="0.86" stop-color="#000" stop-opacity=".09"/><stop offset="0.86" stop-color="#000" stop-opacity=".2"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient><linearGradient id="hf-sv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="0.28" stop-color="#fff" stop-opacity=".16"/><stop offset="0.28" stop-color="#000" stop-opacity="0"/><stop offset="0.7" stop-color="#000" stop-opacity="0"/><stop offset="0.7" stop-color="#000" stop-opacity=".2"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs>';
 const P = (d, f, x = '') => `<path d="${d}" fill="${f}" ${OUT} ${x}/><path d="${d}" fill="url(#hf-sh)"/>`;
 const PV = (d, f, x = '') => `<path d="${d}" fill="${f}" ${OUT} ${x}/><path d="${d}" fill="url(#hf-sv)"/>`;
 const L = (d, s = 'rgba(0,0,0,.3)', w = 1.2) => `<path d="${d}" fill="none" stroke="${s}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -267,8 +266,8 @@ const BOTH = (s) => s + M(s);
 let both = BOTH;
 const LEG_SKIN = 'M39.6 128 C38.8 136 38.8 146 40.4 152 C41.2 155 42 157 42.4 159 C40.8 164 40.6 170 41.6 176 C42.6 182 44.6 186 45 190 L44.6 194 L56.4 194 L55.6 190 C56.4 186 58.2 182 58.8 176 C59.8 170 59.6 164 57.8 159 C58.6 154 59.8 148 60 142 L60 128 Z';
 
-const TORSO = 'M38 77 Q60 71 82 77 C84.4 88 84.6 100 83 112 L81.6 131 Q60 137 38.4 131 L37 112 C35.4 100 35.6 88 38 77 Z';
-const ARM = 'M38 77.6 C33 76.6 26.4 77.2 24.2 82 C22.4 86 22.6 90 23.2 94 C22.4 98 22.4 102 23.6 106 C22.4 111 22 116 22.8 121 L33.8 122 C34.6 117 35 112 35.6 108 C37.8 104 38.8 100 39 94 Z';
+const TORSO = 'M38 77 Q60 71 82 77 C84.6 86 84.4 96 82.4 106 C81 112 80.4 118 81 124 L81.6 131 Q60 137 38.4 131 L39 124 C39.6 118 39 112 37.6 106 C35.6 96 35.4 86 38 77 Z';
+const ARM = 'M38 77.6 C32.4 75.8 26.4 77 23.8 82.2 C22.8 86 22.7 89.6 23 93.4 C23.2 97 24.4 100 24.4 103.4 C23 107 22.4 111 22.8 114.6 C22.5 117 22.5 119.4 23 121 L33.8 122 C34.6 117 35 112 35.8 108 C38 104 39.2 100 39 94 Z';
 const SLEEVE_S = 'M38 77.6 C33 76.6 26.4 77.2 24.2 82 C22.4 86 22.4 90 22.8 94 L22.8 106 L37 108 L39 96 Z';
 const SLEEVE_L = 'M38 77.6 C33 76.6 26.4 77.2 24.2 82 C22.4 86 22.4 90 22.6 94 L22 119 L34 121 L39 98 Z';
 const CUFF_S = 'M23.4 100 L37.6 102 L37 108 L23 106 Z';
@@ -570,6 +569,8 @@ Object.assign(OUTER, {
     + P('M45 74 L53 74 L57 92 L48 82 Z', '#7A2222') + C(54.6, 100, 0.9, '#E8E4DA') + C(55, 114, 0.9, '#E8E4DA')),
 });
 
+// The head is drawn large in its own space and scaled down on the neck, so hair, hats and glasses all shrink with it.
+const HEADT = 'translate(60 76) scale(.56 .58) translate(-60 -76)';
 /** Returns the SVG markup for a character. vb overrides the view box (used for shop previews and busts). */
 export function avatarSvg(av, team, vb) {
   const c = palette(team);
@@ -582,21 +583,28 @@ export function avatarSvg(av, team, vb) {
   const body = BODIES[av.body ?? 1] || BODIES[1];
   const sx = (k) => `translate(60 0) scale(${k} 1) translate(-60 0)`;
   const UP = (s) => (s ? `<g transform="${sx(body.up)}">${s}</g>` : '');
-  const LOW = (s) => `<g transform="${sx(body.low)}">${s}</g>`;
+  const LOW = (s) => `<g transform="translate(0 125) scale(1 1.07) translate(0 -125)"><g transform="${sx(body.low)}">${s}</g></g>`;
   // a closed fist with a thumb, not a ball
   const FIST = 'M22.4 120.6 L34 121.6 Q34.8 127 33.2 130.4 Q30.6 133.4 27 133 Q23.4 132.4 22.4 128.6 Q21.8 124.6 22.4 120.6 Z';
   const hand = P(FIST, skin) + L('M30.6 123.4 Q33.4 125 32.4 128.6', 'rgba(0,0,0,.28)', 1) + L('M24 127.6 H30', 'rgba(0,0,0,.14)', 1);
   const def = body.up >= 1.1 ? 1.5 : body.up < 1 ? 0.7 : 1;
   const sh = (o) => `rgba(0,0,0,${(o * def).toFixed(2)})`;
-  const muscle = L('M24.4 92.6 Q29 95.6 33.6 92.4', sh(0.16), 1.1)
-    + `<path d="M35.8 95 C37 99.6 36.6 104 35.2 108.4 C33.4 104.4 33.6 99 35.8 95 Z" fill="${sh(0.16)}"/><path d="M33.2 109 C34.6 113 34.2 118 33.6 121.6 C31.8 118 31.6 113 33.2 109 Z" fill="${sh(0.12)}"/>`
-    + L('M23.8 106.8 Q27 108.6 30.4 107.2', sh(0.16), 1) + L('M25.2 110.6 Q27.8 114.6 27.2 120', sh(0.1), 1.1)
-    + L('M25.8 82.6 Q24.4 86.6 24.6 90.4', 'rgba(255,255,255,.22)', 1.6) + L('M25 97 Q24.4 101 25 104', 'rgba(255,255,255,.16)', 1.4);
+  const muscle = `<path d="M24.6 80 C27 77.6 32 77 36.6 78.4 L37.8 88 C33 86 28 86.4 24.4 90 C23.6 86 23.8 83 24.6 80 Z" fill="rgba(255,255,255,.12)"/>`
+    + L('M25.6 90.4 Q31 93.4 37 89', sh(0.34), 1.4)
+    + `<path d="M24 92 C23.4 96.6 24.8 101 25.6 104 C28 101 28.4 96 27.6 92.4 Z" fill="rgba(255,255,255,.2)"/>`
+    + `<path d="M35.4 93 C37.4 98 37 104 35.6 108.6 C33.4 104 33.8 98 35.4 93 Z" fill="${sh(0.34)}"/>`
+    + L('M24.6 106.6 Q29 109 34 106.8', sh(0.3), 1.3)
+    + `<path d="M24 109 C22.8 112.6 22.8 116.6 23.8 119.6 C26 117 26.4 112.4 25.4 109.2 Z" fill="rgba(255,255,255,.16)"/>`
+    + `<path d="M33.4 110 C34.6 113.6 34.4 118 33.8 121.4 C31.8 118.2 31.6 113.6 33.4 110 Z" fill="${sh(0.3)}"/>`
+    + L('M27.8 110.6 Q28.8 115 28.2 120', sh(0.2), 1.2) + L('M30 111 Q31 114.6 30.4 118.4', 'rgba(255,255,255,.14)', 1);
+  // chest and waist shading, drawn over a plain shirt so the clothes sit on a built frame
+  const form = L('M42 90 Q51 97 60 92.6 Q69 97 78 90', sh(0.22), 1.6) + L('M60 93 V101', sh(0.1), 1.1)
+    + `<path d="M38.4 84 C40.6 96 40 108 38.4 120 L42 120 C43.6 108 43.6 96 41.6 84 Z" fill="${sh(0.1)}"/><path d="M81.6 84 C79.4 96 80 108 81.6 120 L78 120 C76.4 108 76.4 96 78.4 84 Z" fill="${sh(0.1)}"/>`;
   const out = [];
-  out.push(`<svg viewBox="${vb || '-12 12 144 202'}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="filter:saturate(.82) contrast(1.04)">`, DEFS);
+  out.push(`<svg viewBox="${vb || '-12 30 144 192'}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="filter:saturate(.82) contrast(1.04)">`, DEFS);
   out.push(LOW('<ellipse cx="60" cy="208" rx="38" ry="5" fill="rgba(0,0,0,.3)"/>'));
   out.push(UP(pick(BACK, eq.back)));
-  out.push(`<g transform="translate(60 76) scale(.76 .8) translate(-60 -76)">${HAIR_BACK[hd] ? HAIR_BACK[hd](hair) : ''}</g>`);
+  out.push(`<g transform="${HEADT}">${HAIR_BACK[hd] ? HAIR_BACK[hd](hair) : ''}</g>`);
   const lean = (s) => `<g transform="rotate(3 60 146)">${s}</g>`;
   const shift = (s) => `<g transform="translate(-2.8 .1)">${s}</g>`;
   const botItem = itemById(eq.bottom) || itemById('jeans');
@@ -618,29 +626,30 @@ export function avatarSvg(av, team, vb) {
   const upper = [];
   upper.push(both(P(ARM, skin) + muscle) + both(hand));
   // neck with a little trapezius slope into the shoulders
-  upper.push(`<path d="M50 58 H70 L71 74 Q77 76 82 77.4 L38 77.4 Q43 76 49 74 Z" fill="${skin}" ${OUT}/><path d="M50 64 Q60 76 70 64 V74 H50 Z" fill="rgba(0,0,0,.22)"/>` + L('M53.4 66 L56.6 77 M66.6 66 L63.4 77', 'rgba(0,0,0,.12)', 1.2));
+  upper.push(`<path d="M53.4 62 H66.6 L67 72 Q74 74.4 82 77.4 L38 77.4 Q46 74.4 53 72 Z" fill="${skin}" ${OUT}/><path d="M53.4 66 Q60 73 66.6 66 V74 H53.4 Z" fill="rgba(0,0,0,.24)"/>` + L('M52 76.6 Q55 72 57 69 M68 76.6 Q65 72 63 69', 'rgba(0,0,0,.16)', 1.4));
   upper.push(P(TORSO, skin));
   if (eq.top === 'tank' && body.up >= 1.1) upper.push(L('M44 96 Q52 100 58 97 M62 97 Q68 100 76 96', 'rgba(0,0,0,.16)', 1.2));
   upper.push(pick(TOP, eq.top, 'tee'));
+  upper.push(form);
   upper.push(pick(OUTER, eq.outer));
   upper.push(pick(SCARF, eq.scarf));
   upper.push(pick(CHAIN, eq.chain));
   upper.push(pick(WRIST, eq.wrist));
   out.push(UP(upper.join('')));
   // head: scaled down a little and set on the neck so the proportions look grown up
-  out.push(`<g transform="translate(60 76) scale(.76 .8) translate(-60 -76)">`);
+  out.push(`<g transform="${HEADT}">`);
   out.push(`<ellipse cx="39.6" cy="46" rx="3" ry="5.2" fill="${skin}" ${OUT}/><ellipse cx="80.4" cy="46" rx="3" ry="5.2" fill="${skin}" ${OUT}/>`);
   out.push(pick(EAR, eq.ear));
   out.push(P(HEAD, skin));
   // shading: under the jaw line, cheekbones and temples, so the face reads angular rather than round
-  out.push(both('<path d="M40 49 C40.4 55 42 58.6 44.8 61.6 L53.4 67.6 Q56 68.8 58.4 69.4 L52.4 64.6 L46.8 60.4 C43.8 57.8 41.4 54.4 40 49 Z" fill="rgba(0,0,0,.14)"/><path d="M40.2 37 C40 44 40.4 48 41.4 50.6 L44 45 L44 35.6 Z" fill="rgba(0,0,0,.1)"/>'));
+  out.push(both('<path d="M40 49 C40.4 55 42 58.6 44.8 61.6 L53.4 67.6 Q56 68.8 58.4 69.4 L52.4 64.6 L46.8 60.4 C43.8 57.8 41.4 54.4 40 49 Z" fill="rgba(0,0,0,.24)"/><path d="M45 52 Q47 58 52 62 L50 56 Z" fill="rgba(0,0,0,.1)"/><path d="M40.2 37 C40 44 40.4 48 41.4 50.6 L44 45 L44 35.6 Z" fill="rgba(0,0,0,.1)"/>'));
   out.push(pick(BEARD, eq.beard));
-  const eye = `<path d="M45.4 44.8 Q51 40.8 56.6 44.2 Q51 47.2 45.4 44.8 Z" fill="#E6E1D6" stroke="rgba(0,0,0,.5)" stroke-width=".8"/><circle cx="51.8" cy="44.2" r="2.3" fill="#3A281B"/><circle cx="51.8" cy="44.2" r="1.1" fill="#0B0B10"/><circle cx="52.5" cy="43.5" r=".5" fill="#fff" opacity=".8"/>`
-    + `<path d="M44.8 44.6 Q51 40.4 57 43.8" fill="none" stroke="#24180F" stroke-width="1.5" stroke-linecap="round"/><path d="M46 41.4 Q51 38.4 56 41" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1"/><path d="M46.6 46.8 Q51 48.6 56 46.4" fill="none" stroke="rgba(0,0,0,.16)" stroke-width="1.5" stroke-linecap="round"/>`
-    + `<path d="M44.6 37.8 Q50.6 35.6 57 38.8" fill="none" stroke="#2A1C12" stroke-opacity=".9" stroke-width="3" stroke-linecap="round"/>`;
+  const eye = `<path d="M45 44.6 Q51.4 40.2 57.4 44.2 Q51.6 47.8 45 44.6 Z" fill="#ECE6DA" stroke="rgba(0,0,0,.7)" stroke-width="1.3"/><circle cx="52.2" cy="44.2" r="3" fill="#33241A"/><circle cx="52.2" cy="44.2" r="1.5" fill="#05050A"/>`
+    + `<path d="M44.4 44.4 Q51 39.6 57.6 43.6" fill="none" stroke="#1B120B" stroke-width="2" stroke-linecap="round"/><path d="M46.4 47.4 Q51.6 49.4 56.4 47" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1.6" stroke-linecap="round"/>`
+    + `<path d="M44.6 38.6 Q50 35 56.2 37.6" fill="none" stroke="#24170E" stroke-width="2.8" stroke-linecap="round"/>`;
   out.push(both(eye));
-  out.push(`<path d="M58.4 42 Q57.6 48 57.2 51.6" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2"/>` + L('M56.6 53.2 Q58.2 55.6 60 54.2 Q61.8 55.6 63.4 53.2', 'rgba(60,20,10,.5)', 1.4) + `<path d="M62.6 42 Q63.4 48 63.4 52" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="1.6"/>`);
-  out.push(`<path d="M54.6 60 Q60 60.9 65.8 59.6" fill="none" stroke="#3A1C1C" stroke-width="1.8" stroke-linecap="round"/><path d="M56 62.6 Q60 64 64 62.4" fill="none" stroke="rgba(0,0,0,.1)" stroke-width="1.5" stroke-linecap="round"/>`);
+  out.push(`<path d="M58 44 L56.2 53.4 Q60 56 63.8 53.4 L62 44 Z" fill="rgba(0,0,0,.14)"/>` + L('M56.4 54 Q58.2 56.2 60 55 Q61.8 56.2 63.6 54', 'rgba(50,16,8,.65)', 1.7));
+  out.push(`<path d="M53.6 61.4 Q60 62.8 66.4 61.2" fill="none" stroke="#3A1414" stroke-width="2.2" stroke-linecap="round"/><path d="M55.4 64.2 Q60 65.6 64.6 64" fill="none" stroke="rgba(0,0,0,.16)" stroke-width="1.8" stroke-linecap="round"/>`);
   out.push(pick(FACE, eq.face));
   out.push(HAIR_FRONT[hd] ? HAIR_FRONT[hd](hair) : '');
   out.push(pick(HAT, eq.hat));
@@ -658,8 +667,8 @@ export function renderAvatar(av = getState().avatar, team = avatarTeam(av), cls 
   el.innerHTML = avatarSvg(av, team, /\bbust\b/.test(cls) ? BUST : undefined);
   return el;
 }
-const BUST = '20 12 80 80';
-const VB = { hair: BUST, hat: BUST, face: BUST, beard: BUST, ear: BUST, top: '0 62 120 100', outer: '0 62 120 120', scarf: '8 58 104 80', chain: '20 60 80 66', wrist: '4 92 48 48', bottom: '16 118 88 96', shoes: '14 164 92 52', back: '-12 12 144 202', hand: '-12 12 144 202' };
+const BUST = '30 32 60 60';
+const VB = { hair: BUST, hat: BUST, face: BUST, beard: BUST, ear: BUST, top: '0 62 120 100', outer: '0 62 120 120', scarf: '8 58 104 80', chain: '20 60 80 66', wrist: '4 92 48 48', bottom: '16 118 88 102', shoes: '14 172 92 50', back: '-12 30 144 192', hand: '-12 30 144 192' };
 /** Preview of just one item on the current character, zoomed to where it is worn. */
 export function previewSvg(item, av = getState().avatar, team = avatarTeam(av), ci) {
   const col = ci == null ? av.col : { ...(av.col || {}), [item.id]: ci };
