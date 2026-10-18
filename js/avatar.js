@@ -4,59 +4,81 @@ import { getState, myTeams, buyItem, grantItem, setAvatar } from './store.js';
 import { betStats } from './bets.js';
 import { skinFromColors } from './util.js';
 
-export const SKINS = ['#F6C453', '#F7D9BC', '#EBB98C', '#D39A66', '#B0734A', '#8A5636', '#5E3B24'];
-export const HAIR_COLORS = ['#1E1712', '#4A2E1E', '#8A5A2B', '#D9AE55', '#C9CED8', '#D9472E', '#2F6FE0', '#7C4DDB', '#E04A9A', '#22B35E'];
+export const SKINS = ['#E3B85B', '#F0D3B5', '#DDAE86', '#C58B5E', '#A06A44', '#7A4A2E', '#523320'];
+export const HAIR_COLORS = ['#1A1410', '#3D281B', '#6E4A2A', '#B8935A', '#B7BBC4', '#A8402B', '#2C57A8', '#5E3FA6', '#B23F7F', '#2F8A57'];
 export const SLOTS = [
   { id: 'hair', label: 'Hair' }, { id: 'hat', label: 'Hat' }, { id: 'face', label: 'Face' }, { id: 'beard', label: 'Facial hair' }, { id: 'ear', label: 'Ears' },
-  { id: 'top', label: 'Top' }, { id: 'outer', label: 'Jacket' }, { id: 'scarf', label: 'Scarf' }, { id: 'chain', label: 'Chain' }, { id: 'wrist', label: 'Wrist' },
+  { id: 'top', label: 'Top' }, { id: 'outer', label: 'Jacket' }, { id: 'scarf', label: 'Neckwear' }, { id: 'chain', label: 'Chain' }, { id: 'wrist', label: 'Wrist' },
   { id: 'bottom', label: 'Pants' }, { id: 'shoes', label: 'Shoes' }, { id: 'back', label: 'Back' }, { id: 'hand', label: 'In hand' },
 ];
-// Shop tabs: each one shows the items of several slots.
-export const GROUPS = [
-  { id: 'head', label: 'Hair and hats', slots: ['hair', 'hat'] },
-  { id: 'face', label: 'Face', slots: ['face', 'beard', 'ear'] },
-  { id: 'body', label: 'Tops and jackets', slots: ['top', 'outer', 'scarf'] },
-  { id: 'bling', label: 'Bling', slots: ['chain', 'wrist'] },
-  { id: 'legs', label: 'Pants and shoes', slots: ['bottom', 'shoes'] },
-  { id: 'extra', label: 'Extras', slots: ['back', 'hand'] },
+// Shop sections. Each item belongs to one. Real brands and logos are not used; the labels are made up.
+export const SECTIONS = [
+  { id: 'team', label: 'Team shop', blurb: 'Gear in the colours of the team you follow.' },
+  { id: 'look', label: 'Look', blurb: 'Hair, faces, beards and earrings.' },
+  { id: 'blank', label: 'Blanks', blurb: 'Plain basics. Cheap, no logos.' },
+  { id: 'street', label: 'Streetwear', blurb: 'The everyday fits, from baggy jeans to puffers.' },
+  { id: 'formal', label: 'Formal', blurb: 'Shirts, suits, coats and good shoes.' },
+  { id: 'brand', label: 'Designer', blurb: 'Labels and heavy jewellery. Priced like the real thing.' },
 ];
 export const ALWAYS_ON = ['hair', 'top', 'bottom', 'shoes'];
-export const TIERS = { free: { label: 'Free', price: 0 }, common: { label: 'Common', price: 100 }, rare: { label: 'Rare', price: 500 }, legend: { label: 'Legendary', price: 2500 }, earned: { label: 'Earned', price: 0 } };
+export const TIERS = { free: { label: 'Free' }, common: { label: 'Common' }, rare: { label: 'Rare' }, epic: { label: 'Epic' }, legend: { label: 'Legendary' }, earned: { label: 'Earned' } };
 
 // team: the item picks up the colours of the team you chose for your character.
-// ach: cannot be bought; it unlocks by doing something.
-const I = (id, slot, name, tier, extra) => ({ id, slot, name, tier, price: TIERS[tier].price, ...extra });
+// ach: cannot be bought; it unlocks by doing something. Prices run from free to 35,000 coins.
+const tierOf = (price, ach) => (ach ? 'earned' : price === 0 ? 'free' : price < 400 ? 'common' : price < 2000 ? 'rare' : price < 8000 ? 'epic' : 'legend');
+const I = (id, slot, name, sec, price, extra = {}) => ({ id, slot, name, sec, price, tier: tierOf(price, extra.ach), ...extra });
+const T = { team: true };
 export const ITEMS = [
-  I('short', 'hair', 'Short cut', 'free'), I('buzz', 'hair', 'Buzz cut', 'free'), I('curly', 'hair', 'Curls', 'free'),
-  I('fade', 'hair', 'Skin fade', 'common'), I('slick', 'hair', 'Slick back', 'common'), I('bob', 'hair', 'Bob', 'common'), I('ponytail', 'hair', 'Ponytail', 'common'),
-  I('afro', 'hair', 'Afro', 'common'), I('long', 'hair', 'Long hair', 'common'), I('bun', 'hair', 'Top bun', 'common'),
-  I('braids', 'hair', 'Braids', 'rare'), I('twists', 'hair', 'Twists', 'rare'), I('mohawk', 'hair', 'Mohawk', 'rare'), I('dreads', 'hair', 'Dreads', 'rare'),
+  // ---- Look: hair, face, beards, ears
+  I('short', 'hair', 'Short cut', 'look', 0), I('buzz', 'hair', 'Buzz cut', 'look', 0), I('curly', 'hair', 'Curls', 'look', 0),
+  I('fade', 'hair', 'Skin fade', 'look', 120), I('slick', 'hair', 'Slick back', 'look', 150), I('bob', 'hair', 'Bob', 'look', 150), I('ponytail', 'hair', 'Ponytail', 'look', 150),
+  I('afro', 'hair', 'Afro', 'look', 150), I('long', 'hair', 'Long hair', 'look', 150), I('bun', 'hair', 'Top bun', 'look', 120),
+  I('braids', 'hair', 'Braids', 'look', 400), I('twists', 'hair', 'Twists', 'look', 400), I('mohawk', 'hair', 'Mohawk', 'look', 350), I('dreads', 'hair', 'Dreads', 'look', 450),
+  I('eyeblack', 'face', 'Eye black', 'look', 120), I('stubble', 'beard', 'Stubble', 'look', 100), I('stache', 'beard', 'Moustache', 'look', 120), I('goatee', 'beard', 'Goatee', 'look', 150), I('beard', 'beard', 'Full beard', 'look', 300),
+  I('studs', 'ear', 'Diamond studs', 'look', 300), I('hoops', 'ear', 'Gold hoops', 'look', 700), I('grill', 'face', 'Gold grill', 'look', 1500),
 
-  I('cap', 'hat', 'Team cap', 'common', { team: true }), I('beanie', 'hat', 'Team beanie', 'common', { team: true }), I('headband', 'hat', 'Headband', 'common', { team: true }),
-  I('durag', 'hat', 'Durag', 'common', { team: true }), I('bucket', 'hat', 'Bucket hat', 'rare', { team: true }), I('snapback', 'hat', 'Snapback', 'rare', { team: true }),
-  I('helmet', 'hat', 'Team helmet', 'rare', { team: true }), I('crown', 'hat', 'Gold crown', 'legend'),
+  // ---- Blanks: plain basics
+  I('tee', 'top', 'Plain tee', 'blank', 0), I('tank', 'top', 'Tank top', 'blank', 40), I('jeans', 'bottom', 'Jeans', 'blank', 0), I('joggers', 'bottom', 'Joggers', 'blank', 80),
+  I('shorts', 'bottom', 'Denim shorts', 'blank', 60), I('cargo', 'bottom', 'Cargo pants', 'blank', 120), I('sneakers', 'shoes', 'White sneakers', 'blank', 0), I('slides', 'shoes', 'Slides', 'blank', 40),
+  I('runners', 'shoes', 'Runners', 'blank', 90), I('plaincap', 'hat', 'Plain black cap', 'blank', 100), I('denim', 'outer', 'Denim jacket', 'blank', 300), I('ball', 'hand', 'Ball', 'blank', 100),
+  I('shades', 'face', 'Shades', 'blank', 150), I('boots', 'shoes', 'Work boots', 'blank', 180),
 
-  I('shades', 'face', 'Shades', 'common'), I('eyeblack', 'face', 'Eye black', 'common'), I('paint', 'face', 'Face paint', 'common', { team: true }),
-  I('grill', 'face', 'Gold grill', 'rare'), I('visor', 'face', 'Gold visor', 'legend'),
-  I('stubble', 'beard', 'Stubble', 'common'), I('stache', 'beard', 'Moustache', 'common'), I('goatee', 'beard', 'Goatee', 'common'), I('beard', 'beard', 'Full beard', 'rare'),
-  I('studs', 'ear', 'Diamond studs', 'common'), I('hoops', 'ear', 'Gold hoops', 'rare'),
+  // ---- Streetwear
+  I('boxy', 'top', 'Boxy tee', 'street', 250), I('graphic', 'top', 'Graphic tee', 'street', 300), I('washed', 'top', 'Washed hoodie', 'street', 600),
+  I('baggy', 'bottom', 'Baggy jeans', 'street', 500), I('techp', 'bottom', 'Tech pants', 'street', 900), I('leatherp', 'bottom', 'Leather pants', 'street', 2200),
+  I('bomber', 'outer', 'Flight bomber', 'street', 1100), I('leather', 'outer', 'Leather jacket', 'street', 1800), I('puffer', 'outer', 'Puffer jacket', 'street', 1600), I('parka', 'outer', 'Trapper parka', 'street', 1900),
+  I('chunky', 'shoes', 'Chunky sneakers', 'street', 800), I('trucker', 'hat', 'Trucker hat', 'street', 350), I('aviators', 'face', 'Aviators', 'street', 1200),
+  I('silver', 'chain', 'Silver chain', 'street', 400), I('gold', 'chain', 'Gold chain', 'street', 1500), I('watch', 'wrist', 'Sport watch', 'street', 800),
 
-  I('tee', 'top', 'Plain tee', 'free'), I('tank', 'top', 'Tank top', 'common'), I('polo', 'top', 'Polo', 'common', { team: true }), I('jersey', 'top', 'Team jersey', 'common', { team: true }),
-  I('hoodie', 'top', 'Team hoodie', 'rare', { team: true }), I('ghost', 'top', 'Ghost sheet', 'earned', { ach: 'Get rescued with free coins once' }),
-  I('denim', 'outer', 'Denim jacket', 'common'), I('track', 'outer', 'Track jacket', 'common', { team: true }), I('varsity', 'outer', 'Varsity jacket', 'rare', { team: true }),
-  I('leather', 'outer', 'Leather jacket', 'rare'), I('puffer', 'outer', 'Puffer jacket', 'rare'), I('parka', 'outer', 'Fur parka', 'rare'), I('robe', 'outer', 'Champion robe', 'legend'),
-  I('scarf', 'scarf', 'Team scarf', 'common', { team: true }), I('goldscarf', 'scarf', 'Golden scarf', 'earned', { ach: 'Win 5 bets in a row' }),
+  // ---- Formal
+  I('dressshirt', 'top', 'Dress shirt', 'formal', 500), I('turtleneck', 'top', 'Turtleneck', 'formal', 600),
+  I('blazer', 'outer', 'Charcoal blazer', 'formal', 1800), I('suit', 'outer', 'Navy suit jacket', 'formal', 2600), I('overcoat', 'outer', 'Camel overcoat', 'formal', 3800), I('tux', 'outer', 'Tuxedo jacket', 'formal', 4500),
+  I('slacks', 'bottom', 'Grey slacks', 'formal', 900), I('suitp', 'bottom', 'Suit trousers', 'formal', 1400), I('tuxp', 'bottom', 'Tuxedo trousers', 'formal', 2200),
+  I('loafers', 'shoes', 'Loafers', 'formal', 1000), I('oxfords', 'shoes', 'Oxfords', 'formal', 1200), I('patent', 'shoes', 'Patent dress shoes', 'formal', 2000),
+  I('tie', 'scarf', 'Silk tie', 'formal', 300), I('bowtie', 'scarf', 'Bow tie', 'formal', 400), I('glasses', 'face', 'Round glasses', 'formal', 500), I('dresswatch', 'wrist', 'Dress watch', 'formal', 3000),
 
-  I('silver', 'chain', 'Silver chain', 'common'), I('gold', 'chain', 'Gold chain', 'rare'), I('pendant', 'chain', 'Team pendant', 'rare', { team: true }), I('diamond', 'chain', 'Diamond chain', 'legend'),
-  I('band', 'wrist', 'Wristband', 'common', { team: true }), I('watch', 'wrist', 'Watch', 'rare'), I('goldwatch', 'wrist', 'Iced-out watch', 'legend'),
+  // ---- Designer: made-up labels, priced like the real thing
+  I('foghoodie', 'top', 'Fogline fleece hoodie', 'brand', 6500), I('fogsweats', 'bottom', 'Fogline fleece sweats', 'brand', 5500),
+  I('northgate', 'outer', 'Northgate summit parka', 'brand', 14000), I('nocturne', 'outer', 'Nocturne leather coat', 'brand', 9500), I('silkbomber', 'outer', 'Atelier silk bomber', 'brand', 5500), I('robe', 'outer', 'Champion robe', 'brand', 18000),
+  I('v85red', 'shoes', 'Vantage 85 High, red', 'brand', 4500), I('v85royal', 'shoes', 'Vantage 85 High, royal', 'brand', 4000), I('v85shadow', 'shoes', 'Vantage 85 High, shadow', 'brand', 3800), I('goldkicks', 'shoes', 'Gold kicks', 'brand', 7500),
+  I('monobucket', 'hat', 'Maison monogram bucket', 'brand', 4000), I('monoscarf', 'scarf', 'Maison monogram scarf', 'brand', 3500), I('crown', 'hat', 'Gold crown', 'brand', 15000),
+  I('ovalshades', 'face', 'Oval luxe shades', 'brand', 4000), I('visor', 'face', 'Gold visor', 'brand', 6000),
+  I('cuban', 'chain', 'Cuban link chain', 'brand', 8000), I('tennis', 'chain', 'Iced tennis chain', 'brand', 12000), I('diamond', 'chain', 'Diamond cuban', 'brand', 25000),
+  I('royalwatch', 'wrist', 'Aurelle royal watch', 'brand', 20000), I('goldwatch', 'wrist', 'Iced-out watch', 'brand', 35000), I('goldpants', 'bottom', 'Gold pants', 'brand', 9000),
+  I('wings', 'back', 'Gold wings', 'brand', 25000), I('trophy', 'hand', 'Trophy', 'brand', 15000),
 
-  I('jeans', 'bottom', 'Jeans', 'free'), I('joggers', 'bottom', 'Joggers', 'common'), I('cargo', 'bottom', 'Cargo pants', 'common'), I('shorts', 'bottom', 'Denim shorts', 'common'),
-  I('tshorts', 'bottom', 'Team shorts', 'common', { team: true }), I('trackp', 'bottom', 'Track pants', 'rare', { team: true }), I('leatherp', 'bottom', 'Leather pants', 'rare'), I('goldpants', 'bottom', 'Gold pants', 'legend'),
-  I('sneakers', 'shoes', 'White sneakers', 'free'), I('runners', 'shoes', 'Runners', 'common'), I('slides', 'shoes', 'Slides', 'common'), I('hightops', 'shoes', 'Team high tops', 'common', { team: true }),
-  I('boots', 'shoes', 'Boots', 'rare'), I('retros', 'shoes', 'Team retros', 'rare', { team: true }), I('goldkicks', 'shoes', 'Gold kicks', 'legend'),
+  // ---- Team shop
+  I('cap', 'hat', 'Team cap', 'team', 250, T), I('beanie', 'hat', 'Team beanie', 'team', 250, T), I('headband', 'hat', 'Headband', 'team', 150, T), I('durag', 'hat', 'Durag', 'team', 200, T),
+  I('bucket', 'hat', 'Bucket hat', 'team', 450, T), I('snapback', 'hat', 'Snapback', 'team', 450, T), I('helmet', 'hat', 'Team helmet', 'team', 900, T),
+  I('jersey', 'top', 'Team jersey', 'team', 400, T), I('polo', 'top', 'Team polo', 'team', 300, T), I('hoodie', 'top', 'Team hoodie', 'team', 700, T),
+  I('track', 'outer', 'Track jacket', 'team', 600, T), I('varsity', 'outer', 'Varsity jacket', 'team', 1200, T),
+  I('tshorts', 'bottom', 'Team shorts', 'team', 250, T), I('trackp', 'bottom', 'Track pants', 'team', 700, T),
+  I('hightops', 'shoes', 'Team high tops', 'team', 500, T), I('retros', 'shoes', 'Team retros', 'team', 1200, T),
+  I('scarf', 'scarf', 'Team scarf', 'team', 200, T), I('band', 'wrist', 'Wristband', 'team', 100, T), I('pendant', 'chain', 'Team pendant', 'team', 900, T), I('paint', 'face', 'Face paint', 'team', 150, T),
+  I('backpack', 'back', 'Backpack', 'team', 400, T), I('cape', 'back', 'Team cape', 'team', 1500, T), I('finger', 'hand', 'Foam finger', 'team', 250, T), I('pennant', 'hand', 'Pennant', 'team', 150, T),
 
-  I('backpack', 'back', 'Backpack', 'common', { team: true }), I('cape', 'back', 'Team cape', 'rare', { team: true }), I('wings', 'back', 'Gold wings', 'legend'), I('trophycape', 'back', 'Trophy cape', 'earned', { ach: 'Hit a parlay' }),
-  I('ball', 'hand', 'Ball', 'common'), I('finger', 'hand', 'Foam finger', 'common', { team: true }), I('pennant', 'hand', 'Pennant', 'common', { team: true }), I('trophy', 'hand', 'Trophy', 'legend'),
+  // ---- Earned
+  I('ghost', 'top', 'Ghost sheet', 'team', 0, { ach: 'Get rescued with free coins once' }), I('goldscarf', 'scarf', 'Golden scarf', 'team', 0, { ach: 'Win 5 bets in a row' }), I('trophycape', 'back', 'Trophy cape', 'team', 0, { ach: 'Hit a parlay' }),
 ];
 export const itemById = (id) => ITEMS.find((i) => i.id === id);
 const NEUTRAL = { t1: '#4B5BA8', t2: '#2F3B7A', tink: '#FFFFFF', tacc: '#FFD43B' };
@@ -77,7 +99,7 @@ export function syncUnlocks() {
 
 /** One featured item a day is 20% off. Same item all day, picked from what can be bought. */
 export function dealToday(date = new Date()) {
-  const pool = ITEMS.filter((i) => i.price > 0);
+  const pool = ITEMS.filter((i) => i.price > 0 && i.price <= 2500);
   const n = date.getFullYear() * 400 + date.getMonth() * 32 + date.getDate();
   return pool[(n * 7) % pool.length];
 }
@@ -220,7 +242,7 @@ const HAND = {
 };
 
 /* ----- head ----- */
-const HEAD = 'M39 42 C39 26 48 18 60 18 C72 18 81 26 81 42 C81 55 74 67 60 68 C46 67 39 55 39 42 Z';
+const HEAD = 'M39 42 C39 27 48 18 60 18 C72 18 81 27 81 42 C81 52 79 58 74 63 C69 67 64 69 60 69 C56 69 51 67 46 63 C41 58 39 52 39 42 Z';
 const HP = (d, h, x = '') => `<path d="${d}" fill="${h}" stroke="rgba(8,10,28,.5)" stroke-width="1.2" stroke-linejoin="round" ${x}/><path d="${d}" fill="url(#hf-sv)"/>`;
 const SHINE = (d) => L(d, 'rgba(255,255,255,.28)', 1.4);
 const SHORT = 'M38 46 C33 22 46 11 60 11 C74 11 87 22 82 46 C81 36 75 29 67 27 C58 32 46 31 38 46 Z';
@@ -244,7 +266,7 @@ const HAIR_FRONT = {
   bun: (h) => `<circle cx="60" cy="8" r="9.5" fill="${h}" ${OUT}/><circle cx="60" cy="8" r="9.5" fill="url(#hf-sh)"/>` + HP(SHORT, h) + SHINE('M46 19 Q54 14 62 14'),
   slick: (h) => HP('M38 46 C34 22 48 10 64 10 C78 10 87 24 82 46 C80 34 72 22 60 21 C48 22 40 32 38 46 Z', h) + SHINE('M46 20 Q58 13 72 17') + SHINE('M42 28 Q54 19 70 22') + SHINE('M40 36 Q50 27 66 28'),
   braids: (h) => HP(SHORT, h) + L('M50 16 Q48 24 46 30 M58 13 Q58 22 58 29 M66 14 Q68 22 70 28', 'rgba(0,0,0,.35)', 1.4),
-  twists: (h) => HP('M38 44 C35 24 46 14 60 14 C74 14 85 24 82 44 C78 34 72 28 60 28 C48 28 42 34 38 44 Z', h) + `<g stroke="${h}" stroke-width="6" stroke-linecap="round" ${''}><path d="M44 22 L42 8"/><path d="M52 18 L51 3"/><path d="M60 16 L60 1"/><path d="M68 18 L69 3"/><path d="M76 22 L78 8"/></g><g stroke="rgba(0,0,0,.35)" stroke-width="1.2" stroke-dasharray="2 2.6"><path d="M44 22 L42 8"/><path d="M52 18 L51 3"/><path d="M60 16 L60 1"/><path d="M68 18 L69 3"/><path d="M76 22 L78 8"/></g>`,
+  twists: (h) => HP('M38 46 C35 26 46 16 60 16 C74 16 85 26 82 46 C78 36 72 30 60 30 C48 30 42 36 38 46 Z', h) + `<g fill="none" stroke-linecap="round"><path d="M40 30 q-2.4 -4 -4.0 -8 M45 24 q-1.8 -4 -3.0 -8 M51 20 q-1.2 -4 -2.0 -8 M57 18 q-0.5 -4 -0.8 -8 M63 18 q0.5 -4 0.8 -8 M69 20 q1.2 -4 2.0 -8 M75 24 q1.8 -4 3.0 -8 M80 30 q2.4 -4 4.0 -8 M48 28 q-1.2 -4 -2.0 -8 M60 25 q0.0 -4 0.0 -8 M72 28 q1.2 -4 2.0 -8" stroke="rgba(8,10,28,.5)" stroke-width="7"/><path d="M40 30 q-2.4 -4 -4.0 -8 M45 24 q-1.8 -4 -3.0 -8 M51 20 q-1.2 -4 -2.0 -8 M57 18 q-0.5 -4 -0.8 -8 M63 18 q0.5 -4 0.8 -8 M69 20 q1.2 -4 2.0 -8 M75 24 q1.8 -4 3.0 -8 M80 30 q2.4 -4 4.0 -8 M48 28 q-1.2 -4 -2.0 -8 M60 25 q0.0 -4 0.0 -8 M72 28 q1.2 -4 2.0 -8" stroke="${h}" stroke-width="5.2"/><path d="M40 30 q-2.4 -4 -4.0 -8 M45 24 q-1.8 -4 -3.0 -8 M51 20 q-1.2 -4 -2.0 -8 M57 18 q-0.5 -4 -0.8 -8 M63 18 q0.5 -4 0.8 -8 M69 20 q1.2 -4 2.0 -8 M75 24 q1.8 -4 3.0 -8 M80 30 q2.4 -4 4.0 -8 M48 28 q-1.2 -4 -2.0 -8 M60 25 q0.0 -4 0.0 -8 M72 28 q1.2 -4 2.0 -8" stroke="rgba(0,0,0,.35)" stroke-width="1" stroke-dasharray="1.6 1.8"/></g>`,
   mohawk: (h) => HP('M52 30 L53 4 L60 14 L67 2 L68 30 Z', h) + `<path d="M40 40 C42 30 78 30 80 40 C74 34 46 34 40 40 Z" fill="${h}" opacity=".45"/>`,
   dreads: (h) => HP(SHORT, h) + L('M48 18 Q46 24 44 30 M56 14 Q55 22 54 28 M64 14 Q66 22 66 28', 'rgba(0,0,0,.35)', 1.4),
 };
@@ -276,6 +298,107 @@ const FACE = {
   visor: () => `<path d="M39 38 Q60 31 81 38 L80 49 Q60 55 40 49 Z" fill="${GOLD}" opacity=".95" ${OUT}/>` + L('M43 42 Q60 36 77 42', '#FFF7D6', 2.2),
 };
 
+/* ----- more pieces: streetwear, formal, designer ----- */
+const BOXY = 'M34 77 Q60 70 86 77 L88 114 L86 136 Q60 142 34 136 L32 114 Z';
+const SLEEVE_SW = 'M37 78 C28 77 22 83 21 92 L19 109 L36 112 L38 97 Z';
+const SLEEVE_LW = 'M37 78 C28 77 22 83 21 92 L19 120 L35 122 L38 98 Z';
+const CUFF_LW = 'M19.3 114 L35.4 116 L35 122 L19 120 Z';
+const PUFFY = 'M38 78 C29 77 23 83 22 92 L19 119 C19 125 33 126 35 121 L40 98 Z';
+const BOMBER = 'M35 77 Q60 70 85 77 L87 112 L86 130 Q60 136 34 130 L33 112 Z';
+const SUIT_PANEL = 'M36 77 L52 74 L61 116 L61 144 L35 145 L34 112 Z';
+const LAPEL = 'M45 74 L52 74 L60.4 114 L55 107 L46 87 L49.4 81 Z';
+const LONG_PANEL = 'M36 77 L52 74 L60 114 L60 176 L31 178 L33 112 Z';
+const HEATHER = '#8E9196', HEATHER2 = '#7D8085', MONO = '#6B4A2E', MONO2 = '#D8B66A';
+const monoDots = (pts) => pts.map(([x, y]) => `<path d="M${x} ${y - 2} L${x + 1.6} ${y} L${x} ${y + 2} L${x - 1.6} ${y} Z" fill="${MONO2}" opacity=".9"/>`).join('');
+const suitJ = (f, lap, btn, ex = '') => both(P(SUIT_PANEL, f) + P(SLEEVE_L, f) + P(LAPEL, lap) + L('M23.4 112.4 L34.4 114.4', 'rgba(0,0,0,.3)') + L('M39 124 H50', 'rgba(0,0,0,.4)', 1.4))
+  + C(60, 121, 1.5, btn) + C(60, 132, 1.5, btn) + L('M67 96 L76 95', 'rgba(0,0,0,.4)', 1.4) + ex;
+const longCoat = (f, lap, ex = '') => both(P(LONG_PANEL, f) + P(SLEEVE_L, f) + P(LAPEL, lap) + L('M38 132 H50', 'rgba(0,0,0,.35)', 1.4) + L('M23.4 112.4 L34.4 114.4', 'rgba(0,0,0,.3)')) + ex;
+const legsW = (f, y, ex = '') => both(P(`M37 128 L60 128 L60 ${y} L39 ${y} Z`, f)) + ex + L('M60 130 V150', 'rgba(0,0,0,.4)', 1.4);
+const belt = (f = '#17171C', buckle = '#C9CED8') => P('M38.5 130 H81.5 V136 H38.5 Z', f) + `<rect x="56.4" y="131" width="7.2" height="4.4" rx="1" fill="none" stroke="${buckle}" stroke-width="1.3"/>`;
+const FOOT_F = 'M42 190 L58 190 L59 199 Q59 203 52 203 L35 203 Q32 202 34 199 Q40 197.5 42 190 Z';
+const SOLE_F = 'M33.6 202 H59 V205.4 Q57 206.6 37 206.6 Q33 206.4 33.6 202 Z';
+const formal = (up, sole, ex = '') => both(P(FOOT_F, up) + P(SOLE_F, sole) + L('M37 199.6 Q42 198.4 47 199.6', 'rgba(255,255,255,.35)', 1.2) + ex);
+const HI = 'M41.5 176 L58.5 176 L60 199 Q60 204 54 204 L38 204 Q34 203 36 199 Q41 197 41.5 176 Z';
+const v85 = (base, over, stripe) => both(P(HI, base) + P(SOLE, '#F4F1EA') + `<path d="M36 199 Q41 197 43 195 L50 195 L50 204 L38 204 Q34 203 36 199 Z" fill="${over}"/><path d="M41.5 176 L58.5 176 L58.8 184 L41.7 184 Z" fill="${over}"/><path d="M53 185 L59.4 186 L60 199 L54 199 Z" fill="${over}"/>`
+  + L('M40.6 199 L46.6 187 L52.6 196', stripe, 2.2) + L('M44 180 H56', 'rgba(255,255,255,.5)', 1) + `<path d="${HI}" fill="none" ${OUT}/>`);
+
+Object.assign(TOP, {
+  boxy: () => P(BOXY, '#E9E4D8') + both(P(SLEEVE_SW, '#E9E4D8')) + L('M49 75 Q60 85 71 75', 'rgba(0,0,0,.35)', 2.6) + L('M44 100 Q46 120 42 134 M76 100 Q74 120 78 134', 'rgba(0,0,0,.12)', 1.4),
+  graphic: () => P(TORSO, '#1C1C22') + both(P(SLEEVE_S, '#1C1C22')) + L('M50 75 Q60 84 70 75', 'rgba(255,255,255,.18)', 2)
+    + `<circle cx="60" cy="104" r="10" fill="#C8432E"/><path d="M50.4 108 Q60 92 69.6 108" fill="none" stroke="#F1E9D8" stroke-width="2.2"/><path d="M53 112 H67" stroke="#F1E9D8" stroke-width="1.6"/>`
+    + `<text x="60" y="124" font-family="Arial Black, Impact, sans-serif" font-size="5.6" text-anchor="middle" fill="#F1E9D8" letter-spacing=".5">NIGHT GAME</text>`,
+  washed: () => P(BOXY, '#3A3D44') + both(P(SLEEVE_LW, '#3A3D44') + P(CUFF_LW, '#31343A')) + P('M40 78 C44 68 76 68 80 78 C76 92 44 92 40 78 Z', '#34373D')
+    + L('M44 100 L46 114 M74 104 L72 120 M28 96 L26 108', 'rgba(255,255,255,.07)', 6) + L('M55 86 L54 104 M65 86 L66 104', '#C9CED8', 1.4) + P('M44 116 H76 L79 132 Q60 136 41 132 Z', '#34373D'),
+  dressshirt: () => P(TORSO, '#F2F1EC') + both(P(SLEEVE_L, '#F2F1EC') + P(CUFF_L, '#FAFAF7') + P('M50 72 L60 80 L55 87 L46 76 Z', '#FAFAF7'))
+    + L('M60 80 V134', 'rgba(0,0,0,.18)', 1.2) + C(60, 92, 0.9, '#D6D3CA') + C(60, 104, 0.9, '#D6D3CA') + C(60, 116, 0.9, '#D6D3CA') + L('M44 102 Q47 116 44 128 M76 102 Q73 116 76 128', 'rgba(0,0,0,.08)', 1.2),
+  turtleneck: () => P(TORSO, '#1C1C21') + both(P(SLEEVE_L, '#1C1C21') + P(CUFF_L, '#16161A')) + P('M50 60 H70 V79 Q60 84 50 79 Z', '#1C1C21') + L('M53 62 V79 M57 62 V81 M61 62 V81.5 M65 62 V80 M68 62 V78', 'rgba(255,255,255,.07)', 1.2),
+  foghoodie: () => P(BOXY, HEATHER) + both(P(SLEEVE_LW, HEATHER) + P(CUFF_LW, HEATHER2)) + P('M40 78 C44 67 76 67 80 78 C76 93 44 93 40 78 Z', HEATHER2)
+    + L('M55 87 L54 105 M65 87 L66 105', '#D8D8D4', 1.3) + `<rect x="49" y="96" width="22" height="5.4" rx="1.6" fill="rgba(0,0,0,.12)"/><text x="60" y="100.2" font-family="Arial, sans-serif" font-weight="700" font-size="3.8" text-anchor="middle" fill="#666A70" letter-spacing=".9">FOGLINE</text>`
+    + P('M44 116 H76 L79 132 Q60 136 41 132 Z', '#878A8F') + P('M33 132 Q60 139 87 132 L87 138 Q60 145 33 138 Z', HEATHER2),
+});
+Object.assign(OUTER, {
+  bomber: () => P(BOMBER, '#4E5A3F') + both(P(PUFFY, '#4E5A3F') + P('M19.6 114 L35 116.4 L34.8 122 L19.3 120 Z', '#2F3626')) + P('M46 73 Q60 81 74 73 L74 79 Q60 87 46 79 Z', '#2F3626')
+    + P('M34 127 Q60 133 86 127 L86 135 Q60 141 34 135 Z', '#2F3626') + L('M60 80 V134', '#C9C2A8', 1.4) + P('M25 92 H32 V100 H25 Z', '#46513A') + L('M58 81 L60 86', '#E8772E', 1.8),
+  silkbomber: () => P(BOMBER, '#131318') + both(P(PUFFY, '#131318') + P('M19.6 114 L35 116.4 L34.8 122 L19.3 120 Z', '#7A1B2A') + L('M26 88 Q24 100 23 112', 'rgba(255,255,255,.22)', 2.2))
+    + P('M46 73 Q60 81 74 73 L74 79 Q60 87 46 79 Z', '#7A1B2A') + P('M34 127 Q60 133 86 127 L86 135 Q60 141 34 135 Z', '#7A1B2A') + L('M35 130.5 Q60 136.5 85 130.5', GOLD, 1)
+    + L('M60 80 V134', '#8E8E96', 1.2) + `<path d="M66 100 C70 92 80 94 77 102 C75 108 67 106 70 101 C72 98 76 100 74 103" fill="none" stroke="${GOLD}" stroke-width="1.5" stroke-linecap="round"/><path d="M70 110 l1 2 l2 .3 l-1.6 1.4 l.4 2 l-1.8 -1 l-1.8 1 l.4 -2 l-1.6 -1.4 l2 -.3 Z" fill="${GOLD}"/>`
+    + L('M42 92 Q46 104 44 120', 'rgba(255,255,255,.18)', 2),
+  blazer: () => suitJ('#3A3E46', '#30343B', '#1A1C20'),
+  suit: () => suitJ('#1E2B47', '#18233B', '#0E1424', `<path d="M68 95 L71 91 L74 95 Z" fill="#F4F4F2"/>`),
+  tux: () => suitJ('#121216', '#24242C', '#24242C', L('M47 86 L57 110', 'rgba(255,255,255,.22)', 1.2) + M(L('M47 86 L57 110', 'rgba(255,255,255,.22)', 1.2))),
+  overcoat: () => longCoat('#B98B58', '#A57A4A', C(52, 120, 1.7, '#5A3F22') + C(52, 132, 1.7, '#5A3F22') + C(68, 120, 1.7, '#5A3F22') + C(68, 132, 1.7, '#5A3F22')),
+  nocturne: () => longCoat('#141418', '#0E0E12', both(P('M33 120 L60 118 L60 124 L33 126 Z', '#0B0B0E') + L('M38 90 Q41 130 37 170', 'rgba(255,255,255,.18)', 1.8)) + `<rect x="56" y="117.4" width="8" height="7" rx="1" fill="none" stroke="#C9CED8" stroke-width="1.3"/>`),
+  northgate: () => P('M34 77 Q60 70 86 77 L89 114 L89 160 Q60 166 31 160 L31 114 Z', '#1F2633') + both(P(PUFFY, '#1F2633') + P('M19.6 114 L35 116.4 L34.8 122 L19.3 120 Z', '#161B25') + P('M35 128 H52 V142 H35 Z', '#1A202B') + L('M35 131 H52', 'rgba(255,255,255,.1)'))
+    + P('M57 80 H63 V162 H57 Z', '#1A202B') + P('M30 86 C28 62 92 62 90 86 L83 91 C80 74 40 74 37 91 Z', '#7A6650')
+    + L('M35 82 l3 -2 M39 75 l3 -1 M46 70 l2.4 0 M54 68 l2.4 0 M63 68 l2.4 0 M71 70 l2.4 0 M78 75 l3 1 M82 82 l3 2', '#A08A6E', 1.6) + L('M38 86 Q60 70 82 86', 'rgba(0,0,0,.25)', 1.4)
+    + L('M37 100 Q60 106 83 100 M37 116 Q60 122 83 116', 'rgba(0,0,0,.35)', 1.4)
+    + `<circle cx="91.4" cy="92" r="4.8" fill="#A61C22" stroke="#EDEDED" stroke-width="1.2"/><path d="M88.8 94.4 L91.4 89.6 L94 94.4 Z" fill="#EDEDED"/>`,
+});
+Object.assign(BOTTOM, {
+  baggy: () => legsW('#4F6E9F', 198, both(L('M40 180 Q49 184 59 180 M40 189 Q49 192 59 189', 'rgba(0,0,0,.22)', 1.2) + L('M42 136 Q49 143 57 137', 'rgba(255,255,255,.3)') + L('M46 142 L47 172', 'rgba(255,255,255,.12)', 4))) + belt('#1F2937', GOLD),
+  techp: () => legs('#22252C', 190, both(P('M41 148 H52 V163 H41 Z', '#1A1C22') + L('M42 152 H51', '#3A3F48', 1) + L('M40 172 L58.6 170', '#3A3F48', 2.4) + P('M42.4 184 L58.5 184 L58.5 190 L42 190 Z', '#1A1C22'))) + belt('#121217', '#8E8E96'),
+  slacks: () => legs('#6E737B', 193, both(L('M50 136 L50.4 192', 'rgba(255,255,255,.22)', 1))) + belt(),
+  suitp: () => legs('#1E2B47', 193, both(L('M50 136 L50.4 192', 'rgba(255,255,255,.16)', 1))) + belt(),
+  tuxp: () => legs('#121216', 193, both(L('M40.4 134 L42.4 192', '#30303A', 2.2))) + belt('#0B0B0E', '#24242C'),
+  fogsweats: () => legsW(HEATHER, 192, both(P('M39 184 L60 184 L60 192 L39 192 Z', HEATHER2) + L('M42 185 V191 M46 185 V191 M50 185 V191 M54 185 V191 M58 185 V191', 'rgba(0,0,0,.12)', 1) + L('M44 150 Q46 165 43 180', 'rgba(0,0,0,.1)', 1.4)))
+    + P('M37.5 128 H82.5 V136 H37.5 Z', HEATHER2) + L('M57 134 L56 144 M63 134 L64 144', '#D8D8D4', 1.2) + `<rect x="66" y="141" width="10" height="3" rx="1" fill="rgba(0,0,0,.14)"/>`,
+});
+Object.assign(SHOES, {
+  oxfords: () => formal('#5A3820', '#2A1A0E', L('M46 192 L53 192 M46 194.6 L53 194.6', '#2A1A0E', 1) + L('M37 199.4 Q40 196 44 196.6', 'rgba(0,0,0,.35)')),
+  loafers: () => formal('#1A1A20', '#0E0E12', L('M42 195.6 H49', GOLD, 1.8)),
+  patent: () => formal('#0B0B0E', '#050507', L('M36.6 200 Q42 197.8 49 199.2', 'rgba(255,255,255,.7)', 1.5)),
+  chunky: () => both(P(FOOT, '#EFEAE0') + `<path d="M36 199 Q41 197 44 195 L52 195 L54 202 L37 203 Z" fill="#A9B3C1"/><path d="M48 189 L58 189 L59 196 L50 196 Z" fill="#2F5FA8" opacity=".8"/>` + P('M33 200 H61 V208 Q58 210 38 210 Q32 209 33 200 Z', '#F7F4EE') + L('M34 205 H60', 'rgba(0,0,0,.2)', 1.2)),
+  v85red: () => v85('#F4F4F2', '#B3202A', '#111114'),
+  v85royal: () => v85('#F4F4F2', '#1F4FA8', '#111114'),
+  v85shadow: () => v85('#9AA0A6', '#26282D', '#111114'),
+});
+Object.assign(HAT, {
+  plaincap: () => P('M38 32 C37 10 48 6 60 6 C72 6 83 10 82 32 Z', '#1C1C21') + L('M60 8 V30', 'rgba(255,255,255,.08)') + P('M33 32 H72 Q66 42 33 39 Z', '#141418'),
+  trucker: () => P('M38 32 C37 10 48 6 60 6 C72 6 83 10 82 32 Z', '#EFE9DC') + P('M66 7 C76 9 83 14 82 32 L66 32 Z', '#3A3F48') + L('M70 12 L70 31 M75 14 L75 31 M68 18 H82 M67 25 H82', 'rgba(255,255,255,.2)', .8) + `<rect x="46" y="16" width="14" height="7" rx="1.4" fill="#C8432E"/>` + P('M33 32 H72 Q66 42 33 39 Z', '#3A3F48'),
+  monobucket: () => P('M40 32 C39 12 48 8 60 8 C72 8 81 12 80 32 Z', MONO) + P('M24 34 C24 28 40 28 60 28 C80 28 96 28 96 34 C96 42 78 42 60 42 C42 42 24 42 24 34 Z', MONO)
+    + monoDots([[48, 16], [60, 13], [72, 16], [44, 25], [54, 22], [66, 22], [76, 25], [32, 36], [44, 37], [56, 38], [68, 38], [80, 37], [90, 35]]),
+});
+Object.assign(FACE, {
+  aviators: () => both(`<path d="M42.6 38.6 H57 Q57.6 48.6 50.6 49.6 Q43 49 42.6 38.6 Z" fill="#3B2A1A" fill-opacity=".86" stroke="${GOLD}" stroke-width="1.2"/>` + L('M44.6 41 L49 40.4', 'rgba(255,255,255,.4)', 1.4))
+    + L('M57 39.6 Q60 38 63 39.6 M57.4 41.8 Q60 40.8 62.6 41.8', GOLD, 1) + L('M42.6 39.4 L38.4 38.6 M77.4 39.4 L81.6 38.6', GOLD, 1.2),
+  ovalshades: () => both(`<ellipse cx="50.6" cy="44" rx="7" ry="3.6" fill="#0D0D10" ${OUT}/>` + L('M46 42.6 L50 42', 'rgba(255,255,255,.35)', 1.2)) + L('M57.4 43.6 Q60 42.6 62.6 43.6', '#0D0D10', 1.6) + L('M43.6 43.4 L39 42.6 M76.4 43.4 L81 42.6', GOLD, 1.4),
+  glasses: () => both(`<circle cx="50.6" cy="44" r="5.4" fill="rgba(200,220,255,.12)" stroke="#2A2A2A" stroke-width="1.2"/>`) + L('M56 43.4 Q60 41.6 64 43.4', '#2A2A2A', 1.2) + L('M45.2 43 L39.6 42 M74.8 43 L80.4 42', '#2A2A2A', 1),
+});
+Object.assign(SCARF, {
+  tie: () => P('M57 76 H63 L62 82 H58 Z', '#6B1E2A') + P('M58 82 L62 82 L65 118 L60 125 L55 118 Z', '#6B1E2A') + L('M57.4 92 L62.6 88.6 M56.8 102 L63.4 97.6 M56.2 112 L64 106.6', 'rgba(255,255,255,.22)', 1.4),
+  bowtie: () => P('M60 78 L51 73 L51 83 Z', '#121216') + P('M60 78 L69 73 L69 83 Z', '#121216') + C(60, 78, 2.2, '#1C1C22'),
+  monoscarf: () => P('M40 70 Q60 86 80 70 L82 80 Q60 96 38 80 Z', MONO) + P('M68 84 L80 114 L90 108 L78 80 Z', MONO) + monoDots([[46, 79], [54, 83], [62, 84], [70, 82], [77, 78], [74, 92], [79, 102], [84, 108]]),
+});
+Object.assign(CHAIN, {
+  cuban: () => `<path d="M44 76 Q60 116 76 76" fill="none" stroke="${GOLD2}" stroke-width="7.4" stroke-linecap="round"/><path d="M44 76 Q60 116 76 76" fill="none" stroke="${GOLD}" stroke-width="5.4" stroke-dasharray="4 1.4"/><path d="M44 76 Q60 116 76 76" fill="none" stroke="#FFF3B0" stroke-width="1.2" stroke-dasharray="1.4 4"/>`,
+  tennis: () => `<path d="M45 76 Q60 112 75 76" fill="none" stroke="#9AA8B8" stroke-width="3.6" stroke-linecap="round"/><path d="M45 76 Q60 112 75 76" fill="none" stroke="#F0F9FF" stroke-width="2.6" stroke-linecap="round" stroke-dasharray=".1 3.2"/>`
+    + `<path d="M52 92 l1 -3 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 Z M67 88 l.8 -2.4 l.8 2.4 l2.4 .8 l-2.4 .8 l-.8 2.4 l-.8 -2.4 l-2.4 -.8 Z" fill="#FFFFFF"/>`,
+});
+Object.assign(WRIST, {
+  dresswatch: () => P('M22.4 114 L34.4 116 L34 119 L22 117 Z', '#3B2414') + C(28, 116.2, 3.8, '#E8E6E0') + L('M28 116.2 V113.6 M28 116.2 L29.6 117', '#1A1A1A', .9),
+  royalwatch: () => P('M22.2 113 L34.6 115 L34 120 L21.8 118 Z', GOLD) + L('M25 113.6 L24.6 118.6 M28 114 L27.8 119 M31 114.6 L30.8 119.4', GOLD2, .8) + C(28, 116.4, 4.8, GOLD) + `<circle cx="28" cy="116.4" r="3.1" fill="#123C7A"/>` + L('M28 116.4 V114 M28 116.4 L29.8 117.2', '#F5F5F5', .8),
+});
+
 /** Returns the SVG markup for a character. vb overrides the view box (used for shop previews and busts). */
 export function avatarSvg(av, team, vb) {
   const c = palette(team);
@@ -287,10 +410,10 @@ export function avatarSvg(av, team, vb) {
   const sk = (s) => s.replace(/var\(--sk\)/g, skin);
   const hand = `<circle cx="28" cy="127" r="5.6" fill="${skin}" ${OUT}/><circle cx="28" cy="127" r="5.6" fill="url(#hf-sh)"/>`;
   const out = [];
-  out.push(`<svg viewBox="${vb || '-12 0 144 214'}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`, DEFS);
+  out.push(`<svg viewBox="${vb || '-12 12 144 202'}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="filter:saturate(.82) contrast(1.04)">`, DEFS);
   out.push('<ellipse cx="60" cy="208" rx="38" ry="5" fill="rgba(0,0,0,.3)"/>');
   out.push(pick(BACK, eq.back));
-  out.push(HAIR_BACK[hd] ? HAIR_BACK[hd](hair) : '');
+  out.push(`<g transform="translate(60 76) scale(.8) translate(-60 -76)">${HAIR_BACK[hd] ? HAIR_BACK[hd](hair) : ''}</g>`);
   out.push(sk(`<g>${both(P('M41 128 L59 128 L58 194 L43 194 Z', skin))}</g>`));
   out.push(sk(pick(SHOES, eq.shoes, 'sneakers')));
   out.push(sk(pick(BOTTOM, eq.bottom, 'jeans')));
@@ -302,21 +425,24 @@ export function avatarSvg(av, team, vb) {
   out.push(pick(SCARF, eq.scarf));
   out.push(pick(CHAIN, eq.chain));
   out.push(pick(WRIST, eq.wrist));
-  // head
-  out.push(`<ellipse cx="39.4" cy="46" rx="3.8" ry="5.8" fill="${skin}" ${OUT}/><ellipse cx="80.6" cy="46" rx="3.8" ry="5.8" fill="${skin}" ${OUT}/>`);
+  // head: scaled down a little and set on the neck so the proportions look grown up
+  out.push(`<g transform="translate(60 76) scale(.8) translate(-60 -76)">`);
+  out.push(`<ellipse cx="39.6" cy="46" rx="3" ry="5.2" fill="${skin}" ${OUT}/><ellipse cx="80.4" cy="46" rx="3" ry="5.2" fill="${skin}" ${OUT}/>`);
   out.push(pick(EAR, eq.ear));
   out.push(P(HEAD, skin));
-  out.push(`<circle cx="46" cy="53" r="5" fill="#F0605D" opacity=".16"/><circle cx="74" cy="53" r="5" fill="#F0605D" opacity=".16"/>`);
+  // soft shading: jaw, temples, under the brow
+  out.push(`<path d="M41 50 C42 58 48 66 60 68.4 C72 66 78 58 79 50 C77 58 72 62.6 60 63.4 C48 62.6 43 58 41 50 Z" fill="rgba(0,0,0,.13)"/><path d="M39.6 38 C39.4 46 40 50 41 52 L44 46 L44 36 Z M80.4 38 C80.6 46 80 50 79 52 L76 46 L76 36 Z" fill="rgba(0,0,0,.1)"/>`);
   out.push(pick(BEARD, eq.beard));
-  // eyes, brows, nose, mouth: a relaxed, slightly cool look
-  const eye = `<ellipse cx="51" cy="44.4" rx="4.6" ry="3.3" fill="#fff" stroke="rgba(0,0,0,.35)" stroke-width=".8"/><circle cx="51.8" cy="44.6" r="2.5" fill="#33241A"/><circle cx="51.8" cy="44.6" r="1.2" fill="#0B0B10"/><circle cx="52.6" cy="43.6" r=".9" fill="#fff"/>`
-    + `<path d="M46.2 43.4 Q51 40.2 55.8 43.4" fill="none" stroke="${INK}" stroke-width="1.7" stroke-linecap="round"/><path d="M46 38.4 Q51 36.4 56 38.8" fill="none" stroke="#2A1C12" stroke-opacity=".85" stroke-width="2.6" stroke-linecap="round"/>`;
-  out.push(both(eye).replace(/<g transform="matrix\(-1 0 0 1 120 0\)">/, '<g transform="matrix(-1 0 0 1 120 0)">'));
-  out.push(L('M60 46 Q58.4 52 60.4 53.4 Q62.4 53.6 63.4 52', 'rgba(60,20,10,.4)', 1.3));
-  out.push(`<path d="M53 58 Q60 62.4 67.4 57.6" fill="none" stroke="#4A2323" stroke-width="2" stroke-linecap="round"/><path d="M56 60.4 Q60 62.4 64 60.4" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1.2" stroke-linecap="round"/>`);
+  const eye = `<path d="M45.4 44.8 Q51 40.8 56.6 44.2 Q51 47.2 45.4 44.8 Z" fill="#E6E1D6" stroke="rgba(0,0,0,.5)" stroke-width=".8"/><circle cx="51.8" cy="44.2" r="2.3" fill="#3A281B"/><circle cx="51.8" cy="44.2" r="1.1" fill="#0B0B10"/><circle cx="52.5" cy="43.5" r=".5" fill="#fff" opacity=".8"/>`
+    + `<path d="M44.8 44.8 Q51 40 57 43.8" fill="none" stroke="${INK}" stroke-width="2.1" stroke-linecap="round"/><path d="M46 41.4 Q51 38.4 56 41" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1"/><path d="M46.6 46.8 Q51 48.6 56 46.4" fill="none" stroke="rgba(0,0,0,.16)" stroke-width="1.5" stroke-linecap="round"/>`
+    + `<path d="M44.6 37.8 Q50.6 35.6 57 38.8" fill="none" stroke="#2A1C12" stroke-opacity=".9" stroke-width="3" stroke-linecap="round"/>`;
+  out.push(both(eye));
+  out.push(`<path d="M58.4 42 Q57.6 48 57.2 51.6" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2"/>` + L('M56.6 53.2 Q58.2 55.6 60 54.2 Q61.8 55.6 63.4 53.2', 'rgba(60,20,10,.5)', 1.4) + `<path d="M62.6 42 Q63.4 48 63.4 52" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="1.6"/>`);
+  out.push(`<path d="M53.6 59.6 Q57 60.6 60.4 60.2 Q64 60 66.8 58.4" fill="none" stroke="#3A1C1C" stroke-width="1.9" stroke-linecap="round"/><path d="M56 62.4 Q60 64 64 62.2" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="1.5" stroke-linecap="round"/>`);
   out.push(pick(FACE, eq.face));
   out.push(HAIR_FRONT[hd] ? HAIR_FRONT[hd](hair) : '');
   out.push(pick(HAT, eq.hat));
+  out.push('</g>');
   out.push(sk(pick(HAND, eq.hand)));
   out.push('</svg>');
   return out.join('');
@@ -329,8 +455,8 @@ export function renderAvatar(av = getState().avatar, team = avatarTeam(av), cls 
   el.innerHTML = avatarSvg(av, team, /\bbust\b/.test(cls) ? BUST : undefined);
   return el;
 }
-const BUST = '8 0 104 104';
-const VB = { hair: BUST, hat: BUST, face: BUST, beard: BUST, ear: BUST, top: '0 62 120 100', outer: '0 62 120 120', scarf: '8 58 104 80', chain: '20 60 80 66', wrist: '4 92 48 48', bottom: '16 118 88 96', shoes: '14 164 92 52', back: '-12 0 144 214', hand: '-12 0 144 214' };
+const BUST = '20 12 80 80';
+const VB = { hair: BUST, hat: BUST, face: BUST, beard: BUST, ear: BUST, top: '0 62 120 100', outer: '0 62 120 120', scarf: '8 58 104 80', chain: '20 60 80 66', wrist: '4 92 48 48', bottom: '16 118 88 96', shoes: '14 164 92 52', back: '-12 12 144 202', hand: '-12 12 144 202' };
 /** Preview of just one item on the current character, zoomed to where it is worn. */
 export function previewSvg(item, av = getState().avatar, team = avatarTeam(av)) {
   return avatarSvg({ ...av, eq: { ...av.eq, [item.slot]: item.id } }, team, VB[item.slot]);

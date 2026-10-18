@@ -3,14 +3,14 @@ import { h, clear, toast } from '../ui.js';
 import { getState, getBank, myTeams, setAvatar, onSlipChange } from '../store.js';
 import { pageHead } from '../components.js';
 import { levelFor, rankFor, betStats } from '../bets.js';
-import { SKINS, HAIR_COLORS, SLOTS, GROUPS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, syncUnlocks, renderAvatar, avatarTeam, previewSvg } from '../avatar.js';
+import { SKINS, HAIR_COLORS, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, syncUnlocks, renderAvatar, avatarTeam, previewSvg } from '../avatar.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
 export async function render(root) {
   const unlocked = syncUnlocks();
   if (unlocked.length) toast(`New item unlocked: ${unlocked.map((i) => itemById(i)?.name).join(', ')}`);
-  let group = 'head';
+  let sec = 'team';
   let only = false;
   const host = h('div', { class: 'profile' });
   root.append(pageHead('Your fan', 'Dress your character with coins you win. Looks only. Nothing here changes your odds.'), host);
@@ -37,16 +37,22 @@ export async function render(root) {
       h('div', { class: 'pf-worn' }, SLOTS.map((s) => { const id = av.eq[s.id]; const it = id && itemById(id); return it ? h('span', { class: 'chip' }, it.name) : null; })));
 
     // right: shop
-    const tabs = h('div', { class: 'seg pf-tabs', role: 'tablist' }, GROUPS.map((g) => h('button', { type: 'button', role: 'tab', class: 'seg-b' + (group === g.id ? ' on' : ''), 'aria-selected': group === g.id ? 'true' : 'false', onclick: () => { group = g.id; draw(); } }, g.label)));
-    const slots = GROUPS.find((g) => g.id === group).slots;
-    const items = ITEMS.filter((i) => slots.includes(i.slot) && (!only || av.owned.includes(i.id))).sort((a, b) => slots.indexOf(a.slot) - slots.indexOf(b.slot));
-    const grid = h('div', { class: 'shop-grid' }, items.map((it) => itemCard(it, av, bank, team, deal)));
-    if (!items.length) grid.append(h('p', { class: 'muted' }, 'You do not own anything here yet.'));
+    const tabs = h('div', { class: 'seg pf-tabs', role: 'tablist' }, SECTIONS.map((s) => h('button', { type: 'button', role: 'tab', class: 'seg-b' + (sec === s.id ? ' on' : ''), 'aria-selected': sec === s.id ? 'true' : 'false', onclick: () => { sec = s.id; draw(); } }, s.label)));
+    const cur = SECTIONS.find((s) => s.id === sec);
+    const items = ITEMS.filter((i) => i.sec === sec && !i.ach && (!only || av.owned.includes(i.id)));
+    const body = h('div', { class: 'shop-body' });
+    for (const s of SLOTS) {
+      const list = items.filter((i) => i.slot === s.id).sort((a, b) => a.price - b.price);
+      if (!list.length) continue;
+      body.append(h('h3', { class: 'shop-slot' }, s.label, h('small', null, String(list.length))), h('div', { class: 'shop-grid' }, list.map((it) => itemCard(it, av, bank, team, deal))));
+    }
+    if (!items.length) body.append(h('p', { class: 'muted' }, 'You do not own anything here yet.'));
+    const dealSec = deal && SECTIONS.find((s) => s.id === deal.sec);
     const right = h('section', { class: 'card pf-shop' },
       h('div', { class: 'pf-shop-h' }, h('h2', { class: 'card-h' }, 'Shop'),
         h('label', { class: 'pf-only' }, h('input', { type: 'checkbox', id: 'pf-owned', checked: only ? '' : null, onchange: (e) => { only = e.target.checked; draw(); } }), ' Owned only')),
-      deal ? h('div', { class: 'deal' }, h('b', null, 'Today only'), ` ${deal.name} is 20% off (${fmt(priceOf(deal))} coins). Find it under ${GROUPS.find((g) => g.slots.includes(deal.slot)).label}.`) : null,
-      tabs, grid);
+      deal ? h('div', { class: 'deal' }, h('i', null, 'Today only:'), ` ${deal.name} is 20% off (${fmt(priceOf(deal))} coins, normally ${fmt(deal.price)}). It is in ${dealSec ? dealSec.label : 'the shop'}.`) : null,
+      tabs, h('p', { class: 'muted pf-blurb' }, cur.blurb), body);
 
     host.append(left, right);
 
@@ -74,7 +80,7 @@ export async function render(root) {
     return h('article', { class: `item t-${it.tier}` + (worn ? ' worn' : '') + (owned ? ' owned' : ''), 'data-item': it.id },
       svg,
       h('div', { class: 'it-n' }, it.name),
-      h('small', { class: 'it-t' }, `${TIERS[it.tier].label} · ${SLOTS.find((s) => s.id === it.slot).label}${it.team ? ' · team colours' : ''}`),
+      h('small', { class: 'it-t' }, TIERS[it.tier].label),
       act);
   }
 

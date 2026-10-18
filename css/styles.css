@@ -537,3 +537,8 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
   .shop-grid { grid-template-columns: repeat(2, 1fr); }
   .bk-av .avatar { width: 52px; height: 52px; }
 }
+.shop-slot { font-size: 18px; text-transform: uppercase; margin: 14px 0 8px; display: flex; gap: 8px; align-items: baseline; }
+.shop-slot:first-child { margin-top: 4px; }
+.pf-blurb { margin: -4px 0 8px; font-size: 14px; }
+.item.t-epic { border-color: color-mix(in srgb, var(--violet) 70%, var(--line)); }
+.item.t-legend { background: linear-gradient(160deg, color-mix(in srgb, var(--volt) 10%, var(--surface-2)), var(--surface-2) 60%); }

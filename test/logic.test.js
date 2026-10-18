@@ -335,6 +335,7 @@ import * as S from '../js/specials.js';
 
 // ---- avatar and shop ----
 {
+  const m = await import('../js/avatar.js');
   const { ITEMS, buy, equip, unequip, priceOf, dealToday, avatarSvg, syncUnlocks, itemById } = await import('../js/avatar.js');
   const st = await import('../js/store.js');
   st.resetAll();
@@ -373,6 +374,13 @@ import * as S from '../js/specials.js';
       assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>') && !svg.includes('undefined'), it.id);
     }
     assert.ok(avatarSvg({ skin: 2, hairColor: 0, eq: { top: 'jersey' } }, team).includes('#FF0000'));
+  });
+  t('shop: every item has a section; designer pieces cost far more than blanks', () => {
+    const secs = new Set(m.SECTIONS.map((s) => s.id));
+    for (const it of m.ITEMS) assert.ok(secs.has(it.sec), it.id);
+    const blank = m.ITEMS.filter((i) => i.sec === 'blank'), brand = m.ITEMS.filter((i) => i.sec === 'brand');
+    assert.ok(Math.max(...blank.map((i) => i.price)) * 10 < Math.min(...brand.map((i) => i.price)));
+    assert.ok(m.itemById('foghoodie').price > m.itemById('tee').price + 5000);
   });
   t('shop: earned items unlock from stats and rescue; reset bets keeps items', () => {
     st.update((s) => { s.bank.rescues = 1; });
