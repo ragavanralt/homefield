@@ -689,3 +689,201 @@ ART.beard.beard = (P, g, col, ph, c) => {
 };
 ART.ear.studs = (P, g, col, ph) => { if (ph === 'face') both((s) => { P.add(`<path d="M${CX + s * 35.2} 77.4 l2.2 2.2 l-2.2 2.2 l-2.2 -2.2Z" fill="#F4FBFF" stroke="#7A9AB8" stroke-width="0.8"/>`); }); };
 ART.ear.hoops = (P, g, col, ph) => { if (ph === 'face') both((s) => { P.add(`<ellipse cx="${CX + s * 35.6}" cy="85" rx="3.6" ry="5" fill="none" stroke="${GOLD2}" stroke-width="2.8"/><ellipse cx="${CX + s * 35.6}" cy="85" rx="3.6" ry="5" fill="none" stroke="${GOLD}" stroke-width="1.6"/>`); }); };
+
+/* ============================================================ RETROS, PRINT JEANS, BASICS, OPEN JACKETS, SLEEVES */
+// Throwback pieces in fixed colours. They copy the colours, cuts, stripes, numbers and city lettering of famous
+// kits; no real logos, crests or brand marks are drawn.
+const word = (P, t, y, size, maxW, fill, line, lw = 1.2, font = 'Arial Black, Arial, sans-serif', x = CX) => {
+  const est = t.length * size * 0.74, fit = est > maxW ? ` textLength="${maxW}" lengthAdjust="spacingAndGlyphs"` : '';
+  P.add(`<text x="${x}" y="${y}" font-family="${font}" font-weight="900" font-size="${size}" text-anchor="middle" fill="${fill}"${line ? ` stroke="${line}" stroke-width="${lw}" paint-order="stroke"` : ''} letter-spacing="0.4"${fit}>${t.replace(/&/g, '&amp;')}</text>`);
+};
+// a band across a sleeve or arm at fraction f of the arm's length
+const across = (P, g, side, f, grow, colr, w) => { const J = cutF(g.armJ(side), 0, f, grow); const [x, y, ww] = J[J.length - 1]; P.stroke(`M${pt([x - ww / 2 + 1.4, y])} L${pt([x + ww / 2 - 1.4, y])}`, colr, w); };
+const vStripes = (cols, w, x0 = CX - 90) => Array.from({ length: Math.ceil(180 / w) }, (_, i) => `<rect x="${x0 + i * w}" y="90" width="${w}" height="140" fill="${cols[i % cols.length]}"/>`).join('');
+const hStripes = (cols, w, y0 = 100) => Array.from({ length: Math.ceil(130 / w) }, (_, i) => `<rect x="${CX - 90}" y="${y0 + i * w}" width="180" height="${w}" fill="${cols[i % cols.length]}"/>`).join('');
+const pins = (colr, step = 7, op = 0.9) => Array.from({ length: Math.ceil(180 / step) }, (_, i) => `<path d="M${CX - 90 + i * step} 90 L${CX - 90 + i * step} 230" stroke="${colr}" stroke-width="0.9" opacity="${op}"/>`).join('');
+const band = (y, hgt, colr, op = 1) => `<rect x="${CX - 90}" y="${y}" width="180" height="${hgt}" fill="${colr}" opacity="${op}"/>`;
+// a plain shield on the chest (an original shape, not any club's crest)
+const shield = (P, x, y, a, b2) => { const d = blob([[x - 5.5, y - 6.5], [x + 5.5, y - 6.5], [x + 5.5, y + 1], [x, y + 7.5], [x - 5.5, y + 1]]); P.shape(d, a, { line: INK, w: 1 }); P.clip(d, `<rect x="${x}" y="${y - 8}" width="7" height="16" fill="${b2}"/>`); P.stroke(d, INK, 1); };
+const armholes = (P, c, grow, colr, w = 3) => { const B = c.B; both((s) => P.stroke(curve([[CX + s * (B.nk + 9), 112.5], [CX + s * (B.ch - 4 + grow * 0.5), 128], [CX + s * (B.ch + 1 + grow), 141]]), colr, w)); };
+
+// basketball tanks. o = { main, trim, trim2, ink, out, num, city, pin, side, side2 }
+const nbaTank = (o) => top({
+  main: () => o.main, sleeve: 'none', shape: 'tank', neck: 'none', grow: 4, hem: 207,
+  detail: (P, c, R, d) => {
+    const B = c.B;
+    if (o.pin) P.clip(d, pins(o.pin));
+    if (o.side) P.clip(d, [-1, 1].map((sd) => `<path d="${poly([[CX + sd * (B.ch - 1), 138], [CX + sd * (B.ch + 22), 138], [CX + sd * (B.hp + B.be + 22), 212], [CX + sd * (B.wa + B.be + 1), 212]])}" fill="${o.side}"/>`).join(''));
+    if (o.side2) both((sd) => P.stroke(curve([[CX + sd * (B.ch - 1), 138], [CX + sd * (B.wa + B.be + 1), 207]]), o.side2, 1.8));
+    if (o.city) word(P, o.city, 148, 9.5, 48, o.ink, o.out, 0.7);
+    digits(P, o.num, CX, 182, 34, o.ink, o.out);
+  },
+  collar: (P, c) => { const nk = c.B.nk; P.stroke(curve([[CX - nk - 2, 112], [CX - nk + 2, 122], [CX, 127], [CX + nk - 2, 122], [CX + nk + 2, 112]]), o.trim, 3.6); if (o.trim2) P.stroke(curve([[CX - nk + 0.6, 114], [CX - nk + 3.6, 121], [CX, 124.4], [CX + nk - 3.6, 121], [CX + nk - 0.6, 114]]), o.trim2, 1.2); armholes(P, c, 4, o.trim, 3.2); },
+});
+ART.top.rt_la04 = nbaTank({ main: '#FDB927', trim: '#552583', trim2: '#F4F1EA', ink: '#552583', out: '#F4F1EA', num: '8', city: 'LOS ANGELES', side: '#552583', side2: '#F4F1EA' });
+ART.top.rt_la04p = nbaTank({ main: '#552583', trim: '#FDB927', trim2: '#F4F1EA', ink: '#FDB927', out: '#F4F1EA', num: '8', city: 'LOS ANGELES', side: '#FDB927', side2: '#F4F1EA' });
+ART.top.rt_chi96 = nbaTank({ main: '#CE1141', trim: '#16161A', trim2: '#F4F1EA', ink: '#F4F1EA', out: '#16161A', num: '23', city: 'CHICAGO' });
+ART.top.rt_tor00 = nbaTank({ main: '#4B2A7B', trim: '#16161A', trim2: '#CE1141', ink: '#F4F1EA', out: '#16161A', num: '15', city: 'TORONTO', side: '#CE1141', side2: '#16161A', pin: '#6A4A9A' });
+ART.top.rt_cha93 = nbaTank({ main: '#00788C', trim: '#1D1160', trim2: '#F4F1EA', ink: '#F4F1EA', out: '#1D1160', num: '1', city: 'CHARLOTTE', pin: '#E6F2F4' });
+ART.top.rt_sea96 = nbaTank({ main: '#00653A', trim: '#FFC200', trim2: '#C8102E', ink: '#FFC200', out: '#F4F1EA', num: '20', city: 'SEATTLE', side: '#FFC200', side2: '#C8102E' });
+ART.top.rt_phx93 = nbaTank({ main: '#1D1160', trim: '#E56020', trim2: '#F4F1EA', ink: '#E56020', out: '#F4F1EA', num: '13', city: 'PHOENIX', side: '#E56020' });
+
+// football kits. o = { main, collar, cuff, cuff2, stripes, pattern, badge, sleeve, neck }
+const kit = (o) => top({
+  main: () => o.main, sleeve: 'short', neck: o.neck ?? 'v', grow: o.grow ?? 6, sgrow: o.sgrow ?? 6.5, hem: 209, ribCol: () => o.collar,
+  sleeveCol: o.sleeve ? () => o.sleeve : undefined,
+  detail: (P, c, R, d) => {
+    if (o.stripes) P.clip(d, vStripes(o.stripes[0], o.stripes[1], o.stripes[2]));
+    if (o.pattern) P.clip(d, o.pattern);
+    if (o.stripes || o.pattern) P.clip(d, `<path d="${poly([[CX + 22, 90], [CX + 90, 90], [CX + 90, 230], [CX + 26, 230]])}" fill="#000" opacity="0.14"/>`);
+    if (o.badge) shield(P, CX + 16, 140, o.badge[0], o.badge[1]);
+    if (o.num) digits(P, o.num, CX - 16, 146, 11, o.num[1] || o.collar, INK);
+  },
+  trim: (P, g, side, yEnd, c) => { const gr = 6.5 * (c.B.arm * 0.5 + 0.5); across(P, g, side, yEnd - 0.02, gr, o.cuff || o.collar, 3.2); if (o.cuff2) across(P, g, side, yEnd - 0.07, gr, o.cuff2, 1.4); },
+});
+ART.top.rt_blau = kit({ main: '#1A3C8C', stripes: [['#1A3C8C', '#9B1B30'], 15, CX - 97], collar: '#F2C230', cuff: '#F2C230', badge: ['#F2C230', '#9B1B30'], grow: 8, sgrow: 8 });
+ART.top.rt_bra02 = kit({ main: '#F9D616', collar: '#0A7A3C', cuff: '#0A7A3C', cuff2: '#1F4CA8', badge: ['#1F4CA8', '#0A7A3C'], neck: 'crew' });
+ART.top.rt_mil94 = kit({ main: '#16161A', stripes: [['#C8102E', '#16161A'], 10, CX - 95], collar: '#F4F1EA', cuff: '#F4F1EA', badge: ['#F4F1EA', '#C8102E'] });
+ART.top.rt_arg86 = kit({ main: '#F4F1EA', stripes: [['#74ACDF', '#F4F1EA'], 9, CX - 94.5], collar: '#1C2A55', cuff: '#1C2A55', badge: ['#74ACDF', '#F4F1EA'], neck: 'crew' });
+ART.top.rt_ned88 = kit({ main: '#F36C21', pattern: Array.from({ length: 9 }, (_, i) => `<path d="M${CX - 90 + i * 22} 230 L${CX - 79 + i * 22} 90 L${CX - 68 + i * 22} 230Z" fill="#FFB06B" opacity="0.6"/><path d="M${CX - 79 + i * 22} 90 L${CX - 68 + i * 22} 230 L${CX - 57 + i * 22} 90Z" fill="#C9480F" opacity="0.5"/>`).join(''), collar: '#F4F1EA', cuff: '#F4F1EA', cuff2: '#F36C21', badge: ['#F4F1EA', '#F36C21'] });
+
+// gridiron jersey: big shoulders, sleeve stripes, block numbers
+ART.top.rt_whiteout = top({
+  main: () => '#F4F4F2', sleeve: 'short', neck: 'v', grow: 7, sgrow: 10, hem: 209, ribCol: () => '#00338D',
+  detail: (P) => digits(P, '17', CX, 184, 40, '#C60C30', '#00338D'),
+  trim: (P, g, side, yEnd, c) => { const gr = 10 * (c.B.arm * 0.5 + 0.5); across(P, g, side, yEnd - 0.05, gr, '#00338D', 3.4); across(P, g, side, yEnd - 0.11, gr, '#C60C30', 2.6); across(P, g, side, yEnd - 0.165, gr, '#00338D', 3.4); },
+});
+
+// hockey sweaters: long sleeves with arm stripes, hem stripes, laced collar
+const sweater = (o) => top({
+  main: () => o.main, sleeve: 'long', neck: 'v', grow: 8, sgrow: 7.5, hem: 212, ribCol: () => o.collar, cuffCol: () => o.main,
+  detail: (P, c, R, d) => {
+    P.clip(d, o.chest ? band(150, 12, o.chest) + band(150, 1.8, o.stripe) + band(160.2, 1.8, o.stripe) : '');
+    P.clip(d, band(190, 6, o.stripe) + (o.hem2 ? band(197, 3, o.hem2) : ''));
+    [118, 124, 130].forEach((y) => P.stroke(curve([[CX - 3, y], [CX + 3, y + 3]]), o.stripe, 1.1));
+    if (o.num) digits(P, o.num, CX, 180, 20, o.stripe, INK);
+  },
+  trim: (P, g, side, yEnd, c) => { const gr = 7.5 * (c.B.arm * 0.5 + 0.5); across(P, g, side, 0.6, gr, o.stripe, 4.2); if (o.hem2) across(P, g, side, 0.66, gr, o.hem2, 2.2); },
+});
+ART.top.rt_tor67 = sweater({ main: '#00205B', collar: '#F4F1EA', stripe: '#F4F1EA' });
+ART.top.rt_mtl = sweater({ main: '#AF1E2D', collar: '#192168', stripe: '#F4F1EA', chest: '#192168', hem2: '#192168' });
+
+// baseball button-up with piping
+ART.top.rt_tor93 = top({
+  main: () => '#8EB8E5', sleeve: 'short', neck: 'v', rib: false, grow: 5, sgrow: 6, hem: 209,
+  collar: (P, c) => { const nk = c.B.nk; P.stroke(curve([[CX - nk - 3.5, 112.5], [CX - nk * 0.4, 124], [CX, 138], [CX + nk * 0.4, 124], [CX + nk + 3.5, 112.5]]), '#13274F', 2.4); },
+  detail: (P) => { P.stroke(curve([[CX + 1.5, 138], [CX + 1.5, 207]]), '#13274F', 2); P.stroke(curve([[CX + 3.5, 138], [CX + 3.5, 207]]), '#E8291C', 1); [146, 160, 174, 188, 202].forEach((y) => P.dot(CX - 2, y, 1.4, '#F4F1EA')); word(P, 'TORONTO', 160, 10, 50, '#13274F', '#E8291C', 0.8, 'Georgia, serif'); },
+  trim: (P, g, side, yEnd, c) => { const gr = 6 * (c.B.arm * 0.5 + 0.5); across(P, g, side, yEnd - 0.02, gr, '#13274F', 2.2); across(P, g, side, yEnd - 0.05, gr, '#E8291C', 1.2); },
+});
+
+// luxury court shorts: long mesh, a wide side panel with piping, a thick gold waistband
+const lux = (main, side, pipe) => pants({ one: true, main: () => main, end: 268, grow: 13, bag: { hem: 1.14, out: 3 }, fly: false, band: () => '#C9A23A',
+  legDetail: (P, g, sd, J, c, R) => {
+    for (let k = 0; k < 40; k++) { const j = J[1 + (k % (J.length - 2))]; P.dot(j[0] + ((k * 7) % 13 - 6) * j[2] / 16, j[1] + ((k * 5) % 9 - 4), 0.5, R.deep, 0.5); }
+    P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 - 4.5), y])), side, 9);
+    P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 - 9.6), y])), pipe, 1.4);
+    P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 - 1), y])), pipe, 1.2);
+    hemLine(P, J, R);
+  },
+  detail: (P, c, R, m, w) => { for (let x = CX - w + 3; x < CX + w - 3; x += 4) P.stroke(`M${x} 192.6 l2 1.8 l2 -1.8`, '#7A5E14', 0.8, 0.9); P.ell(CX, 194, 3.4, 2.2, '#16161A', { line: '#7A5E14', w: 0.8 }); },
+});
+ART.bottom.rt_lux_chi = lux('#CE1141', '#16161A', '#F4F1EA');
+ART.bottom.rt_lux_la = lux('#552583', '#FDB927', '#F4F1EA');
+ART.bottom.rt_lux_bos = lux('#007A33', '#F4F1EA', '#BA9653');
+ART.bottom.rt_lux_cha = lux('#00788C', '#1D1160', '#F4F1EA');
+const kitShorts = (main, stripe) => pants({ one: true, main: () => main, end: 252, grow: 9, bag: { hem: 1.08, out: 2 }, fly: false, band: () => main, legDetail: (P, g, sd, J, c, R) => { P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 - 2.5), y])), stripe, 2.2); hemLine(P, J, R); } });
+ART.bottom.rt_blau_sh = kitShorts('#1A2A5C', '#F2C230');
+ART.bottom.rt_bra_sh = kitShorts('#1F4CA8', '#F4F1EA');
+ART.bottom.rt_tear = pants({ main: () => '#16161A', grow: 6, straight: 0.95, fly: false, band: () => '#16161A', legDetail: (P, g, sd, J, c, R) => {
+  [-6.8, -4.4, -2].forEach((o) => P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 + o), y])), '#F4F1EA', 1.2));
+  J.slice(1).forEach(([x, y, w]) => P.dot(x + sd * (w / 2 - 4.4), y, 1.3, SILVER));
+} });
+
+// retro hats
+ART.hat.rt_cap_chi = capOf({ main: () => '#CE1141', bill: () => '#16161A', flat: true, logo: (P) => word(P, 'CHI', 37, 13, 30, '#F4F1EA', '#16161A', 1.4) });
+ART.hat.rt_cap_tor = capOf({ main: () => '#134A8E', bill: () => '#134A8E', logo: (P) => { word(P, 'T', 36, 17, 14, '#F4F1EA', '#E8291C', 1.6, 'Georgia, serif'); P.ell(100, 9, 2.6, 1.8, '#E8291C'); } });
+const bucketOf = (crown, brim, stitch) => (P, g, col, ph) => { if (ph !== 'head') return; const R = ramp(crown), R2 = ramp(brim); P.part(blob([[68, 44], [70, 22], [84, 10], [100, 8], [116, 10], [130, 22], [132, 44]]), R, { shade: [[poly([[112, 0], [150, 0], [150, 60], [116, 60]]), R.sh]] }); P.part(blob([[54, 52], [62, 40], [100, 37], [138, 40], [146, 52], [140, 58], [100, 56], [60, 58]]), R2, { shade: [[poly([[112, 30], [160, 30], [160, 70], [116, 70]]), R2.sh]] }); [[[62, 49], [100, 45.5], [138, 49]], [[60, 53], [100, 50], [140, 53]]].forEach((s2) => P.stroke(curve(s2), stitch, 0.9, 0.9)); P.stroke(curve([[68, 42], [100, 39.5], [132, 42]]), stitch, 1.2); };
+ART.hat.rt_bucket = bucketOf('#00788C', '#1D1160', '#F4F1EA');
+ART.hat.rt_beanie = (P, g, col, ph) => {
+  if (ph !== 'head') return;
+  const R = ramp('#16161A'), d = blob([[63, 46], [63, 28], [72, 12], [88, 3], [100, 1.5], [112, 3], [128, 12], [137, 28], [137, 46]]);
+  P.part(d, R, { shade: [[poly([[112, -10], [150, -10], [150, 60], [116, 60]]), R.sh]] });
+  P.clip(d, band(16, 5, '#E8B93A') + band(24, 3, '#F4F1EA'));
+  for (let x = 72; x <= 128; x += 7) P.stroke(curve([[x, 10 + Math.abs(x - 100) * 0.3], [x + (x - 100) * 0.04, 34]]), R.deep, 1.1, 0.6);
+  P.part(blob([[62, 50], [62, 36], [100, 33], [138, 36], [138, 50], [100, 53]]), ramp('#E8B93A'), { shade: [[poly([[114, 20], [150, 20], [150, 60], [118, 60]]), dk('#E8B93A', 0.2)]] });
+  P.ell(100, -2, 8, 7, '#16161A', { line: '#000' }); P.ell(97, -4, 3, 2, '#E8B93A', { op: 0.7 });
+};
+
+// retro jackets
+const satin = (main, rib, o = {}) => outer({ main: () => main, closed: true, len: 210, grow: 9, sgrow: 8.5, collar: ribCollar(() => rib), cuff: () => rib,
+  detail: (P, c, R, d, m, B, grow, hemY) => {
+    if (o.yoke) P.clip(d, band(100, 36, o.yoke) + band(136, 2.4, '#F4F1EA'));
+    P.clip(d, `<path d="${curve([[CX - 34, 150], [CX - 22, 132], [CX - 12, 128]])}" stroke="${lt(main, 0.45)}" stroke-width="5" fill="none" opacity="0.45" stroke-linecap="round"/><path d="${curve([[CX - 30, 190], [CX - 20, 170]])}" stroke="${lt(main, 0.4)}" stroke-width="4" fill="none" opacity="0.35" stroke-linecap="round"/>`);
+    [164, 178, 192].forEach((y) => P.dot(CX, y, 1.8, SILVER));
+    hem(P, B, grow, hemY, ramp(rib)); P.clip(d, band(hemY - 4.5, 1.2, '#F4F1EA'));
+    if (o.text) word(P, o.text, 152, o.size || 13, 40, '#F4F1EA', o.textLine || INK, 1.4, o.font || 'Arial Black, Arial, sans-serif', CX);
+  } });
+ART.outer.rt_satin_chi = satin('#C8102E', '#16161A', { text: 'CHICAGO', size: 9 });
+ART.outer.rt_satin_la = satin('#005A9C', '#F4F1EA', { text: 'Los Angeles', font: 'Brush Script MT, Georgia, cursive', size: 12, textLine: '#C8102E' });
+ART.outer.rt_halfzip = outer({ main: () => '#00788C', closed: true, len: 210, grow: 9, sgrow: 8, sleeveCol: () => '#00788C', cuff: () => '#1D1160',
+  collar: (P, c) => { const nk = c.B.nk; P.shape(poly([[CX - nk - 4, 101], [CX + nk + 4, 101], [CX + nk + 6, 115], [CX - nk - 6, 115]]), '#1D1160', { line: INK }); },
+  detail: (P, c, R, d, m, B, grow, hemY) => {
+    P.clip(d, `<path d="${poly([[CX - 90, 118], [CX + 90, 150], [CX + 90, 172], [CX - 90, 140]])}" fill="#1D1160"/><path d="${poly([[CX - 90, 140], [CX + 90, 172], [CX + 90, 176], [CX - 90, 144]])}" fill="#F4F1EA"/><path d="${poly([[CX - 90, 144], [CX + 90, 176], [CX + 90, 186], [CX - 90, 154]])}" fill="#B23F7F"/>`);
+    zip(104, 150)(P); hem(P, B, grow, hemY, ramp('#1D1160'));
+  } });
+
+/* ---------- designer print jeans */
+const rnd = (seed) => { let s = seed; return () => ((s = (s * 16807) % 2147483647) / 2147483647); };
+const printJeans = (def, draw, o = {}) => pants({ def, grow: o.grow ?? 8, bag: { hem: 1.08, out: 2.5 }, end: o.end ?? 308, legDetail: (P, g, sd, J, c, R) => { draw(P, J, sd, R); hemLine(P, J, R); }, detail: pocketsJ });
+const onLeg = (J, t, u) => { const i = Math.min(J.length - 2, Math.floor(t * (J.length - 1))), f = t * (J.length - 1) - i, a = J[i], b = J[i + 1]; const x = a[0] + (b[0] - a[0]) * f, y = a[1] + (b[1] - a[1]) * f, w = a[2] + (b[2] - a[2]) * f; return [x + u * w / 2, y, w]; };
+// gothic leather patches with silver stitching (an original quatrefoil-and-dagger design)
+const gothic = (P, x, y, s) => { const d = `M${x} ${y - 7 * s} Q${x + 2.4 * s} ${y - 2.4 * s} ${x + 7 * s} ${y} Q${x + 2.4 * s} ${y + 2.4 * s} ${x} ${y + 9 * s} Q${x - 2.4 * s} ${y + 2.4 * s} ${x - 7 * s} ${y} Q${x - 2.4 * s} ${y - 2.4 * s} ${x} ${y - 7 * s}Z`; P.shape(d, '#0C0C0F', { line: '#000', w: 1.1 }); P.add(`<path d="${d}" fill="none" stroke="${SILVER}" stroke-width="0.8" stroke-dasharray="1.4 1" transform="translate(${x} ${y}) scale(0.78) translate(${-x} ${-y})"/>`); P.dot(x, y, 1.1, SILVER); };
+ART.bottom.dz_gothic = printJeans('#3A3C44', (P, J, sd) => { [[0.2, -0.15, 1.6], [0.48, 0.2, 1.35], [0.74, -0.1, 1.5], [0.34, 0.45, 0.9], [0.62, -0.5, 0.9]].forEach(([t, u, s]) => { const [x, y] = onLeg(J, t, u * sd); gothic(P, x, y, s); }); });
+ART.bottom.dz_graffiti = printJeans('#8DAED6', (P, J, sd) => {
+  const r = rnd(sd > 0 ? 11 : 29), cols = ['#E8463A', '#2E6FD0', '#F2C230', '#1B9E5A', '#16161A', '#D84FB0'];
+  for (let k = 0; k < 9; k++) { const [x, y, w] = onLeg(J, 0.1 + r() * 0.8, (r() - 0.5) * 1.4); const pts = Array.from({ length: 4 }, (_, i) => [x + (i - 1.5) * w * 0.12, y + (r() - 0.5) * 8]); P.stroke(curve(pts), cols[k % cols.length], 1.6 + r()); }
+  for (let k = 0; k < 4; k++) { const [x, y] = onLeg(J, 0.15 + r() * 0.7, (r() - 0.5)); P.stroke(`M${x} ${y} l0 ${5 + r() * 6}`, cols[(k + 2) % cols.length], 1.2); }
+});
+ART.bottom.dz_bandana = printJeans('#22324F', (P, J, sd) => {
+  for (let t = 0.06; t < 0.98; t += 0.09) for (let u = -0.8; u <= 0.81; u += 0.4) { const [x, y] = onLeg(J, t, u * sd + (Math.round(t * 11) % 2) * 0.2); const k = Math.round((t * 11 + u * 5)) % 3; if (k === 0) P.add(`<path d="M${x} ${y - 2.8} q2.6 2.2 0 4.6 q-2.2 -1.6 0 -4.6Z" fill="#F4F1EA" opacity="0.9"/>`); else if (k === 1) P.dot(x, y, 1, '#F4F1EA', 0.85); else P.ell(x, y, 1.6, 1.6, 'none', { line: '#F4F1EA', w: 0.7 }); }
+});
+const starAt = (x, y, r) => poly(Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; return [x + Math.cos(a) * rr, y + Math.sin(a) * rr]; }));
+ART.bottom.dz_stars = printJeans('#2A2B30', (P, J, sd) => { [[0.18, 0.1, 6], [0.42, -0.3, 4.5], [0.62, 0.3, 5.5], [0.84, -0.1, 4]].forEach(([t, u, r]) => { const [x, y] = onLeg(J, t, u * sd); P.fill(starAt(x, y, r), '#F4F1EA', 0.92); }); });
+ART.bottom.dz_splatter = printJeans('#7FA0C9', (P, J, sd) => {
+  const r = rnd(sd > 0 ? 5 : 17), cols = ['#F4F1EA', '#16161A', '#E8463A'];
+  for (let k = 0; k < 7; k++) { const [x, y] = onLeg(J, 0.08 + r() * 0.85, (r() - 0.5) * 1.5), c2 = cols[k % 3], s = 2.5 + r() * 3; P.fill(blob(Array.from({ length: 7 }, (_, i) => { const a = (i / 7) * Math.PI * 2; const rr = s * (0.7 + r() * 0.6); return [x + Math.cos(a) * rr, y + Math.sin(a) * rr]; })), c2, 0.9); for (let q = 0; q < 3; q++) P.dot(x + (r() - 0.5) * 12, y + (r() - 0.5) * 10, 0.6 + r() * 0.8, c2, 0.9); }
+}, { grow: 6 });
+
+/* ---------- streetwear basics */
+const contrast = (m) => (rgbL(m) > 0.55 ? '#1F2A44' : '#F2EFE6');
+ART.top.lstee = top({ def: '#ECEBE7', sleeve: 'long' });
+ART.top.ringer = top({ def: '#F2EFE6', sleeve: 'short', ribCol: (p, m) => contrast(m), trim: (P, g, side, yEnd, c, R, m) => across(P, g, side, yEnd - 0.02, 4 * (c.B.arm * 0.5 + 0.5), contrast(m), 3) });
+ART.top.stripetee = top({ def: '#1F2A44', sleeve: 'short', detail: (P, c, R, d, m) => P.clip(d, hStripes([m, contrast(m)], 6, 116)) });
+ART.top.henley = top({ def: '#B9AC92', sleeve: 'long', detail: (P, c, R) => { P.stroke(curve([[CX - 2, 119], [CX - 2, 140]]), R.line, 1.1, 0.8); P.stroke(curve([[CX + 2, 119], [CX + 2, 140]]), R.line, 1.1, 0.8); [124, 130, 136].forEach((y) => P.dot(CX, y, 1.3, dk(R.base, 0.3))); } });
+ART.top.crewsweat = top({ def: '#8E9196', sleeve: 'long', grow: 5, sgrow: 6, hem: 205, detail: (P, c, R) => { hem(P, c.B, 5, 205, R); P.fill(poly([[CX - 3, 121], [CX + 3, 121], [CX, 127]]), R.sh); } });
+
+/* ---------- open jackets: worn open so the top underneath shows */
+const openGap = (y) => (y < 150 ? 10 + (150 - y) * 0.24 : 10 + (y - 150) * 0.12);
+const edges = (P, col, w, y0 = 116, y1 = 206, off = 0) => both((s) => P.stroke(curve(Array.from({ length: 6 }, (_, i) => { const y = y0 + ((y1 - y0) * i) / 5; return [CX + s * (openGap(y) + off), y]; })), col, w));
+const campCollar = (P, c, R, main) => { const nk = c.B.nk; both((s) => P.shape(poly([[CX + s * (nk + 2), 106], [CX + s * (nk + 13), 114], [CX + s * (openGap(130) + 6), 134], [CX + s * (openGap(126) + 0.5), 126]]), lt(main, 0.05), { line: R.line, w: 1.4 })); };
+ART.outer.campshirt = outer({ def: '#E9E2D0', sleeve: 'short', len: 212, grow: 6, sgrow: 7.5, gap: openGap, collar: campCollar, detail: (P, c, R) => { [146, 166, 186].forEach((y) => P.dot(CX - openGap(y) - 3, y, 1.4, dk(R.base, 0.3))); } });
+ART.outer.overshirt = outer({ def: '#5B6440', len: 214, grow: 6, sgrow: 6.5, gap: openGap, collar: shirtCollar, detail: (P, c, R) => { both((s) => { const x = CX + s * 24; P.shape(poly([[x - 7, 140], [x + 7, 140], [x + 7, 154], [x - 7, 154]]), R.base, { line: R.line, w: 1.2 }); P.stroke(curve([[x - 7, 144], [x + 7, 144]]), R.line, 1); }); [146, 166, 186].forEach((y) => P.dot(CX - openGap(y) - 3, y, 1.4, dk(R.base, 0.35))); } });
+ART.outer.zipopen = outer({ def: '#3A3D44', len: 210, grow: 6, sgrow: 6.5, gap: openGap, collar: (P, c, R) => hood(P, c, R), cuff: (p, m) => dk(m, 0.12), detail: (P, c, R, d, m, B, grow, hemY) => { edges(P, INK, 2.2, 118, hemY - 4, 0.6); edges(P, SILVER, 0.9, 118, hemY - 4, 0.6); both((s) => P.stroke(curve([[CX + s * 26, 178], [CX + s * 20, 196]]), R.line, 1.2, 0.8)); } });
+ART.outer.chore = outer({ def: '#2E4A6E', len: 222, grow: 7, sgrow: 7, gap: openGap, collar: shirtCollar, detail: (P, c, R) => { both((s) => { const x = CX + s * 26; P.shape(poly([[x - 9, 182], [x + 9, 182], [x + 9, 200], [x - 9, 200]]), R.base, { line: R.line, w: 1.2 }); }); const x = CX + 24; P.shape(poly([[x - 6, 140], [x + 6, 140], [x + 6, 152], [x - 6, 152]]), R.base, { line: R.line, w: 1.1 }); edges(P, dk(R.base, 0.2), 1, 116, 216, 2.4); } });
+ART.outer.cardigan = outer({ def: '#6B1E2A', len: 214, grow: 6, sgrow: 6.5, gap: openGap, cuff: (p, m) => dk(m, 0.12), detail: (P, c, R, d, m, B, grow, hemY) => { edges(P, R.line, 5.4, 112, hemY - 1, 1.6); edges(P, dk(m, 0.12), 3.6, 112, hemY - 1, 1.6); [150, 168, 186].forEach((y) => P.dot(CX - openGap(y) - 1.6, y, 1.7, '#E9E2D0')); hem(P, B, grow, hemY, ramp(dk(m, 0.12))); } });
+
+/* ---------- team sleeves and calf bands (team colours) */
+const sleeveTube = (P, J, c, o = {}) => { const T = tube(J); P.tube(T, ramp(c.pal.t1), { cap0: false, cap1: false }); return T; };
+ART.armwear.armsleeve = (P, g, col, ph, c) => { if (ph !== 'arms') return; const g2 = 0.8; sleeveTube(P, cutF(g.armJ(1), 0.1, 0.96, g2), c); across(P, g, 1, 0.22, g2, c.pal.t2, 2.6); across(P, g, 1, 0.26, g2, c.pal.tacc, 1.1); across(P, g, 1, 0.9, g2, c.pal.t2, 2.2); };
+ART.armwear.shooter = (P, g, col, ph, c) => { if (ph !== 'arms') return; const g2 = 0.8; sleeveTube(P, cutF(g.armJ(1), 0.5, 0.96, g2), c); across(P, g, 1, 0.56, g2, c.pal.t2, 2.4); across(P, g, 1, 0.9, g2, c.pal.t2, 2); };
+const legPiece = (y0, y1, both2, stripes) => (P, g, col, ph, c) => {
+  if (ph !== 'legs') return;
+  for (const side of both2 ? [-1, 1] : [-1]) {
+    const J = cutJ(g.legJ(side), y1, 0.8, y0);
+    sleeveTube(P, J, c);
+    stripes.forEach(([y, colr, w]) => { const j = J.find((q) => q[1] >= y) || J[J.length - 1]; P.stroke(curve([[j[0] - j[2] / 2 + 0.6, y], [j[0] + j[2] / 2 - 0.6, y]]), c.pal[colr], w); });
+  }
+};
+ART.legwear.legsleeve = legPiece(212, 300, false, [[290, 't2', 2.6], [294, 'tacc', 1.1]]);
+ART.legwear.kneesleeve = legPiece(246, 288, false, [[250, 't2', 2.4], [283, 't2', 2.4]]);
+ART.legwear.calfbands = legPiece(266, 277, true, [[270, 't2', 1.6], [273.4, 'tacc', 1.1]]);

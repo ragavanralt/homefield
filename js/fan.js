@@ -342,7 +342,7 @@ export function drawHead(P, sk, hairCol, opts = {}) {
 // the head (and everything worn on it) is drawn in its own space and scaled down about the chin for a better head-to-body ratio
 export const HEAD_SCALE = 0.87;
 const HEADG = `<g transform="translate(100 107) scale(${HEAD_SCALE}) translate(-100 -107)">`;
-export const ART = { expr: {}, hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, outer: {}, scarf: {}, chain: {}, wrist: {}, bottom: {}, shoes: {}, back: {}, hand: {}, bg: {} };
+export const ART = { expr: {}, hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, outer: {}, scarf: {}, chain: {}, wrist: {}, bottom: {}, shoes: {}, back: {}, hand: {}, bg: {}, armwear: {}, legwear: {} };
 
 /** Draw the whole fan. ctx: { skin, hair, eq, colourOf(id), pal, build } -> svg inner markup */
 export function drawFan(ctx) {
@@ -372,6 +372,7 @@ export function drawFan(ctx) {
       void ox;
     }
   }
+  if (ctx.bareLegs !== false) run('legwear', 'legs');
   run('shoes', 'feet');
   run('bottom', 'legs');
   // torso, then the neck over it (open at the bottom so it flows into the traps)
@@ -411,6 +412,7 @@ export function drawFan(ctx) {
       },
     });
   }
+  run('armwear', 'arms');
   run('top', 'body'); run('top', 'sleeves');
   run('outer', 'body'); run('outer', 'sleeves');
   run('back', 'neck'); run('scarf', 'neck'); run('chain', 'neck');

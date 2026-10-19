@@ -13,13 +13,14 @@ export const SKINS = ['#E3B85B', '#F0D3B5', '#DDAE86', '#C58B5E', '#A06A44', '#7
 export const HAIR_COLORS = ['#1A1410', '#3D281B', '#6E4A2A', '#B8935A', '#B7BBC4', '#A8402B', '#2C57A8', '#5E3FA6', '#B23F7F', '#2F8A57'];
 export const SLOTS = [
   { id: 'expr', label: 'Expression' }, { id: 'hair', label: 'Hair' }, { id: 'hat', label: 'Hat' }, { id: 'face', label: 'Face' }, { id: 'beard', label: 'Facial hair' }, { id: 'ear', label: 'Ears' },
-  { id: 'top', label: 'Top' }, { id: 'outer', label: 'Jacket' }, { id: 'scarf', label: 'Neckwear' }, { id: 'chain', label: 'Chain' }, { id: 'wrist', label: 'Wrist' },
-  { id: 'bottom', label: 'Pants' }, { id: 'shoes', label: 'Shoes' }, { id: 'back', label: 'Back' }, { id: 'hand', label: 'In hand' },
+  { id: 'top', label: 'Top' }, { id: 'outer', label: 'Jacket' }, { id: 'scarf', label: 'Neckwear' }, { id: 'chain', label: 'Chain' }, { id: 'wrist', label: 'Wrist' }, { id: 'armwear', label: 'Arm sleeve' },
+  { id: 'bottom', label: 'Pants' }, { id: 'legwear', label: 'Leg sleeve' }, { id: 'shoes', label: 'Shoes' }, { id: 'back', label: 'Back' }, { id: 'hand', label: 'In hand' },
   { id: 'bg', label: 'Background' },
 ];
 // Shop sections. Each item belongs to one. Real brands and logos are not used; the labels are made up.
 export const SECTIONS = [
   { id: 'team', label: 'Team shop', blurb: 'Gear in the colours of the team you follow.' },
+  { id: 'retro', label: 'Retros', blurb: 'Throwback jerseys, kits, shorts, hats and jackets from big moments in sports. Fixed colours.' },
   { id: 'look', label: 'Look', blurb: 'Hair, faces, beards and earrings.' },
   { id: 'blank', label: 'Blanks', blurb: 'Plain basics. Cheap, no logos.' },
   { id: 'street', label: 'Streetwear', blurb: 'The everyday fits, from baggy jeans to puffers.' },
@@ -105,6 +106,36 @@ export const ITEMS = [
   I('locker', 'bg', 'Locker room', 'bg', 1200, T), I('lights', 'bg', 'Stadium lights', 'bg', 1500), I('city', 'bg', 'City at night', 'bg', 2000),
   I('jumbo', 'bg', 'Jumbotron', 'bg', 3000, T), I('confetti', 'bg', 'Championship confetti', 'bg', 9000),
 
+  // ---- Retros: fixed-colour throwbacks
+  I('rt_la04', 'top', "LA '04 gold home jersey", 'retro', 4500), I('rt_la04p', 'top', "LA '04 purple road jersey", 'retro', 4500),
+  I('rt_chi96', 'top', "Chicago '96 red road jersey", 'retro', 6000), I('rt_tor00', 'top', "Toronto '00 purple jersey", 'retro', 5000),
+  I('rt_cha93', 'top', "Charlotte '93 teal pinstripe jersey", 'retro', 4000), I('rt_sea96', 'top', "Seattle '96 green jersey", 'retro', 3500),
+  I('rt_phx93', 'top', "Phoenix '93 purple jersey", 'retro', 3500), I('rt_whiteout', 'top', 'Buffalo white-out jersey', 'retro', 4000),
+  I('rt_blau', 'top', "Blaugrana '99 baggy kit", 'retro', 5000), I('rt_bra02', 'top', "Brazil '02 yellow kit", 'retro', 4500),
+  I('rt_mil94', 'top', "Milan '94 red and black kit", 'retro', 4000), I('rt_arg86', 'top', "Argentina '86 stripes", 'retro', 5500),
+  I('rt_ned88', 'top', "Holland '88 orange kit", 'retro', 4500), I('rt_tor67', 'top', "Toronto '67 hockey sweater", 'retro', 4000),
+  I('rt_mtl', 'top', 'Montreal red hockey sweater', 'retro', 4000), I('rt_tor93', 'top', "Toronto '93 powder blue button-up", 'retro', 3500),
+  I('rt_lux_chi', 'bottom', 'Luxury court shorts, Chicago red', 'retro', 6500), I('rt_lux_la', 'bottom', 'Luxury court shorts, LA purple', 'retro', 6500),
+  I('rt_lux_bos', 'bottom', 'Luxury court shorts, Boston green', 'retro', 6500), I('rt_lux_cha', 'bottom', 'Luxury court shorts, Charlotte teal', 'retro', 6500),
+  I('rt_blau_sh', 'bottom', "Blaugrana '99 shorts", 'retro', 2000), I('rt_bra_sh', 'bottom', "Brazil '02 shorts", 'retro', 2000),
+  I('rt_tear', 'bottom', 'Tear-away pants, black and white', 'retro', 2500),
+  I('rt_cap_chi', 'hat', 'Chicago snapback, red and black', 'retro', 1800), I('rt_cap_tor', 'hat', "Toronto '93 fitted", 'retro', 1800),
+  I('rt_bucket', 'hat', "'90s teal bucket hat", 'retro', 1500), I('rt_beanie', 'hat', 'Retro pom beanie, black and gold', 'retro', 1200),
+  I('rt_satin_chi', 'outer', 'Satin starter jacket, Chicago red', 'retro', 7000), I('rt_satin_la', 'outer', 'Satin bomber, LA blue', 'retro', 6500),
+  I('rt_halfzip', 'outer', "'90s half-zip windbreaker, teal and purple", 'retro', 4000),
+
+  // ---- More streetwear and designer
+  I('lstee', 'top', 'Long-sleeve tee', 'street', 150), I('ringer', 'top', 'Ringer tee', 'street', 200), I('stripetee', 'top', 'Striped tee', 'street', 250),
+  I('henley', 'top', 'Henley', 'street', 300), I('crewsweat', 'top', 'Crewneck sweatshirt', 'street', 450),
+  I('campshirt', 'outer', 'Open camp shirt', 'street', 500), I('overshirt', 'outer', 'Open overshirt', 'street', 650), I('zipopen', 'outer', 'Open zip hoodie', 'street', 700),
+  I('chore', 'outer', 'Chore coat', 'street', 900), I('cardigan', 'outer', 'Open cardigan', 'street', 800),
+  I('dz_gothic', 'bottom', 'Gothic patch jeans', 'brand', 15000), I('dz_graffiti', 'bottom', 'Graffiti print jeans', 'brand', 9000),
+  I('dz_bandana', 'bottom', 'Bandana print jeans', 'brand', 7500), I('dz_stars', 'bottom', 'Star stencil jeans', 'brand', 8000), I('dz_splatter', 'bottom', 'Paint splatter jeans', 'brand', 6500),
+
+  // ---- Team sleeves and bands
+  I('armsleeve', 'armwear', 'Arm sleeve', 'team', 300, T), I('shooter', 'armwear', 'Shooter sleeve', 'team', 250, T),
+  I('legsleeve', 'legwear', 'Leg sleeve', 'team', 350, T), I('kneesleeve', 'legwear', 'Knee sleeve', 'team', 250, T), I('calfbands', 'legwear', 'Calf bands', 'team', 150, T),
+
   // ---- Earned
   I('ghost', 'top', 'Ghost sheet', 'team', 0, { ach: 'Get rescued with free coins once' }), I('goldscarf', 'scarf', 'Golden scarf', 'team', 0, { ach: 'Win 5 bets in a row' }), I('trophycape', 'back', 'Trophy cape', 'team', 0, { ach: 'Hit a parlay' }),
 ];
@@ -153,6 +184,16 @@ const COLS = {
   techjog: [['Grey', '#8A8F96'], ['Black', '#1E1F23'], ['Navy', NV], ['Olive', OL], ['Dark grey', '#4A4E55']],
   sixhood: [['Black', '#141418'], ['Cream', CR], ['Forest', '#2F4F3A']],
   cs_stars: [['Black', '#141418'], ['White', '#F2F1EC']], rj_stars: [['Black', '#141418'], ['White', '#F2F1EC']],
+  lstee: [['White', W], ['Black', BK], ['Heather', HG], ['Navy', NV], ['Olive', '#5B6440'], ['Cream', CR], ['Brown', '#6B4E3A']],
+  ringer: [['Cream', '#F2EFE6'], ['White', W], ['Heather', HG], ['Black', BK], ['Navy', NV]],
+  stripetee: [['Navy', '#1F2A44'], ['Black', BK], ['Red', '#9B2C2C'], ['Forest', '#2F4F3A'], ['Brown', '#6B4E3A']],
+  henley: [['Oat', '#B9AC92'], ['Black', BK], ['White', W], ['Olive', OL], ['Burgundy', '#6B1E2A']],
+  crewsweat: [['Heather', HG], ['Black', BK], ['Navy', NV], ['Cream', CR], ['Forest', '#2F4F3A'], ['Burgundy', '#6B1E2A']],
+  campshirt: [['Cream', '#E9E2D0'], ['Black', BK], ['Sage', '#9AA58C'], ['Rust', '#A0522D'], ['Sky', '#8DB4D8']],
+  overshirt: [['Olive', '#5B6440'], ['Black', BK], ['Khaki', '#9C8B63'], ['Navy', NV], ['Brown', '#6B4A33']],
+  zipopen: [['Charcoal', '#3A3D44'], ['Black', BK], ['Heather', HG], ['Navy', NV], ['Cream', CR]],
+  chore: [['Indigo', '#2E4A6E'], ['Brown duck', '#7A5A3A'], ['Black', BK], ['Olive', OL]],
+  cardigan: [['Burgundy', '#6B1E2A'], ['Cream', CR], ['Black', BK], ['Forest', '#2F4F3A'], ['Navy', NV]],
 };
 const SHADES = {
   carpenter: { '#66492E': 0.14 }, bagcargo: { '#4A5235': 0.14 }, flannel: { '#7A2222': 0.25 },
@@ -161,7 +202,7 @@ const SHADES = {
   leather: { '#0F0F15': 0.3 }, dressshirt: { '#FAFAF7': -0.3 }, turtleneck: { '#16161A': 0.2 }, blazer: { '#30343B': 0.15 }, suit: { '#18233B': 0.15 }, overcoat: { '#A57A4A': 0.12 },
   foghoodie: { '#7D8085': 0.12, '#878A8F': 0.05, '#666A70': 0.3 }, fogsweats: { '#7D8085': 0.12 }, techhood: { '#6F747B': 0.18 }, techjog: { '#6F747B': 0.18 }, sixhood: { '#0E0E12': 0.25 },
 };
-for (const id of ['shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal', 'cs_stars']) ITEMS.find((i) => i.id === id).short = true;
+for (const id of ['shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal', 'cs_stars', 'rt_lux_chi', 'rt_lux_la', 'rt_lux_bos', 'rt_lux_cha', 'rt_blau_sh', 'rt_bra_sh']) ITEMS.find((i) => i.id === id).short = true;
 for (const it of ITEMS) if (COLS[it.id]) { it.colors = COLS[it.id].map(([n, k]) => ({ n, k })); it.shades = SHADES[it.id] || {}; }
 
 /** Darken (amt > 0) or lighten (amt < 0) a #rrggbb colour. */
@@ -281,7 +322,7 @@ export function palette(team) {
 const FULL = '0 -14 200 354';
 const BUST = '42 -14 116 150';
 const HEADVB = '50 -12 100 124';
-const VB = { expr: HEADVB, hair: HEADVB, hat: HEADVB, face: HEADVB, beard: HEADVB, ear: HEADVB, top: '18 90 164 132', outer: '12 90 176 180', scarf: '46 92 108 112', chain: '50 94 100 84', wrist: '14 176 76 64', bottom: '28 178 144 162', shoes: '40 282 120 54', back: '-30 -20 260 364', hand: '70 120 130 170', bg: FULL };
+const VB = { expr: HEADVB, hair: HEADVB, hat: HEADVB, face: HEADVB, beard: HEADVB, ear: HEADVB, top: '18 90 164 132', outer: '12 90 176 180', scarf: '46 92 108 112', chain: '50 94 100 84', wrist: '14 176 76 64', bottom: '28 178 144 162', shoes: '40 282 120 54', back: '-30 -20 260 364', hand: '70 120 130 170', bg: FULL, armwear: '96 100 70 130', legwear: '40 200 120 120' };
 const cache = new Map();
 
 /** Returns the SVG markup for a character. vb overrides the view box (shop previews and busts). */
@@ -320,5 +361,9 @@ export function renderAvatar(av = getState().avatar, team = avatarTeam(av), cls 
 /** Preview of just one item on the current character, zoomed to where it is worn. */
 export function previewSvg(item, av = getState().avatar, team = avatarTeam(av), ci) {
   const col = ci == null ? av.col : { ...(av.col || {}), [item.id]: ci };
-  return avatarSvg({ ...av, col, eq: { ...av.eq, [item.slot]: item.id } }, team, VB[item.slot]);
+  const eq = { ...av.eq, [item.slot]: item.id };
+  // sleeves only show on bare arms and legs, so the preview puts on a tank or shorts
+  if (item.slot === 'armwear') eq.top = 'tank';
+  if (item.slot === 'legwear' && !itemById(eq.bottom || 'jeans')?.short) eq.bottom = 'shorts';
+  return avatarSvg({ ...av, col, eq }, team, VB[item.slot]);
 }

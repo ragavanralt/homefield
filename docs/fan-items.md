@@ -2,7 +2,7 @@
 
 Updated Oct 19, 2026. Generated from js/avatar.js.
 
-Total: 157 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought.
+Total: 207 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
 
 ## Character basics (free)
 
@@ -17,22 +17,24 @@ Total: 157 items. Prices are in coins. "Team" means the item takes the colours o
 |---|---|
 | Expression | 6 |
 | Hair | 16 |
-| Hat | 11 |
+| Hat | 15 |
 | Face | 8 |
 | Facial hair | 4 |
 | Ears | 2 |
-| Top | 17 |
-| Jacket | 17 |
+| Top | 38 |
+| Jacket | 25 |
 | Neckwear | 5 |
 | Chain | 6 |
 | Wrist | 5 |
-| Pants | 25 |
+| Arm sleeve | 2 |
+| Pants | 37 |
+| Leg sleeve | 3 |
 | Shoes | 14 |
 | Back | 4 |
 | In hand | 5 |
 | Background | 12 |
 
-## Team shop (28)
+## Team shop (33)
 
 Gear in the colours of the team you follow.
 
@@ -63,9 +65,51 @@ Gear in the colours of the team you follow.
 | Team cape | cape | Back | 1,500 | rare | Team colours |  |
 | Foam finger | finger | In hand | 250 | common | Team colours |  |
 | Pennant | pennant | In hand | 150 | common | Team colours |  |
+| Arm sleeve | armsleeve | Arm sleeve | 300 | common | Team colours |  |
+| Shooter sleeve | shooter | Arm sleeve | 250 | common | Team colours |  |
+| Leg sleeve | legsleeve | Leg sleeve | 350 | common | Team colours |  |
+| Knee sleeve | kneesleeve | Leg sleeve | 250 | common | Team colours |  |
+| Calf bands | calfbands | Leg sleeve | 150 | common | Team colours |  |
 | Ghost sheet | ghost | Top | 0 | earned | Earned: Get rescued with free coins once |  |
 | Golden scarf | goldscarf | Neckwear | 0 | earned | Earned: Win 5 bets in a row |  |
 | Trophy cape | trophycape | Back | 0 | earned | Earned: Hit a parlay |  |
+
+## Retros (30)
+
+Throwback jerseys, kits, shorts, hats and jackets from big moments in sports. Fixed colours.
+
+| Item | Id | Slot | Price | Tier | Notes | Colours |
+|---|---|---|---|---|---|---|
+| LA '04 gold home jersey | rt_la04 | Top | 4,500 | epic |  |  |
+| LA '04 purple road jersey | rt_la04p | Top | 4,500 | epic |  |  |
+| Chicago '96 red road jersey | rt_chi96 | Top | 6,000 | epic |  |  |
+| Toronto '00 purple jersey | rt_tor00 | Top | 5,000 | epic |  |  |
+| Charlotte '93 teal pinstripe jersey | rt_cha93 | Top | 4,000 | epic |  |  |
+| Seattle '96 green jersey | rt_sea96 | Top | 3,500 | epic |  |  |
+| Phoenix '93 purple jersey | rt_phx93 | Top | 3,500 | epic |  |  |
+| Buffalo white-out jersey | rt_whiteout | Top | 4,000 | epic |  |  |
+| Blaugrana '99 baggy kit | rt_blau | Top | 5,000 | epic |  |  |
+| Brazil '02 yellow kit | rt_bra02 | Top | 4,500 | epic |  |  |
+| Milan '94 red and black kit | rt_mil94 | Top | 4,000 | epic |  |  |
+| Argentina '86 stripes | rt_arg86 | Top | 5,500 | epic |  |  |
+| Holland '88 orange kit | rt_ned88 | Top | 4,500 | epic |  |  |
+| Toronto '67 hockey sweater | rt_tor67 | Top | 4,000 | epic |  |  |
+| Montreal red hockey sweater | rt_mtl | Top | 4,000 | epic |  |  |
+| Toronto '93 powder blue button-up | rt_tor93 | Top | 3,500 | epic |  |  |
+| Luxury court shorts, Chicago red | rt_lux_chi | Pants | 6,500 | epic |  |  |
+| Luxury court shorts, LA purple | rt_lux_la | Pants | 6,500 | epic |  |  |
+| Luxury court shorts, Boston green | rt_lux_bos | Pants | 6,500 | epic |  |  |
+| Luxury court shorts, Charlotte teal | rt_lux_cha | Pants | 6,500 | epic |  |  |
+| Blaugrana '99 shorts | rt_blau_sh | Pants | 2,000 | epic |  |  |
+| Brazil '02 shorts | rt_bra_sh | Pants | 2,000 | epic |  |  |
+| Tear-away pants, black and white | rt_tear | Pants | 2,500 | epic |  |  |
+| Chicago snapback, red and black | rt_cap_chi | Hat | 1,800 | rare |  |  |
+| Toronto '93 fitted | rt_cap_tor | Hat | 1,800 | rare |  |  |
+| '90s teal bucket hat | rt_bucket | Hat | 1,500 | rare |  |  |
+| Retro pom beanie, black and gold | rt_beanie | Hat | 1,200 | rare |  |  |
+| Satin starter jacket, Chicago red | rt_satin_chi | Jacket | 7,000 | epic |  |  |
+| Satin bomber, LA blue | rt_satin_la | Jacket | 6,500 | epic |  |  |
+| '90s half-zip windbreaker, teal and purple | rt_halfzip | Jacket | 4,000 | epic |  |  |
 
 ## Look (30)
 
@@ -125,7 +169,7 @@ Plain basics. Cheap, no logos.
 | Shades | shades | Face | 150 | common |  |  |
 | Work boots | boots | Shoes | 180 | common |  | Brown, Wheat, Black |
 
-## Streetwear (22)
+## Streetwear (32)
 
 The everyday fits, from baggy jeans to puffers.
 
@@ -153,6 +197,16 @@ The everyday fits, from baggy jeans to puffers.
 | Silver chain | silver | Chain | 400 | rare |  |  |
 | Gold chain | gold | Chain | 1,500 | rare |  |  |
 | Sport watch | watch | Wrist | 800 | rare |  |  |
+| Long-sleeve tee | lstee | Top | 150 | common |  | White, Black, Heather, Navy, Olive, Cream, Brown |
+| Ringer tee | ringer | Top | 200 | common |  | Cream, White, Heather, Black, Navy |
+| Striped tee | stripetee | Top | 250 | common |  | Navy, Black, Red, Forest, Brown |
+| Henley | henley | Top | 300 | common |  | Oat, Black, White, Olive, Burgundy |
+| Crewneck sweatshirt | crewsweat | Top | 450 | rare |  | Heather, Black, Navy, Cream, Forest, Burgundy |
+| Open camp shirt | campshirt | Jacket | 500 | rare |  | Cream, Black, Sage, Rust, Sky |
+| Open overshirt | overshirt | Jacket | 650 | rare |  | Olive, Black, Khaki, Navy, Brown |
+| Open zip hoodie | zipopen | Jacket | 700 | rare |  | Charcoal, Black, Heather, Navy, Cream |
+| Chore coat | chore | Jacket | 900 | rare |  | Indigo, Brown duck, Black, Olive |
+| Open cardigan | cardigan | Jacket | 800 | rare |  | Burgundy, Cream, Black, Forest, Navy |
 
 ## Formal (16)
 
@@ -177,7 +231,7 @@ Shirts, suits, coats and good shoes.
 | Round glasses | glasses | Face | 500 | rare |  |  |
 | Dress watch | dresswatch | Wrist | 3,000 | epic |  |  |
 
-## Designer (35)
+## Designer (40)
 
 Labels and heavy jewellery. Priced like the real thing.
 
@@ -218,6 +272,11 @@ Labels and heavy jewellery. Priced like the real thing.
 | Courtside pinstripe shorts, stars | cs_stars | Pants | 4,500 | epic |  | Black, White |
 | Courtside retro jersey, purple and gold | rj_purple | Top | 5,000 | epic |  |  |
 | Courtside pinstripe jersey, stars | rj_stars | Top | 5,500 | epic |  | Black, White |
+| Gothic patch jeans | dz_gothic | Pants | 15,000 | legend |  |  |
+| Graffiti print jeans | dz_graffiti | Pants | 9,000 | legend |  |  |
+| Bandana print jeans | dz_bandana | Pants | 7,500 | epic |  |  |
+| Star stencil jeans | dz_stars | Pants | 8,000 | legend |  |  |
+| Paint splatter jeans | dz_splatter | Pants | 6,500 | epic |  |  |
 
 ## Backgrounds (12)
 
