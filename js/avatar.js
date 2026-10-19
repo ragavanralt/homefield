@@ -146,7 +146,6 @@ export const ITEMS = [
   I('dz_bandana', 'bottom', 'Bandana print jeans', 'brand', 7500), I('dz_stars', 'bottom', 'Star stencil jeans', 'brand', 8000), I('dz_splatter', 'bottom', 'Paint splatter jeans', 'brand', 6500),
 
   // ---- More blanks
-  I('onesleeve', 'top', 'One-sleeve tee, right', 'street', 300), I('onesleevel', 'top', 'One-sleeve tee, left', 'street', 300),
   I('pockettee', 'top', 'Pocket tee', 'blank', 50), I('thermal', 'top', 'Waffle thermal', 'blank', 120), I('plainhood', 'top', 'Plain hoodie', 'blank', 200),
   I('zipblank', 'outer', 'Zip-up hoodie', 'blank', 250), I('sweatpants', 'bottom', 'Sweatpants', 'blank', 120), I('chinos', 'bottom', 'Chinos', 'blank', 150),
   I('meshshorts', 'bottom', 'Mesh shorts', 'blank', 80), I('cargoshorts', 'bottom', 'Cargo shorts', 'blank', 100), I('plainbeanie', 'hat', 'Plain beanie', 'blank', 60),
@@ -165,10 +164,10 @@ export const ITEMS = [
   // ---- Team sleeves and bands
   I('armsleeve', 'armwear', 'Arm sleeve', 'team', 300, T), I('shooter', 'armwear', 'Shooter sleeve', 'team', 250, T),
   I('armsleeves', 'armwear', 'Arm sleeves, both arms', 'team', 500, T), I('shootersleeves', 'armwear', 'Shooter sleeves, both arms', 'team', 420, T),
-  I('fullsleeve', 'armwear', 'Full sleeve, shoulder to wrist', 'team', 450, T), I('fullsleeves', 'armwear', 'Full sleeves, both arms', 'team', 800, T), I('fullleg', 'legwear', 'Full leg sleeve', 'team', 450, T),
+  I('fullsleeve', 'armwear', 'Full sleeve, shoulder to wrist', 'team', 450, T), I('fullsleeves', 'armwear', 'Full sleeves, both arms', 'team', 800, T), I('fullleg', 'legwear', 'Full leg sleeves, both legs', 'team', 700, T), I('fullleg1', 'legwear', 'Full leg sleeve, one leg', 'team', 450, T),
   // ---- Casual: sport-brand style pieces in fixed colours
   I('blackcalf', 'legwear', 'Black calf bands', 'casual', 200), I('whitecalf', 'legwear', 'White calf bands', 'casual', 200), I('bredcalf', 'legwear', 'Black and red calf bands', 'casual', 350), I('royalcalf', 'legwear', 'Royal and gold calf bands', 'casual', 350),
-  I('blackleg', 'legwear', 'Black leg sleeve', 'casual', 350),
+  I('blackleg', 'legwear', 'Black full leg sleeves, both legs', 'casual', 600), I('blackleg1', 'legwear', 'Black full leg sleeve, one leg', 'casual', 350),
   I('fsblack1', 'armwear', 'Black full sleeve', 'casual', 350), I('fsblack', 'armwear', 'Black full sleeves, both arms', 'casual', 700), I('fswhite', 'armwear', 'White full sleeves, both arms', 'casual', 700),
   I('fsbred', 'armwear', 'Black and red full sleeves', 'casual', 900), I('fsroyal', 'armwear', 'Royal and gold full sleeves', 'casual', 900), I('elbowblack', 'armwear', 'Black elbow sleeves', 'casual', 250),
   I('legsleeve', 'legwear', 'Leg sleeve', 'team', 350, T), I('kneesleeve', 'legwear', 'Knee sleeve', 'team', 250, T), I('calfbands', 'legwear', 'Calf bands', 'team', 150, T),

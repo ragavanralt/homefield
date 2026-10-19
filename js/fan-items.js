@@ -216,8 +216,6 @@ const cityText = (P, c, y, size, maxW, fill, line, lw = 1.4) => {
 const tout = (c) => c.pal.tout || c.pal.t2;
 const ini = (c) => (c.pal.city || 'H').replace(/[^A-Z]/g, '').charAt(0) || 'H';
 ART.top.tee = top({ def: '#64748B', sleeve: 'short' });
-ART.top.onesleeve = top({ def: '#2B2F3A', sleeve: 'none', sleeveR: 'long', grow: 3, sgrow: 4.5 });
-ART.top.onesleevel = top({ def: '#2B2F3A', sleeve: 'none', sleeveL: 'long', grow: 3, sgrow: 4.5 });
 ART.top.tank = top({ def: '#1F2937', sleeve: 'none', shape: 'tank', neck: 'none', grow: 1.5 });
 ART.top.boxy = top({ def: '#E9E4D8', sleeve: 'elbow', grow: 7, sgrow: 8, hem: 206, detail: (P, c, R) => { P.stroke(curve([[CX - 30, 160], [CX - 26, 190]]), R.sh, 1.4, 0.8); P.stroke(curve([[CX + 32, 150], [CX + 30, 196]]), R.deep, 1.4, 0.8); } });
 ART.top.graphic = top({ def: '#1C1C22', sleeve: 'short', detail: (P, c, R) => {
@@ -984,12 +982,14 @@ ART.armwear.fsbred = armPiece(0.02, 0.97, true, fix('#16181D', '#C8102E', '#F2F2
 ART.armwear.fsroyal = armPiece(0.02, 0.97, true, fix('#1D428A', '#FFC72C', null, '#FFC72C'));
 ART.armwear.fsblack1 = armPiece(0.02, 0.97, false, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
 ART.armwear.elbowblack = armPiece(0.35, 0.8, true, fix('#16181D', '#F2F2F2', null, null));
-ART.legwear.fullleg = legPieceC(212, 300, false, team);
+ART.legwear.fullleg = legPieceC(212, 300, true, team);
+ART.legwear.fullleg1 = legPieceC(212, 300, false, team);
+ART.legwear.blackleg1 = legPieceC(212, 300, false, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
 ART.legwear.bredcalf = legPieceC(266, 277, true, fix('#16181D', '#C8102E', '#F2F2F2', '#C8102E'));
 ART.legwear.whitecalf = legPieceC(266, 277, true, fix('#F1F1EE', '#16181D', null, '#16181D'));
 ART.legwear.royalcalf = legPieceC(266, 277, true, fix('#1D428A', '#FFC72C', null, '#FFC72C'));
 ART.legwear.blackcalf = legPieceC(262, 279, true, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
-ART.legwear.blackleg = legPieceC(212, 300, false, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
+ART.legwear.blackleg = legPieceC(212, 300, true, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
 
 /* ---------- retros, second drop: more niche, closer to the real thing */
 const W2 = '#F4F1EA';
