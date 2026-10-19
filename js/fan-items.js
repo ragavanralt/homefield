@@ -439,35 +439,28 @@ const curlTex = (R, spots, s = 1) => spots.map(([x, y], i) => {
   return `<path d="${curve([[x - r, y + r * 0.35], [x - r * 0.35, y - r * 0.8], [x + r * 0.7, y - r * 0.4], [x + r * 0.5, y + r * 0.6], [x - r * 0.15, y + r * 0.75]])}" fill="none" stroke="${lit && i % 3 !== 2 ? R.hi : R.deep}" stroke-width="1.45" stroke-linecap="round"/>`;
 }).join('');
 const curlRamp = (hc) => { const R = ramp(hc, { k: 0.9 }); if (rgbL(hc) < 0.2) { R.base = adj(hc, 0.07); R.sh = adj(hc, 0.02); R.deep = adj(hc, 0.17); R.hi = adj(hc, 0.16); } R.line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22); return R; };
-// Curly flow: a middle part with curly, wavy hair flowing out over the temples and down past the ears to the jaw,
-// one seamless shape per layer, wavy curl ends at the bottom and long S-wave strands through it.
-const wave = (P0, P1, n, amp) => { const out = []; for (let i = 0; i <= n; i++) { const t = i / n, x = P0[0] + (P1[0] - P0[0]) * t, y = P0[1] + (P1[1] - P0[1]) * t; const dx = P1[0] - P0[0], dy = P1[1] - P0[1], l = Math.hypot(dx, dy) || 1; const k = Math.sin(t * Math.PI * n / 2) * amp * (i % 2 ? 1 : -1) * (i === 0 || i === n ? 0 : 1); out.push([x - (dy / l) * k, y + (dx / l) * k]); } return out; };
-// Curly flow: a full curly top pushed up and back off the forehead, a couple of curls dropping onto it, shorter
-// sides with the ears showing, and curls at the back down to the nape. One seamless shape per layer.
-ART.hair.curly = hairOf((P, hc) => {
+// Curly flow: a symmetrical middle part with clean curls on both sides, a full curly crown, short neat sides
+// with the ears showing. No length at the back. One seamless shape.
+ART.hair.curly = hairOf(null, (P, hc) => {
   const R = curlRamp(hc);
-  // the curls at the back, showing behind the ears and jaw down to the nape
-  const o = [[62, 52], [59.5, 66], [60, 80], [63.5, 92], [69, 99], [76, 96], [82, 102], [118, 102], [124, 96], [131, 99], [136.5, 92], [140, 80], [140.5, 66], [138, 52]];
-  const d = `M${pt(o[0])}${scallop(o, 2.8, false, [100, 70])} L100 40Z`;
-  P.fill(d, R.sh);
-  P.clip(d, curlTex(R, [[63, 70], [137, 70], [66, 86], [134, 86], [74, 97], [126, 97]]));
-  P.stroke(`M${pt(o[0])}${scallop(o, 2.8, false, [100, 70])}`, R.line, OW);
-}, (P, hc) => {
-  const R = curlRamp(hc);
-  // outline over the top: tapered sides, then a big curly crown
-  const topRun = [[68, 60], [64.5, 47], [60, 35], [63, 22], [71, 11], [83, 3], [96, -1.5], [109, -1], [121, 3.5], [132, 11], [139.5, 22], [142, 35], [137, 47], [134.5, 60]];
-  // the hairline: curls lifted off the forehead, two dropping down over the left brow
-  const fringe = [[134.5, 60], [133, 50], [130, 41], [124, 35.5], [116, 32.5], [108, 31.5], [100, 31], [93.5, 33.5], [89, 41.5], [85.5, 47.5], [81.5, 41], [77.5, 45.5], [73.5, 40.5], [70.5, 48], [68, 60]];
-  const d = `M${pt(topRun[0])}${scallop(topRun, 3.2, false, [100, 45])}${scallop(fringe, 2.2, false, [100, 64])}Z`;
+  const mir = (a) => a.map(([x, y]) => [200 - x, y]);
+  const topR = [[100, -1.5], [111, -0.5], [122, 3.5], [132, 11], [139.5, 22], [142, 35], [137.5, 47], [134.5, 59]];
+  const fringeR = [[134.5, 59], [133, 49], [129.5, 41], [123.5, 37], [118, 41.5], [113.5, 34.5], [107.5, 37], [103, 31.5], [100, 29.5]];
+  const topL = mir(topR).reverse(), fringeL = mir(fringeR).reverse();
+  const d = `M${pt(topL[0])}${scallop(topL, 3, false, [100, 45])}${scallop(topR, 3, false, [100, 45])}${scallop(fringeR, 2, false, [100, 66])}${scallop(fringeL, 2, false, [100, 66])}Z`;
   P.fill(d, R.base);
+  const loopsL = [[88, 6], [76, 12], [67, 24], [82, 22], [64, 37], [74, 33], [90, 27]];
+  const loopsR = mir(loopsL);
+  const loop = ([x, y], colr, s) => `<path d="${curve([[x - 3.4 * s, y + 2.2], [x - 1.2 * s, y - 2.8], [x + 2.8 * s, y - 1.2], [x + 1.8 * s, y + 2.6], [x - 0.6 * s, y + 2.4]])}" fill="none" stroke="${colr}" stroke-width="1.45" stroke-linecap="round"/>`;
   P.clip(d, [
     `<path d="${poly([[116, -20], [170, -20], [170, 90], [120, 90]])}" fill="${R.sh}"/>`,
-    `<path d="${blob([[96, 26], [112, 24], [128, 30], [132, 40], [118, 33], [100, 32]])}" fill="${R.deep}" opacity="0.65"/>`,
-    // swept-back waves over the top and curl loops through the crown and sides
-    ...[[[86, 30], [90, 20], [98, 10], [108, 4]], [[100, 29], [104, 19], [112, 10], [122, 7]], [[74, 36], [76, 24], [84, 13], [94, 6]], [[114, 31], [120, 22], [128, 15], [136, 18]]].map((w, i) => `<path d="${curve(w)}" fill="none" stroke="${i === 2 ? R.hi : R.deep}" stroke-width="1.5" stroke-linecap="round"/>`),
-    curlTex(R, [[70, 22], [80, 12], [92, 6], [106, 5], [118, 9], [128, 16], [135, 28], [66, 36], [134, 40], [78, 30], [96, 18], [112, 18], [124, 26], [86, 40], [67, 50], [133, 52]], 0.9),
+    // each side sweeps out from the part in two clean waves
+    ...[[[97, 4], [90, 10], [84, 20], [80, 33]], [[94, 14], [84, 18], [74, 28], [70, 42]]].map((w) => `<path d="${curve(w)}" fill="none" stroke="${R.hi}" stroke-width="1.5" stroke-linecap="round"/>`),
+    ...[[[103, 4], [110, 10], [116, 20], [120, 33]], [[106, 14], [116, 18], [126, 28], [130, 42]]].map((w) => `<path d="${curve(w)}" fill="none" stroke="${R.deep}" stroke-width="1.5" stroke-linecap="round"/>`),
+    ...loopsL.map((p2) => loop(p2, R.hi, 1)), ...loopsR.map((p2) => loop(p2, R.deep, -1)),
   ].join(''));
   P.stroke(d, R.line, OW);
+  P.stroke(curve([[100, 0], [100, 14], [100, 29.5]]), R.line, 1.5);
 });
 ART.hair.afro = hairOf((P, hc) => hairShape(P, blob([[56, 66], [48, 44], [54, 20], [76, 2], [100, -3], [124, 2], [146, 20], [152, 44], [144, 66], [136, 70], [64, 70]]), hc, { shX: 118, shX2: 124, hi: [[64, 22], [80, 8], [96, 4], [84, 14], [70, 28]], strands: [[[70, 40], [74, 46]], [[130, 30], [134, 38]], [[90, 10], [96, 14]], [[116, 12], [122, 18]], [[60, 52], [64, 58]], [[140, 52], [136, 58]]] }), (P, hc) => {
   const d = blob([[66, 58], [64, 40], [72, 30], [86, 26], [100, 25], [114, 26], [128, 30], [136, 40], [134, 58], [131, 46], [122, 39], [100, 36], [78, 39], [69, 46]]);
