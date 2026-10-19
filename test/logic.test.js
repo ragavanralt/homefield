@@ -342,7 +342,7 @@ import * as S from '../js/specials.js';
   t('shop: starter items owned, hair and top equipped', () => {
     const a = st.getState().avatar;
     assert.equal(a.eq.hair, 'short'); assert.equal(a.eq.top, 'tee');
-    assert.ok(a.owned.includes('curly'));
+    assert.ok(a.owned.includes('curls') && !a.owned.includes('curly'));
   });
   t('shop: buying takes coins, owns and wears the item; no double buy', () => {
     const start = st.getBank().coins;

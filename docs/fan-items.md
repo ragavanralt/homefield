@@ -2,7 +2,7 @@
 
 Updated Oct 19, 2026. Generated from js/avatar.js.
 
-Total: 156 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought.
+Total: 157 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought.
 
 ## Character basics (free)
 
@@ -16,7 +16,7 @@ Total: 156 items. Prices are in coins. "Team" means the item takes the colours o
 | Slot | Count |
 |---|---|
 | Expression | 6 |
-| Hair | 15 |
+| Hair | 16 |
 | Hat | 11 |
 | Face | 8 |
 | Facial hair | 4 |
@@ -67,7 +67,7 @@ Gear in the colours of the team you follow.
 | Golden scarf | goldscarf | Neckwear | 0 | earned | Earned: Win 5 bets in a row |  |
 | Trophy cape | trophycape | Back | 0 | earned | Earned: Hit a parlay |  |
 
-## Look (29)
+## Look (30)
 
 Hair, faces, beards and earrings.
 
@@ -81,7 +81,8 @@ Hair, faces, beards and earrings.
 | Tongue out | tongue | Expression | 600 | rare |  |  |
 | Short cut | short | Hair | 0 | free |  |  |
 | Buzz cut | buzz | Hair | 0 | free |  |  |
-| Curly flow | curly | Hair | 0 | free |  |  |
+| Curls | curls | Hair | 0 | free |  |  |
+| Curly flow | curly | Hair | 600 | rare |  |  |
 | Curly flow, blonde highlights | curlyhl | Hair | 900 | rare |  |  |
 | Skin fade | fade | Hair | 120 | common |  |  |
 | Slick back | slick | Hair | 150 | common |  |  |
