@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-10-18",
+  "updated": "2026-10-19",
   "daily": {
-    "date": "2026-10-18",
+    "date": "2026-10-19",
     "quests": [
       {
-        "id": "d2026-10-18-1",
-        "metric": "shop_visits",
+        "id": "d2026-10-19-1",
+        "metric": "outfit_changed",
         "target": 1,
         "coins": 40,
-        "title": "Check out the shop"
+        "title": "Change something in your fit"
       },
       {
-        "id": "d2026-10-18-2",
+        "id": "d2026-10-19-2",
         "metric": "parlays_placed",
         "target": 1,
         "coins": 120,
         "title": "Build a parlay"
       },
       {
-        "id": "d2026-10-18-3",
+        "id": "d2026-10-19-3",
         "metric": "games_opened",
         "target": 6,
         "coins": 120,
@@ -27,8 +27,8 @@
       }
     ],
     "deal": {
-      "itemId": "hightops",
-      "pct": 25
+      "itemId": "snapback",
+      "pct": 30
     }
   },
   "weekly": {
