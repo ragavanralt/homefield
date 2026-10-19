@@ -7,7 +7,6 @@ import { TABS } from './leagues.js';
 import { settleAll } from './settle.js';
 import { applyTheme, watchSystem, bindSettings } from './themes.js';
 import { startBrand, setContextTeam, teamForRoute } from './brand.js';
-import { startPixelate } from './pixel.js';
 
 const ROUTES = [
   { re: /^\/?$/, view: () => import('./views/home.js'), nav: 'home', params: () => ({}) },
@@ -100,7 +99,6 @@ export function start() {
   if (slip) mountSlip(slip);
   route();
   try { startBrand(); } catch (e) { /* the logo is optional */ }
-  try { startPixelate(); } catch (e) { /* the smooth fan is fine too */ }
   try {
     settleAll().then(() => {
       for (const n of takeNotices()) {

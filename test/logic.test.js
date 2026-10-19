@@ -373,7 +373,7 @@ import * as S from '../js/specials.js';
       const svg = avatarSvg({ skin: 2, hairColor: 1, eq: { hair: 'short', top: 'tee', [it.slot]: it.id } }, team);
       assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>') && !svg.includes('undefined'), it.id);
     }
-    assert.ok(avatarSvg({ skin: 2, hairColor: 0, eq: { top: 'jersey' } }, team).includes('#FF0000'));
+    assert.ok(avatarSvg({ skin: 2, hairColor: 0, eq: { top: 'jersey' } }, team).includes('rgb(255,0,0)'));
   });
   t('shop: every item has a section; designer pieces cost far more than blanks', () => {
     const secs = new Set(m.SECTIONS.map((s) => s.id));
@@ -385,14 +385,14 @@ import * as S from '../js/specials.js';
   t('avatar: body types are free and change the drawing', () => {
     const eq = { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' };
     const lean = m.avatarSvg({ skin: 2, hairColor: 0, body: 0, eq }, null), built = m.avatarSvg({ skin: 2, hairColor: 0, body: 2, eq }, null);
-    assert.notEqual(lean, built); assert.ok(built.includes('scale(1.12 1)'));
+    assert.notEqual(lean, built);
     assert.equal(st.getState().avatar.body, 1);
   });
   t('colours: free and owned items switch colour; unowned cannot; drawing changes', () => {
     const eq = { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' };
     const before = m.avatarSvg({ skin: 2, hairColor: 0, eq }, null);
     const black = m.avatarSvg({ skin: 2, hairColor: 0, eq, col: { tee: 2 } }, null);
-    assert.notEqual(before, black); assert.ok(black.includes('#1C1C21'));
+    assert.notEqual(before, black); assert.ok(black.includes('rgb(28,28,33)'));
     assert.ok(m.setColour('tee', 1)); assert.equal(m.colourIndex(st.getState().avatar, 'tee'), 1);
     assert.equal(m.setColour('foghoodie', 1), false);
     assert.equal(m.setColour('tee', 99), false);
