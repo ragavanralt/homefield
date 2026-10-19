@@ -31,6 +31,12 @@ export const BODIES = [
   { id: 'built', label: 'Built', up: 1.14, low: 1.12 },
   { id: 'heavy', label: 'Heavy', up: 1.26, low: 1.22 },
 ];
+// Poses are free and change only the arms, so every item fits every pose.
+export const POSES = [
+  { id: 'relaxed', label: 'Relaxed' },
+  { id: 'onehip', label: 'One hip' },
+  { id: 'hips', label: 'Both hips' },
+];
 export const ALWAYS_ON = ['hair', 'top', 'bottom', 'shoes'];
 export const TIERS = { free: { label: 'Free' }, common: { label: 'Common' }, rare: { label: 'Rare' }, epic: { label: 'Epic' }, legend: { label: 'Legendary' }, earned: { label: 'Earned' } };
 
@@ -255,7 +261,8 @@ export function avatarSvg(av, team, vb) {
   const eq = av.eq || {};
   const pal = palette(team);
   const body = BODIES[av.body ?? 1] || BODIES[1];
-  const key = JSON.stringify([av.skin, av.hairColor, av.body, av.col, eq, pal, vb]);
+  const pose = (POSES[av.pose ?? 0] || POSES[0]).id;
+  const key = JSON.stringify([av.skin, av.hairColor, av.body, pose, av.col, eq, pal, vb]);
   if (cache.has(key)) return cache.get(key);
   const colourOf = (id) => {
     const it = itemById(id);
@@ -267,7 +274,7 @@ export function avatarSvg(av, team, vb) {
     skin: SKINS[av.skin] ?? SKINS[2],
     hair: HAIR_COLORS[av.hairColor] ?? HAIR_COLORS[0],
     eq: { ...eq, hair: eq.hair || 'short', top: eq.top || 'tee', bottom: eq.bottom || 'jeans', shoes: eq.shoes || 'sneakers' },
-    colourOf, pal, build: body.id,
+    colourOf, pal, build: body.id, pose,
   });
   const out = `<svg viewBox="${vb || FULL}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
   if (cache.size > 120) cache.delete(cache.keys().next().value);

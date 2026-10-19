@@ -1,7 +1,7 @@
 // Every wearable as a small SVG recipe drawn on the shared body (fan.js). A recipe is
 // (P, g, col, phase, c): P the pen, g the body geometry, col the chosen colour (or undefined), phase the
 // layer being drawn, c = { skin, sk, hair, pal, B, g }. Team gear reads c.pal (t1, t2, tink, tacc).
-import { ART, CX, OW, ramp, adj, mix, dk, lt, tube, cutJ, curve, blob, poly, torsoD, torsoPts, halfD, segs, pt } from './fan.js';
+import { ART, CX, OW, ramp, adj, mix, dk, lt, tube, cutJ, cutF, curve, blob, poly, torsoD, torsoPts, halfD, segs, pt } from './fan.js';
 
 const GOLD = '#E8B93A', GOLD2 = '#A87A1A', GOLDHI = '#FFE9A0', SILVER = '#CDD3DC', SILVER2 = '#8E96A3', INK = '#16131A';
 const colOf = (o, c, col) => (o.main ? o.main(c.pal, col) : col || o.def || '#888888');
@@ -16,8 +16,8 @@ function bodyShade(B, grow, hem, top, R) {
   const lit = blob([...mirror(pts).map(([x, y]) => [CX + (x - CX) * 0.9 + 2, y]), [CX - 90, hem + 20], [CX - 90, pts[0][1] - 20]]);
   return [[band(0.36), R.sh], [band(0.13), R.deep], [lit, R.hi]];
 }
-function sleeve(P, g, side, yEnd, grow, R, o = {}) {
-  const T = tube(cutJ(g.armJ(side), yEnd, grow, o.from));
+function sleeve(P, g, side, f, grow, R, o = {}) {
+  const T = tube(cutF(g.armJ(side), 0, f, grow));
   P.tube(T, R, { cap0: o.cap0 ?? true, cap1: false, extra: o.extra });
   return T;
 }
@@ -39,7 +39,7 @@ function neckline(P, c, type, R, o = {}) {
 function top(o) {
   return (P, g, col, ph, c) => {
     const main = colOf(o, c, col), R = ramp(main), B = c.B, grow = o.grow ?? 3, hem = o.hem ?? 210;
-    const yEnd = { short: 157, elbow: 184, long: 212, none: null }[o.sleeve ?? 'short'];
+    const yEnd = { short: 0.36, elbow: 0.6, long: 0.9, none: null }[o.sleeve ?? 'short'];
     if (ph === 'body') {
       const d = o.shape === 'tank' ? tankD(B, grow, hem) : torsoD(B, grow, hem);
       P.part(d, R, { shade: bodyShade(B, grow, hem, 0, R) });
@@ -54,7 +54,7 @@ function top(o) {
     });
     if (ph === 'cuffs' && yEnd && o.sleeve === 'long') both((side) => {
       const SR = o.sleeveCol ? ramp(o.sleeveCol(c.pal, main)) : R;
-      const T = tube(cutJ(g.armJ(side), 223, (o.sgrow ?? 4) * (c.B.arm * 0.5 + 0.5) + 0.5, 209));
+      const T = tube(cutF(g.armJ(side), 0.85, 1.0, (o.sgrow ?? 4) * (c.B.arm * 0.5 + 0.5) + 0.5));
       P.tube(T, o.cuffCol ? ramp(o.cuffCol(c.pal, main)) : { ...SR, base: SR.sh, hi: SR.base, sh: SR.deep }, { cap0: false, cap1: false });
     });
   };
@@ -87,11 +87,11 @@ function outer(o) {
       if (o.collar) o.collar(P, c, R, main, B);
     }
     if (ph === 'sleeves' && o.sleeve !== 'none') both((side) => {
-      const T = sleeve(P, g, side, o.sleeve === 'short' ? 160 : 214, (o.sgrow ?? 6.5) * (B.arm * 0.5 + 0.5), SR);
+      const T = sleeve(P, g, side, o.sleeve === 'short' ? 0.38 : 0.92, (o.sgrow ?? 6.5) * (B.arm * 0.5 + 0.5), SR);
       if (o.stripe) { const pts = T.J.map(([x, y, w], i) => [x - side * w * 0.36, y]); const colr = o.stripe(c.pal, main); P.stroke(curve(pts.slice(0, -1)), colr, 2.6); }
     });
     if (ph === 'cuffs' && o.sleeve !== 'none' && o.sleeve !== 'short') both((side) => {
-      const T = tube(cutJ(g.armJ(side), 224, (o.sgrow ?? 6.5) * (B.arm * 0.5 + 0.5) + 0.5, 210));
+      const T = tube(cutF(g.armJ(side), 0.86, 1.0, (o.sgrow ?? 6.5) * (B.arm * 0.5 + 0.5) + 0.5));
       const CR = o.cuff ? ramp(o.cuff(c.pal, main)) : { ...SR, base: SR.sh, hi: SR.base, sh: SR.deep };
       P.tube(T, CR, { cap0: false, cap1: false });
     });
@@ -186,7 +186,7 @@ ART.top.techhood = top({
   detail: (P, c, R) => { P.stroke(curve([[CX - 2, 120], [CX - 1, 205]]), INK, 2); P.dot(CX - 2, 124, 1.8, SILVER); P.stroke(curve([[CX + 14, 150], [CX + 26, 146]]), INK, 1.8); P.stroke(curve([[CX - 26, 172], [CX - 26, 196]]), dk(R.base, 0.25), 1.6); hem(P, c.B, 3.5, 207, R); },
 });
 ART.top.sixhood = hoodie({ o: { def: '#141418' }, detail: (P) => { P.shape(blob([[CX - 13, 136], [CX + 13, 136], [CX + 13, 152], [CX, 162], [CX - 13, 152]]), GOLD, { line: GOLD2, w: 1.4 }); P.shape(blob([[CX - 8, 141], [CX + 8, 141], [CX + 8, 151], [CX, 157], [CX - 8, 151]]), '#141418', { line: GOLD2, w: 1 }); P.dot(CX, 148, 2.6, GOLD); } });
-const jerseyTrim = (P, g, side, yEnd, c) => { const J = cutJ(g.armJ(side), yEnd, 4 * (c.B.arm * 0.5 + 0.5)); const [x, y, w] = J[J.length - 1]; P.stroke(curve([[x - w / 2, y - 3], [x + w / 2, y - 3]]), c.pal.t2, 3.2); };
+const jerseyTrim = (P, g, side, yEnd, c) => { const J = cutF(g.armJ(side), 0, yEnd, 4 * (c.B.arm * 0.5 + 0.5)); const [x, y, w] = J[J.length - 1]; P.stroke(curve([[x - w / 2, y - 3], [x + w / 2, y - 3]]), c.pal.t2, 3.2); };
 ART.top.jersey = top({
   main: (p) => p.t1, sleeve: 'short', neck: 'v', grow: 4, ribCol: (p) => p.t2, trim: jerseyTrim,
   detail: (P, c, R) => { digits(P, '7', CX, 178, 34, c.pal.tink, c.pal.t2); const B = c.B; both((s) => P.stroke(curve([[CX + s * (B.ch + 3), 140], [CX + s * (B.wa + B.be + 4), 200]]), c.pal.t2, 3)); },
@@ -282,16 +282,18 @@ ART.chain.pendant = (P, g, col, ph, c) => { if (ph !== 'neck') return; chain(P, 
 
 /* ============================================================ WRIST AND HAND */
 const onWrist = (P, g, c, strap, face, ring) => {
-  const [x, y, w] = cutJ(g.armJ(-1), 215, 0).slice(-1)[0];
+  const [x, y, w] = g.watch(-1);
   const a = c.B.arm;
+  P.add(`<g transform="rotate(${g.watchTurn(-1).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">`);
   P.shape(blob([[x - w / 2 - 1, y - 4], [x + w / 2 + 1, y - 4], [x + w / 2 + 1, y + 2.5], [x - w / 2 - 1, y + 2.5]]), strap, { line: '#121212', w: 1.3 });
   if (face) { P.ell(x - 1, y - 0.8, 4.6 * a, 4.6, face, { line: ring || '#121212', w: 1.6 }); P.stroke(curve([[x - 1, y - 0.8], [x - 1, y - 3.4]]), ring || '#FFFFFF', 0.9); }
+  P.add('</g>');
 };
 ART.wrist.watch = (P, g, col, ph, c) => { if (ph === 'wrist') onWrist(P, g, c, '#1E1F23', '#3A6FB8', '#9CC7FF'); };
 ART.wrist.dresswatch = (P, g, col, ph, c) => { if (ph === 'wrist') onWrist(P, g, c, '#3B2414', '#EDEBE5', GOLD); };
 ART.wrist.royalwatch = (P, g, col, ph, c) => { if (ph === 'wrist') onWrist(P, g, c, GOLD, '#123C7A', GOLD2); };
-ART.wrist.goldwatch = (P, g, col, ph, c) => { if (ph === 'wrist') { onWrist(P, g, c, GOLD, '#F4F7FF', '#FFFFFF'); const [x, y] = cutJ(g.armJ(-1), 215, 0).slice(-1)[0]; [[-4, -4], [3, -5], [4, 1], [-5, 1]].forEach(([dx, dy]) => P.dot(x + dx, y + dy, 0.9, '#FFFFFF')); } };
-ART.wrist.band = (P, g, col, ph, c) => { if (ph !== 'wrist') return; const [x, y, w] = cutJ(g.armJ(-1), 214, 0).slice(-1)[0]; P.shape(blob([[x - w / 2 - 1.5, y - 6], [x + w / 2 + 1.5, y - 6], [x + w / 2 + 1.5, y + 2], [x - w / 2 - 1.5, y + 2]]), c.pal.t1, { line: dk(c.pal.t1, 0.4), w: 1.4 }); P.stroke(curve([[x - w / 2, y - 2], [x + w / 2, y - 2]]), c.pal.t2, 1.8); };
+ART.wrist.goldwatch = (P, g, col, ph, c) => { if (ph === 'wrist') { onWrist(P, g, c, GOLD, '#F4F7FF', '#FFFFFF'); const [x, y] = g.watch(-1); [[-4, -4], [3, -5], [4, 1], [-5, 1]].forEach(([dx, dy]) => P.dot(x + dx, y + dy, 0.9, '#FFFFFF')); } };
+ART.wrist.band = (P, g, col, ph, c) => { if (ph !== 'wrist') return; const [x, y, w] = g.watch(-1); P.add(`<g transform="rotate(${g.watchTurn(-1).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">`); P.shape(blob([[x - w / 2 - 1.5, y - 6], [x + w / 2 + 1.5, y - 6], [x + w / 2 + 1.5, y + 2], [x - w / 2 - 1.5, y + 2]]), c.pal.t1, { line: dk(c.pal.t1, 0.4), w: 1.4 }); P.stroke(curve([[x - w / 2, y - 2], [x + w / 2, y - 2]]), c.pal.t2, 1.8); P.add('</g>'); };
 const rightHand = (g) => { const [x, y] = g.wrist(1); return [x, y]; };
 /** draw a held item bigger, scaled about the hand */
 const held = (k, f) => (P, g, col, ph, c) => { if (ph !== 'hand') return; const [x, y] = rightHand(g); P.add(`<g transform="translate(${x} ${y + 10}) scale(${k}) translate(${-x} ${-(y + 10)})">`); f(P, g, col, ph, c); P.add('</g>'); };
@@ -419,13 +421,33 @@ ART.hair.fade = hairOf(null, (P, hc, c) => {
   hairShape(P, blob([[70, 40], [70, 28], [80, 15], [96, 9], [112, 10], [126, 17], [131, 30], [130, 40], [122, 37], [110, 39], [100, 35], [88, 38], [78, 36]]), hc, { strands: [[[88, 20], [96, 30]], [[106, 18], [110, 28]]], lights: [[[82, 20], [94, 14]]] });
 });
 ART.hair.slick = hairOf(null, (P, hc) => hairShape(P, blob([[66, 56], [63.5, 42], [67, 27], [80, 15], [98, 10], [116, 11.5], [130, 20], [136.5, 36], [136.5, 56], [133, 55], [132, 42], [124, 32.5], [110, 30], [96, 30.5], [82, 33], [72, 40], [68, 56]]), hc, { strands: [[[78, 30], [96, 18], [118, 18]], [[84, 32], [102, 24], [124, 26]]], lights: [[[76, 26], [94, 16], [112, 15]], [[90, 26], [108, 22]]], noHi: true }));
-ART.hair.curly = hairOf((P, hc) => hairShape(P, blob([[62, 70], [58, 50], [62, 30], [80, 12], [100, 6], [120, 12], [138, 30], [142, 50], [138, 70]]), hc, { noHi: true }), (P, hc) => {
-  const C = [[70, 36, 9], [80, 24, 10], [94, 18, 10], [108, 18, 10], [121, 24, 10], [130, 36, 9], [66, 48, 7], [134, 48, 7], [86, 36, 8], [100, 32, 8], [114, 36, 8]];
-  const R = ramp(hc, { k: 0.9 }); const line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22);
-  C.forEach(([x, y, r]) => P.ell(x, y, r, r, line, {}));
-  C.forEach(([x, y, r]) => P.ell(x, y, r - OW * 0.9, r - OW * 0.9, x > 108 ? R.sh : R.base, {}));
-  C.forEach(([x, y, r]) => P.stroke(curve([[x - r * 0.5, y - r * 0.3], [x - r * 0.1, y - r * 0.6]]), lt(hc, 0.18), 1.6, 0.9));
-  C.forEach(([x, y, r]) => P.stroke(curve([[x - r * 0.4, y + r * 0.35], [x, y + r * 0.55], [x + r * 0.45, y + r * 0.3]]), R.deep, 1.2, 0.8));
+// loose brown curls with a middle part: volume at the sides, curls framing the temples, forehead open in the middle
+ART.hair.curly = hairOf((P, hc) => {
+  const R = ramp(hc, { k: 0.9 }); if (rgbL(hc) < 0.2) { R.base = adj(hc, 0.06); R.sh = adj(hc, 0.01); R.deep = adj(hc, 0.14); } const line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22);
+  // the mass behind the head: a little wider than the skull, bumpy curl edge, down to about the ears
+  const C = [[60, 64, 8], [57, 52, 9], [59, 38, 10], [66, 25, 11], [78, 15, 11], [92, 10, 11], [108, 10, 11], [122, 15, 11], [134, 25, 11], [141, 38, 10], [143, 52, 9], [140, 64, 8]];
+  C.forEach(([x, y, r]) => P.ell(x, y, r + OW * 0.6, r + OW * 0.6, line));
+  P.fill(blob([[58, 70], [56, 40], [72, 16], [100, 8], [128, 16], [144, 40], [142, 70], [100, 40]]), R.sh);
+  C.forEach(([x, y, r]) => P.ell(x, y, r, r, x > 112 ? R.sh : R.base));
+  C.forEach(([x, y, r]) => P.stroke(curve([[x - r * 0.55, y + r * 0.1], [x - r * 0.1, y - r * 0.5], [x + r * 0.45, y - r * 0.2]]), x > 112 ? R.deep : lt(hc, 0.14), 1.4, 0.9));
+}, (P, hc) => {
+  const R = ramp(hc, { k: 0.9 }); if (rgbL(hc) < 0.2) { R.base = adj(hc, 0.06); R.sh = adj(hc, 0.01); R.deep = adj(hc, 0.14); } const line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22);
+  // two curtains of curls from a middle part, sweeping out over the temples to about the brows
+  const half = (s) => {
+    const X = (x) => CX + x * s, base = s > 0 ? R.sh : R.base;
+    const curls = [[X(7), 27, 6], [X(15), 33, 6.6], [X(24), 38.5, 7], [X(32), 44, 7], [X(36), 54, 6.4]];
+    const d = blob([[X(1), 17], [X(16), 14], [X(31), 20], [X(39), 34], [X(40), 50], [X(36), 52], [X(30), 42], [X(20), 36], [X(10), 30], [X(1.5), 24]]);
+    curls.forEach(([x, y, r]) => P.ell(x, y, r + OW * 0.6, r + OW * 0.6, line));
+    P.fill(d, base);
+    curls.forEach(([x, y, r]) => P.ell(x, y, r, r, base));
+    P.stroke(curve([[X(1), 17], [X(16), 14], [X(31), 20], [X(39), 34], [X(41), 48]]), line, OW);
+    P.stroke(curve([[X(1), 16], [X(1.5), 24]]), line, 1.4);
+    // curl swirls: an S down each lock and a C in each tip
+    P.stroke(curve([[X(8), 19], [X(16), 21], [X(22), 27]]), s > 0 ? R.deep : lt(hc, 0.16), 1.5);
+    P.stroke(curve([[X(20), 18], [X(30), 25], [X(34), 34]]), R.deep, 1.3);
+    curls.forEach(([x, y, r]) => P.stroke(curve([[x - r * 0.45 * s, y + r * 0.35], [x - r * 0.05 * s, y - r * 0.4], [x + r * 0.45 * s, y - r * 0.05], [x + r * 0.1 * s, y + r * 0.35]]), s > 0 ? R.deep : lt(hc, 0.14), 1.3));
+  };
+  half(-1); half(1);
 });
 ART.hair.afro = hairOf((P, hc) => hairShape(P, blob([[56, 66], [48, 44], [54, 20], [76, 2], [100, -3], [124, 2], [146, 20], [152, 44], [144, 66], [136, 70], [64, 70]]), hc, { shX: 118, shX2: 124, hi: [[64, 22], [80, 8], [96, 4], [84, 14], [70, 28]], strands: [[[70, 40], [74, 46]], [[130, 30], [134, 38]], [[90, 10], [96, 14]], [[116, 12], [122, 18]], [[60, 52], [64, 58]], [[140, 52], [136, 58]]] }), (P, hc) => {
   const d = blob([[66, 58], [64, 40], [72, 30], [86, 26], [100, 25], [114, 26], [128, 30], [136, 40], [134, 58], [131, 46], [122, 39], [100, 36], [78, 39], [69, 46]]);

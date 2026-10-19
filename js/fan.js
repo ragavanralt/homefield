@@ -100,6 +100,17 @@ export function cutJ(J, yEnd, grow = 0, from = -Infinity) {
   return out.length > 1 ? out : [out[0], [out[0][0], out[0][1] + 0.5, out[0][2]]];
 }
 
+/** part of a tube between fractions f0..f1 of its length (sleeves follow the arm whatever the pose) */
+export function cutF(J, f0, f1, grow = 0) {
+  const L = [0];
+  for (let i = 1; i < J.length; i++) L.push(L[i - 1] + Math.hypot(J[i][0] - J[i - 1][0], J[i][1] - J[i - 1][1]));
+  const tot = L[L.length - 1], at = (d) => { let i = 1; while (i < J.length - 1 && L[i] < d) i++; const t = Math.max(0, Math.min(1, (d - L[i - 1]) / (L[i] - L[i - 1] || 1))); const a = J[i - 1], b = J[i]; return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t + grow]; };
+  const d0 = tot * f0, d1 = tot * Math.min(1, f1), out = [at(d0)];
+  for (let i = 1; i < J.length - 1; i++) if (L[i] > d0 + 0.5 && L[i] < d1 - 0.5) out.push([J[i][0], J[i][1], J[i][2] + grow]);
+  out.push(at(d1));
+  return out;
+}
+
 /* ------------------------------------------------------------------ svg builder */
 export class Pen {
   constructor() { this.out = []; }
@@ -156,13 +167,23 @@ export const BUILDS = [
 ];
 
 /** Everything items hang on. side: -1 = viewer's left, 1 = viewer's right. */
-export function geometry(B) {
+export function geometry(B, pose = 'relaxed') {
   const g = { B };
   const s = (x, side) => (side < 0 ? x : 2 * CX - x); // shapes are defined on the left; mirror for the right
   // arms: hanging a little away from the body (open, relaxed), slight bend at the elbow
   const a = B.arm, ax = CX - B.sh + 12;
-  g.armJ = (side) => [[ax + 2, 127, 25 * a], [ax - 4, 142, 25 * a], [ax - 9, 162, 21 * a], [ax - 12.5, 182, 16 * a], [ax - 14.5, 196, 18.5 * a], [ax - 17.5, 220, 12 * a]].map(([x, y, w]) => [s(x, side), y, w]);
+  // poses: relaxed (arms hanging a little away from the body), hands on hips, or one hand on the hip
+  const onHip = (side) => pose === 'hips' || (pose === 'onehip' && side < 0);
+  g.onHip = onHip;
+  g.armJ = (side) => (onHip(side)
+    ? [[ax + 2, 127, 25 * a], [ax - 6, 140, 25 * a], [ax - 13, 153, 21 * a], [CX - B.sh - 11, 166, 16.5 * a], [CX - B.wa - B.be - 11, 179, 18 * a], [CX - B.wa - B.be - 2, 190, 12.5 * a]]
+    : [[ax + 2, 127, 25 * a], [ax - 4, 141, 25 * a], [ax - 8.5, 159, 21 * a], [ax - 11.5, 177, 16 * a], [ax - 13, 190, 18.5 * a], [ax - 15.5, 211, 12 * a]]
+  ).map(([x, y, w]) => [s(x, side), y, w]);
   g.wrist = (side) => { const j = g.armJ(side); return j[j.length - 1]; };
+  // where a watch sits: a little up the forearm from the wrist
+  g.watch = (side) => { const j = g.armJ(side), p = j[4], q = j[5], t = 0.72; return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t]; };
+  g.watchTurn = (side) => { const j = g.armJ(side), p = j[4], q = j[5]; return Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI - 90; };
+  g.handTurn = (side) => (onHip(side) ? (side < 0 ? -28 : 28) : 0);
   // legs: slight A-stance, thigh, knee, calf swell on the outside, narrow ankle
   const l = B.leg, lx = CX - 15 - (B.hp - 28.5) * 0.45;
   g.legJ = (side) => [[lx + 2.2, 196, 31 * l], [lx, 226, 30 * l], [lx - 1, 256, 21 * l], [lx - 2.2, 270, 24.5 * l], [lx - 2, 288, 16 * l], [lx - 2.2, 304, 12.5 * l]].map(([x, y, w]) => [s(x, side), y, w]);
@@ -276,7 +297,7 @@ export const ART = { hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, o
 /** Draw the whole fan. ctx: { skin, hair, eq, colourOf(id), pal, build } -> svg inner markup */
 export function drawFan(ctx) {
   const B = BUILDS.find((b) => b.id === ctx.build) || BUILDS[1];
-  const g = geometry(B);
+  const g = geometry(B, ctx.pose);
   const P = new Pen();
   const sk = ramp(ctx.skin, { hs: 0.25 });
   sk.line = adj(ctx.skin, -0.5, -8, -0.08);
@@ -343,7 +364,12 @@ export function drawFan(ctx) {
   run('outer', 'body'); run('outer', 'sleeves');
   run('back', 'neck'); run('scarf', 'neck'); run('chain', 'neck');
   // hands
-  for (const side of [-1, 1]) hand(P, side, g.wrist(side), sk, (B.arm * 0.6 + 0.4) * 1.18);
+  for (const side of [-1, 1]) {
+    const [wx, wy] = g.wrist(side), turn = g.handTurn(side);
+    if (turn) P.add(`<g transform="rotate(${turn} ${wx} ${wy})">`);
+    hand(P, side, g.wrist(side), sk, (B.arm * 0.6 + 0.4) * 1.18);
+    if (turn) P.add('</g>');
+  }
   run('top', 'cuffs'); run('outer', 'cuffs');
   run('wrist', 'wrist'); run('hand', 'hand');
   // head
