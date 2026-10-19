@@ -5,12 +5,12 @@ import { Spr, shadeHex, mix, W, H } from './sprite.js';
 
 /* ------------------------------------------------------------------ body shapes */
 const PATH = {
-  armF: [[23, 30.8, 5], [21, 38, 4.6], [21.2, 45.5, 4.2], [22.4, 51.6, 3.8]],
-  armN: [[41.4, 30.8, 5.8], [44.4, 38, 5.4], [44.6, 45.5, 4.8], [42.4, 51.8, 4.2]],
-  legF: [[27.4, 50, 8.4], [26.6, 66, 7.6], [26.4, 84.6, 6.2]],
-  legN: [[36.6, 50, 9], [37.2, 66, 8], [36.4, 85, 6.6]],
+  armF: [[23, 30.8, 5.4], [21, 38, 4.9], [21, 44.5, 4.5], [21.4, 48.5, 4.5], [22.4, 51.6, 3.7]],
+  armN: [[41.4, 30.8, 6.2], [44.4, 37.6, 5.9], [44.8, 43.8, 5.0], [44.2, 47.6, 4.8], [42.4, 51.8, 3.9]],
+  legF: [[27.4, 50, 8.6], [26.9, 60, 7.9], [26.6, 66, 7.1], [26.5, 72, 7.7], [26.4, 79, 5.4], [26.4, 85, 5.6]],
+  legN: [[36.6, 50, 9.2], [37, 60, 8.5], [37.3, 66, 7.5], [37.3, 72, 8.1], [36.8, 79, 5.8], [36.4, 85, 6.2]],
 };
-export const TORSO_PTS = [[22.6, 30.8], [27, 28.4], [36.6, 28.4], [41.6, 30.6], [42.6, 35], [41.4, 43.5], [40.4, 51.4], [23.6, 51.4], [22.4, 43.5], [21.6, 35]];
+export const TORSO_PTS = [[22.2, 30.8], [27, 28.4], [36.6, 28.4], [42, 30.6], [43, 35], [41.8, 43.5], [40.6, 51.4], [23.4, 51.4], [22.2, 43.5], [21.2, 35]];
 
 /** Cut a path off at y (interpolating the last point) and fatten it a little. */
 function cut(path, yEnd, grow = 0) {
@@ -41,32 +41,70 @@ function geometry(S) {
 }
 
 /* ------------------------------------------------------------------ the head */
-const HEAD_POLY = [[24, 16.4], [24.4, 21.8], [26, 25.8], [29, 28.4], [32.6, 28.6], [36, 27], [38.6, 23.6], [39.8, 19.6], [39.8, 15.6]];
+// the head outline in final design coordinates (turned to the left), softened with a corner-cutting pass
+const HEAD_FINAL = [[24.9, 12.2], [24.4, 16], [24.4, 19.2], [25, 22.2], [26.1, 24.4], [27.9, 26], [30.2, 27], [32.7, 26.8], [35.1, 25.6], [37.2, 23.4], [38.6, 20.6], [39.2, 17.2], [39.1, 13], [37.8, 9.4], [35, 7.4], [31.8, 7], [28.6, 7.8], [26.2, 9.6]];
+function chaikin(pts, n = 1) {
+  let p = pts;
+  for (let k = 0; k < n; k++) { const o = []; for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; o.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]); } p = o; }
+  return p;
+}
 function headMasks(S) {
   const m = {};
-  m.head = S.or(S.ell(31.8, 16.2, 8, 7.4, false), S.poly(HEAD_POLY, false));
-  m.nose = S.poly([[24.4, 19.6], [22, 22.6], [23.6, 24.2], [25.6, 23]], false);
-  m.ear = S.ell(38.8, 20.4, 1.8, 2.6, false);
+  m.head = S.poly(chaikin(HEAD_FINAL, 2), 'raw');
   return m;
 }
-function drawHead(S, m, skin, hairCol, beard) {
-  S.paint(m.head, skin);
-  S.paint(m.nose, skin, { bands: 1 });
-  S.paint(m.ear, skin, { bands: 1 });
+const R = 'raw';
+/** The face, drawn in final design coordinates. Eyes sit near y 16.5, brows near 14, mouth near 23. */
+function drawHead(S, m, skin, hairCol, beard, neck) {
+  const sk1 = shadeHex(skin, 0.1), sk2 = shadeHex(skin, 0.22), sk3 = shadeHex(skin, 0.38), hi = shadeHex(skin, -0.2);
+  const ink = '#2A1A14', white = '#F4EFE8', brow = shadeHex(hairCol, 0.18), lip = mix(skin, '#9A3138', 0.55), lipD = mix(skin, '#6E1F26', 0.6);
+  // shade under the chin on the neck
+  if (neck) S.shade(S.and(neck, S.poly([[24, 24.4], [40, 24.4], [40, 31], [24, 31]], R)), 0.3, 190);
+  // the nose pokes past the cheek because the face is turned; head, nose and ear share one outline
+  const nose = S.poly(chaikin([[27.4, 15.6], [28.4, 16.4], [28.2, 19], [27.2, 20.6], [25.6, 21.5], [24.3, 21.1], [23.7, 20.3], [24.3, 19.4], [25.8, 17.2]], 2), R);
+  const ear = S.or(S.ell(39, 19.6, 1.5, 2.5, R), S.ell(38.8, 21.9, 0.95, 1, R));
+  S.paint(S.or(m.head, nose, ear), skin, { bands: 1 });
+  // nose: lit tip, shaded underside, nostril
+  S.flat(S.and(S.ell(24.6, 20.2, 0.8, 0.8, R), nose), hi, 200);
+  S.shade(S.and(S.poly([[23.2, 21], [25.6, 21.9], [27.6, 21], [27.4, 22.4], [23.6, 22.4]], R), S.or(nose, m.head)), 0.2, 200);
+  S.stroke([[23.7, 21], [24.8, 21.6], [26.3, 21.8], [27.4, 21]], sk3, 0.45, R, 230);
+  S.spot(24.6, 21.2, 0.3, sk3);
+  // ear: rim, inner fold and lobe
+  S.shade(S.and(ear, S.ell(38.7, 19.9, 0.85, 1.6, R)), 0.26, 220);
+  S.stroke([[38, 17.6], [39.4, 17.4], [40.4, 18.8], [40.3, 21], [39.5, 22.4]], sk3, 0.4, R, 240);
+  S.stroke([[38.6, 18.6], [39.4, 19.4], [39.1, 21]], sk3, 0.4, R, 240);
+  S.shade(S.and(ear, S.ell(39.6, 18.6, 0.5, 0.7, R)), -0.1, 180);
   if (beard) beard();
-  const E = '#2A1A14', WH = '#F2EDE4', sk2 = shadeHex(skin, 0.2), sk3 = shadeHex(skin, 0.4), brow = shadeHex(hairCol, 0.12), lip = mix(skin, '#8E2F34', 0.5);
-  const R = 'raw';
+  // face shading: jaw and neck side, temple, under the brow and cheek
+  S.shade(S.and(m.head, S.poly([[32, 26.6], [38.4, 22.4], [40.4, 19.4], [40.4, 29], [30, 29]], R)), 0.2, 170);
+  S.shade(S.and(m.head, S.poly([[24, 22.4], [25.6, 24.6], [28.4, 27.4], [27.2, 22.6]], R)), 0.16, 150);
+  S.shade(S.and(m.head, S.poly([[35.4, 17.6], [38.4, 17], [38.2, 22.4], [36, 24]], R)), 0.12, 160);
+  S.flat(S.and(m.head, S.ell(31.6, 21.2, 2.5, 1.4, R)), '#E58C7C', 30);
+  S.flat(S.and(m.head, S.ell(26.8, 21.8, 1.2, 0.9, R)), '#E58C7C', 22);
+  // nose bridge, side and nostril
+  S.shade(S.and(m.head, S.poly([[28.6, 15.6], [29.7, 16.2], [29.2, 19.6], [27.6, 21.5], [27, 20.6], [28.2, 18.6]], R)), 0.17, 190);
+  S.stroke([[25.1, 21.3], [26.2, 21.7], [27, 21.2]], sk3, 0.45, R, 230);
+  S.spot(25.1, 21, 0.3, sk3);
   // brows
-  S.line(25, 14, 27, 14, brow, R); S.line(30, 14, 33, 14, brow, R); S.dot(34, 15, brow, R);
-  // eyes: the far one is narrower because the face is turned
-  S.dot(26, 16, E, R); S.dot(26, 17, E, R); S.dot(27, 16, WH, R); S.dot(27, 17, sk2, R);
-  S.dot(30, 16, E, R); S.dot(31, 16, E, R); S.dot(32, 16, WH, R); S.dot(30, 17, E, R); S.dot(31, 17, E, R); S.dot(32, 17, sk2, R);
-  // nose and cheek
-  S.dot(25, 19, sk3, R); S.dot(26, 18, sk2, R); S.dot(28, 18, sk2, R); S.dot(28, 19, sk2, R);
-  // mouth
-  S.line(27, 22, 30, 22, lip, R); S.dot(31, 21, sk2, R); S.dot(28, 23, sk2, R); S.dot(29, 23, sk2, R);
-  // jaw shadow
-  S.line(30, 24, 36, 23, sk2, R); S.dot(37, 19, sk2, R); S.dot(37, 20, sk2, R); S.dot(37, 21, sk2, R);
+  S.stroke([[24.9, 14.3], [26.2, 13.5], [27.9, 13.4]], brow, 0.75, R);
+  S.stroke([[30, 13.5], [32.4, 13.1], [34.4, 13.8], [35.2, 14.6]], brow, 0.85, R);
+  // eyes: far one is narrower because of the turn
+  const eye = (cx, cy, rx, ry, ix) => {
+    S.flat(S.ell(cx, cy, rx, ry, R), white);
+    const clip = S.ell(cx, cy, rx, ry, R);
+    S.flat(S.and(clip, S.ell(ix, cy + 0.05, ry * 0.95, ry * 1.05, R)), '#4A3022');
+    S.flat(S.and(clip, S.ell(ix - 0.05, cy + 0.05, ry * 0.52, ry * 0.58, R)), '#120A07');
+    S.spot(ix - 0.4, cy - 0.35, 0.28, '#FFFFFF');
+    S.stroke([[cx - rx - 0.1, cy - 0.1], [cx - rx * 0.4, cy - ry - 0.15], [cx + rx * 0.5, cy - ry - 0.1], [cx + rx + 0.15, cy + 0.15]], ink, 0.55, R);
+    S.stroke([[cx - rx * 0.6, cy + ry + 0.1], [cx + rx * 0.5, cy + ry + 0.12]], sk2, 0.35, R, 150);
+  };
+  eye(26.7, 16.7, 1.35, 1.05, 26.3);
+  eye(32.1, 16.5, 1.75, 1.2, 31.5);
+  // mouth: a soft curve with a lower-lip highlight
+  S.stroke([[26.3, 23.1], [28, 23.7], [29.8, 23.4], [31.2, 22.7]], lipD, 0.5, R);
+  S.stroke([[27, 24.3], [28.8, 24.6], [30.2, 24.2]], lip, 0.55, R, 200);
+  S.stroke([[27.4, 22.7], [28.8, 22.5], [30.2, 22.5]], lip, 0.4, R, 140);
+  S.stroke([[28, 26.4], [30, 26.5]], sk2, 0.5, R, 120);
 }
 
 /* ------------------------------------------------------------------ shared recipe helpers */
@@ -204,15 +242,44 @@ export const HELP = { top, pants, shoes, outer, NECK, torsoShape, sleeveOf, digi
 export const ART = { hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, outer: {}, scarf: {}, chain: {}, wrist: {}, bottom: {}, shoes: {}, back: {}, hand: {} };
 
 
-/** Build the whole sprite. ctx: { skin, hair, eq, colourOf(id, fallback), pal, body } */
+/** Muscle and joint definition laid over the bare skin: shoulders, biceps, elbows, forearms, knees and calves. */
+function definition(S, g, skin, hasLegs) {
+  const clipN = g.armN, clipF = g.armF, st = (pts, w) => S.strokeMask(pts, w, true);
+  // near arm (the one we see most of)
+  S.shade(S.and(S.ell(44.2, 34.4, 2.3, 2.6), clipN), -0.17, 240);
+  S.shade(S.and(S.ell(42.9, 40.2, 1.5, 3.1), clipN), -0.15, 240);
+  S.shade(S.and(st([[41.6, 43.4], [43, 44.2], [45, 43.4]], 0.8), clipN), 0.37, 240);
+  S.shade(S.and(st([[46.9, 35.4], [47.3, 41.4], [47.2, 46.4], [46.1, 50.6]], 1.1), clipN), 0.34, 240);
+  S.shade(S.and(S.ell(44.9, 44.9, 1.5, 1.1), clipN), 0.2, 208);
+  S.shade(S.and(st([[43.2, 46], [43.2, 49.4]], 0.9), clipN), -0.14, 240);
+  S.shade(S.and(st([[41.2, 33], [41.6, 38]], 0.8), clipN), 0.24, 208);
+  // far arm
+  S.shade(S.and(st([[19.2, 36], [19, 41.6], [19.4, 47]], 1.0), clipF), 0.31, 240);
+  S.shade(S.and(S.ell(21.6, 40, 1.2, 2.6), clipF), -0.12, 208);
+  S.shade(S.and(S.ell(21.2, 44.8, 1.4, 1.0), clipF), 0.17, 192);
+  if (!hasLegs) return;
+  // legs: knee, shin highlight, calf split and a narrow ankle
+  S.shade(S.and(S.ell(37.2, 64.6, 2.4, 1.6), g.legN), 0.17, 224);
+  S.shade(S.and(S.ell(36.2, 64.4, 1.3, 1.0), g.legN), -0.2, 240);
+  S.shade(S.and(st([[35.4, 67.4], [35.2, 78]], 0.9), g.legN), -0.17, 240);
+  S.shade(S.and(st([[39.4, 69], [39, 74], [38, 80]], 0.9), g.legN), 0.34, 255);
+  S.shade(S.and(st([[37.6, 71], [37.6, 76.6], [37, 80]], 0.5), g.legN), 0.31, 208);
+  S.shade(S.and(S.ell(26.4, 64.6, 2.2, 1.5), g.legF), 0.17, 224);
+  S.shade(S.and(st([[25, 68], [24.8, 78]], 0.8), g.legF), -0.14, 224);
+  S.shade(S.and(st([[28.6, 69], [28.2, 76], [27.6, 80]], 0.8), g.legF), 0.34, 240);
+}
+
+/** Build the whole figure. ctx: { skin, hair, eq, colourOf(id), pal, k, win: [x, y, w, h], R } */
 export function drawFan(ctx) {
-  const S = new Spr(W, H);
+  const S = new Spr(ctx.win || [0, 0, W, H], ctx.R || 1);
   const { skin, eq, colourOf, pal, k } = ctx;
   S.k = k || 1;
   const g = geometry(S); g.k = S.k;
   const hm = headMasks(S);
+  hm.neck = g.neck;
   const item = (slot) => { const id = eq[slot]; const f = id && ART[slot][id]; return f ? { f, col: colourOf(id), id } : null; };
   const run = (slot, phase) => { const it = item(slot); if (it) it.f(S, g, it.col, phase, { skin, hair: ctx.hair, pal, hm }); };
+  const botId = eq.bottom, bareLegs = !botId || /shorts|tshorts|jorts|cs_/.test(botId);
 
   // ground shadow
   S.paint(S.ell(32, 88.2, 17, 2.6, false), '#000000', { alpha: 70 });
@@ -237,13 +304,14 @@ export function drawFan(ctx) {
   // --- near arm
   S.paint(g.armN, skin);
   S.paint(g.handN, skin, { bands: 1 });
+  definition(S, g, skin, bareLegs);
   ['top', 'outer'].forEach((s2) => run(s2, 'near'));
   run('wrist', 'near'); run('hand', 'near');
   // --- head
   S.hs = 0.9; S.cy = 25.6;
   const hair = item('hair');
   if (hair) hair.f(S, g, hair.col, 'back', { skin, hair: ctx.hair, pal, hm });
-  drawHead(S, hm, skin, ctx.hair, () => run('beard', 'head'));
+  drawHead(S, hm, skin, ctx.hair, () => run('beard', 'head'), g.neck);
   run('ear', 'head'); run('face', 'head');
   if (hair) hair.f(S, g, hair.col, 'front', { skin, hair: ctx.hair, pal, hm });
   run('hat', 'head');

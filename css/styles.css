@@ -499,7 +499,7 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 /* ---------- fan: avatar, profile, shop ---------- */
 .avatar { display: inline-block; line-height: 0; }
 .avatar svg { width: 100%; height: auto; display: block; overflow: visible; }
-.avatar img.px { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: pixelated; }
+.avatar img.px { width: 100%; height: auto; display: block;    }
 .avatar.sm { width: 64px; } .avatar.lg, .avatar.lg svg, .avatar.lg img.px { height: 360px; width: auto; max-width: 100%; }
 .avatar.pv { width: 100%; height: 104px; } .avatar.pv svg, .avatar.pv img.px { height: 104px; overflow: hidden; object-fit: contain; }
 .bk-av { display: flex; flex-direction: column; align-items: center; gap: 2px; justify-self: start; }

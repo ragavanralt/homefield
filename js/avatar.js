@@ -27,10 +27,10 @@ export const SECTIONS = [
 // Body types are free. Upper body and legs are widened separately so a built frame gets broad
 // shoulders on normal legs, and clothes stretch with the body.
 export const BODIES = [
-  { id: 'lean', label: 'Lean', up: 0.92, low: 0.94 },
-  { id: 'athletic', label: 'Athletic', up: 1, low: 1 },
-  { id: 'built', label: 'Built', up: 1.05, low: 1.03 },
-  { id: 'heavy', label: 'Heavy', up: 1.1, low: 1.08 },
+  { id: 'lean', label: 'Lean', up: 0.9, low: 0.92 },
+  { id: 'athletic', label: 'Athletic', up: 1.04, low: 1.04 },
+  { id: 'built', label: 'Built', up: 1.14, low: 1.12 },
+  { id: 'heavy', label: 'Heavy', up: 1.26, low: 1.22 },
 ];
 export const ALWAYS_ON = ['hair', 'top', 'bottom', 'shoes'];
 export const TIERS = { free: { label: 'Free' }, common: { label: 'Common' }, rare: { label: 'Rare' }, epic: { label: 'Epic' }, legend: { label: 'Legendary' }, earned: { label: 'Earned' } };
@@ -243,36 +243,48 @@ export function palette(team) {
 }
 
 /* ---------- drawing ---------- */
-// A small pixel-art sprite (64 x 96 pixels), three-quarter view, drawn by sprite-art.js and sprite-items.js.
-// Crop windows below are in sprite pixels: [x, y, width, height].
+// A smooth illustrated figure on a 64 x 96 design grid, three-quarter view, drawn by sprite-art.js and
+// sprite-items.js. It is drawn several times larger than shown and shrunk so the edges are clean.
+// Crop windows below are in design units: [x, y, width, height].
 const FULL = [0, 0, 64, 96];
 const BUST = [14, 0, 36, 44];
 const VB = { hair: [16, 0, 32, 34], hat: [16, 0, 32, 34], face: [16, 0, 32, 34], beard: [16, 0, 32, 34], ear: [16, 0, 32, 34], top: [12, 26, 40, 34], outer: [12, 26, 40, 40], scarf: [14, 22, 36, 34], chain: [14, 22, 36, 30], wrist: [28, 38, 30, 28], bottom: [12, 44, 40, 40], shoes: [12, 72, 40, 24], back: FULL, hand: [20, 26, 44, 60] };
+// fine pixels per design unit (R) and how much the picture is shrunk afterwards (D). Tests in node stay tiny.
+const QUAL = typeof document === 'undefined' ? { hi: { R: 1, D: 1 }, mid: { R: 1, D: 1 }, lo: { R: 1, D: 1 } } : { hi: { R: 8, D: 2 }, mid: { R: 5, D: 1 }, lo: { R: 4, D: 2 } };
+const cache = new Map();
 
 /** Returns the markup for a character. vb overrides the crop window (shop previews and busts). */
-export function avatarSvg(av, team, vb) {
+export function avatarSvg(av, team, vb, quality) {
   const eq = av.eq || {};
   const body = BODIES[av.body ?? 1] || BODIES[1];
+  const q = QUAL[quality || (vb ? 'mid' : 'hi')];
+  const pal = palette(team);
+  const key = JSON.stringify([av.skin, av.hairColor, av.body, av.col, eq, pal, vb, q]);
+  if (cache.has(key)) return cache.get(key);
   const colourOf = (id) => {
     const i = av.col && av.col[id];
     const it = itemById(id);
     return i && it && it.colors && it.colors[i] ? it.colors[i].k : undefined;
   };
   const S = drawFan({
+    win: vb || FULL, R: q.R,
     skin: SKINS[av.skin] ?? SKINS[2],
     hair: HAIR_COLORS[av.hairColor] ?? HAIR_COLORS[0],
     eq: { ...eq, hair: eq.hair || 'short', top: eq.top || 'tee', bottom: eq.bottom || 'jeans', shoes: eq.shoes || 'sneakers' },
-    colourOf, pal: palette(team), k: (body.up + body.low) / 2,
+    colourOf, pal, k: (body.up + body.low) / 2,
   });
-  const [x, y, w, h] = vb || FULL;
-  return spriteMarkup(S.crop(x, y, w, h), 'Your fan character');
+  const out = spriteMarkup(S.crop(q.D), 'Your fan character');
+  if (cache.size > 80) cache.delete(cache.keys().next().value);
+  cache.set(key, out);
+  return out;
 }
 
 /** A DOM element with the character in it. Add 'bust' to the class for just head and shoulders. */
 export function renderAvatar(av = getState().avatar, team = avatarTeam(av), cls = '') {
   const el = document.createElement('span');
   el.className = 'avatar ' + cls;
-  el.innerHTML = avatarSvg(av, team, /\bbust\b/.test(cls) ? BUST : undefined);
+  const bust = /\bbust\b/.test(cls);
+  el.innerHTML = avatarSvg(av, team, bust ? BUST : undefined, bust ? 'lo' : /\blg\b/.test(cls) ? 'hi' : 'mid');
   return el;
 }
 /** Preview of just one item on the current character, zoomed to where it is worn. */

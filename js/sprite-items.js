@@ -311,7 +311,7 @@ ART.face.visor = (S, g, col, ph) => { if (ph === 'head') { S.paint(S.rect(24.4, 
 ART.face.grill = (S, g, col, ph) => { if (ph === 'head') { S.line(27, 22, 30, 22, GOLD, R); S.dot(28, 21, '#FFF3B0', R); } };
 
 /* ============================================================ BEARD, EARS */
-const stubbleMask = (S, hm) => { const m = S.and(hm.head, S.rect(24, 19, 40, 26, R)), o = S.mask(); for (let y = 0; y < S.h; y++) for (let x = 0; x < S.w; x++) if (m[y * S.w + x] && (x + y) % 2 === 0) o[y * S.w + x] = 1; return o; };
+const stubbleMask = (S, hm) => { const m = S.and(hm.head, S.rect(24, 19, 40, 26, R)), o = S.mask(); const q = Math.max(1, Math.round(S.R * 0.5)); for (let y = 0; y < S.h; y++) for (let x = 0; x < S.w; x++) if (m[y * S.w + x] && (Math.floor(x / q) + Math.floor(y / q)) % 2 === 0) o[y * S.w + x] = 1; return o; };
 ART.beard.stubble = (S, g, col, ph, c) => { if (ph === 'head') S.flat(stubbleMask(S, c.hm), dk(c.hair, 0.1), 150); };
 ART.beard.stache = (S, g, col, ph, c) => { if (ph === 'head') { S.line(26.6, 20.6, 30.6, 20.6, c.hair, R); S.line(27, 21.6, 30, 21.6, c.hair, R); S.dot(31.4, 20, c.hair, R); } };
 ART.beard.goatee = (S, g, col, ph, c) => { if (ph === 'head') { S.flat(S.poly([[27.6, 22.8], [31.6, 22.8], [31, 26.4], [28.4, 26.4]], R), c.hair); S.line(26.6, 20.6, 30.6, 20.6, c.hair, R); } };
