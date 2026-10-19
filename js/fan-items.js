@@ -514,46 +514,43 @@ const curlTex = (R, spots, s = 1) => spots.map(([x, y], i) => {
   return `<path d="${curve([[x - r, y + r * 0.35], [x - r * 0.35, y - r * 0.8], [x + r * 0.7, y - r * 0.4], [x + r * 0.5, y + r * 0.6], [x - r * 0.15, y + r * 0.75]])}" fill="none" stroke="${lit && i % 3 !== 2 ? R.hi : R.deep}" stroke-width="1.45" stroke-linecap="round"/>`;
 }).join('');
 const curlRamp = (hc) => { const R = ramp(hc, { k: 0.9 }); if (rgbL(hc) < 0.2) { R.base = adj(hc, 0.07); R.sh = adj(hc, 0.02); R.deep = adj(hc, 0.17); R.hi = adj(hc, 0.16); } R.line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22); return R; };
-// Curly flow, drawn from Ragavan's own hair: thick loose curls and waves with the volume on top, pushed up and
-// out so the top sits wider than the head, then short tidy sides that hug the head down to the top of the ears.
-// Loose curl tips fall onto the forehead without covering it. Messy clumps, a few stray wisps. Nothing at the back.
+// Curly flow: a styled curly slick back. The hair is pushed up and back off the forehead with volume on top and
+// waves running back from the hairline; the curl ends peek out behind the crown; the sides are tapered short.
+// The forehead is fully clear and nothing hangs at the back.
 ART.hair.curly = hairOf(null, (P, hc) => {
   const R = curlRamp(hc);
   const M = ([x, y]) => [200 - x, y];
-  // right half: crown out to the wide top, tuck in at the temple, short side down to the ear
-  const topR = [[100, -2.5], [109, -3.5], [118, -1.5], [127, 2.5], [135.5, 8.5], [142, 16], [146, 25], [146.5, 34]];
-  const sideR = [[146.5, 34], [144.5, 43], [141, 51], [138, 58.5], [135.6, 63.5], [132.6, 62], [131, 55], [129.5, 49], [126, 45.5]];
-  // curl tips along the forehead, a little uneven like real hair
-  const fringeR = [[126, 45.5], [118.5, 43], [111, 47.5], [104, 43.5], [97.5, 50.5]];
-  const fringeL = [[97.5, 50.5], [91, 43.5], [83.5, 47], [74, 45.5]];
-  const sideL = sideR.map(M).reverse(), topL = topR.map(M).reverse();
-  const d = `M${pt(topL[0])}${scallop(topL, [3.2, 2.4, 3.6, 2.8, 3, 2.2, 3.4], false, [100, 44])}${scallop(topR, [3, 2.6, 3.4, 2.2, 3.2, 2.8, 3.6], false, [100, 44])}${segs(sideR)}${scallop(fringeR, [2.8, 3.2, 2.6, 3.6], false, [100, 74])}${scallop(fringeL, [3.4, 2.8, 3], false, [100, 74])}${segs(sideL)}Z`;
+  // right half: the lifted front, round over the top, down a short tapered side to the top of the ear, then the hairline
+  const topR = [[100, -9], [111, -9.5], [122, -6.5], [131.5, -0.5], [138.5, 7.5], [143, 17], [144, 27], [141, 36]];
+  const sideR = [[141, 36], [137.6, 44], [136.9, 54], [136.2, 62.5], [134.8, 66.5], [132.6, 63.5], [132.4, 54], [131.6, 45.5]];
+  const lineR = [[131.6, 45.5], [130.4, 39.5], [126.5, 36.6], [119, 35.6], [110, 33.6], [100, 33]];
+  const topL = topR.map(M).reverse(), sideL = sideR.map(M).reverse(), lineL = lineR.map(M).reverse();
+  const d = `M${pt(topL[0])}${scallop(topL, [2.4, 1.8, 3, 2.4, 3.2, 2.6, 3], false, [100, 40])}${scallop(topR, [3, 2.6, 3.2, 2.4, 3, 1.8, 2.4], false, [100, 40])}${segs(sideR)}${segs(lineR)}${segs(lineL)}${segs(sideL)}Z`;
   P.fill(d, R.base);
   const S = (pts, colr, w = 1.6, op) => `<path d="${curve(pts)}" fill="none" stroke="${colr}" stroke-width="${w}" stroke-linecap="round"${op != null ? ` opacity="${op}"` : ''}/>`;
-  // clumps of wavy hair pushed up and out from the crown
-  const clumps = [
-    [[99, 6], [91, 1.5], [81, 4], [72, 12], [66, 24]], [[97, 17], [87, 12.5], [77, 17], [70, 28], [66, 38]],
-    [[95, 29], [86, 25], [79, 30], [75, 39]], [[103, 8], [111, 3.5], [120, 6], [128, 13]], [[104, 20], [113, 15], [123, 19], [130, 29]],
-  ];
-  // the little hooks where the loose curls end
-  const hooks = [[66, 25], [66.5, 38], [76, 41], [89, 41], [97, 45], [111, 42], [121, 39], [129, 14], [131, 29], [137, 38]];
-  const hook = ([x, y], colr, f) => S([[x - 3.2 * f, y - 1], [x - 0.8 * f, y - 3.8], [x + 2.6 * f, y - 2.4], [x + 2.4 * f, y + 0.8], [x + 0.2 * f, y + 1.8]], colr, 1.4);
+  // waves running back from the hairline: three crests across the top, each lit on top with a shadow in the trough
+  const wave = (y0, amp, ph, x0 = 62, x1 = 138) => Array.from({ length: 9 }, (_, i) => { const x = x0 + ((x1 - x0) * i) / 8; return [x, y0 - Math.cos(((x - 100) / 38) * Math.PI) * -1.5 + Math.sin(((x - x0) / (x1 - x0)) * Math.PI * 3 + ph) * amp]; });
+  const crests = [[27, 2.2, 0.4, 64, 136], [14, 2.6, 1.6, 60, 140], [2, 2.2, 2.8, 70, 130]];
   P.clip(d, [
-    `<path d="${poly([[116, -30], [170, -30], [170, 90], [122, 90]])}" fill="${R.sh}"/>`,
-    `<path d="${poly([[136, -30], [170, -30], [170, 90], [138, 90]])}" fill="${R.deep}" opacity="0.65"/>`,
-    // the short sides sit a shade darker than the top
-    `<path d="${blob([[52, 34], [66, 42], [70.5, 66], [58, 58]])}" fill="${R.sh}" opacity="0.6"/><path d="${blob([[148, 34], [134, 42], [129.5, 66], [142, 58]])}" fill="${R.deep}" opacity="0.6"/>`,
-    // a soft shine across the top, a shadow where the curls lift off the forehead
-    S([[62, 14], [74, 2], [90, -4], [104, -5]], R.hi, 5, 0.3),
-    S([[70, 44], [84, 40], [100, 41], [116, 39], [130, 43]], R.deep, 4.5, 0.5),
-    ...clumps.slice(0, 3).map((c2) => S(c2, R.hi, 2)), ...clumps.slice(3).map((c2) => S(c2, R.deep, 2)), S(clumps[2].map(M), R.deep, 2),
-    ...clumps.slice(0, 2).map((c2) => S(c2.map(([x, y]) => [x + 3, y + 6]), R.deep, 1.2, 0.7)), ...clumps.slice(3).map((c2) => S(c2.map(([x, y]) => [x - 2, y + 7]), R.hi, 1.2, 0.5)),
-    ...[[[66, 48], [64, 58]], [[134, 48], [136, 58]], [[70, 50], [69, 62]], [[130, 50], [131, 62]]].map((c2) => S(c2, R.deep, 1.3, 0.8)),
-    ...hooks.map((h2) => hook(h2, h2[0] < 104 ? R.hi : R.deep, h2[0] < 100 ? 1 : -1)),
+    `<path d="${poly([[116, -30], [170, -30], [170, 90], [124, 90]])}" fill="${R.sh}"/>`,
+    `<path d="${poly([[136, -30], [170, -30], [170, 90], [138, 90]])}" fill="${R.deep}" opacity="0.6"/>`,
+    // tapered sides: darker and thinner-looking than the top
+    `<path d="${blob([[56, 38], [68, 40], [69, 68], [60, 64]])}" fill="${R.deep}" opacity="0.55"/><path d="${blob([[144, 38], [132, 40], [131, 68], [140, 64]])}" fill="${R.deep}" opacity="0.7"/>`,
+    ...[[63, 46], [65.5, 55], [134.5, 46], [134.8, 55]].map(([x, y]) => S([[x, y], [x + (x < 100 ? 0.4 : -0.4), y + 6]], R.base, 1, 0.6)),
+    ...crests.map(([y0, a2, ph, x0, x1]) => S(wave(y0 + 4.2, a2, ph, x0 + 2, x1 - 2), R.deep, 2.4, 0.75)),
+    ...crests.map(([y0, a2, ph, x0, x1]) => S(wave(y0, a2, ph, x0, x1).filter(([x]) => x < 118), R.hi, 2.2, 0.9)),
+    ...crests.map(([y0, a2, ph, x0, x1]) => S(wave(y0, a2, ph, x0, x1).filter(([x]) => x > 114), lt(R.sh, 0.12), 1.8, 0.8)),
+    // strands combed up and back from the hairline
+    ...[[78, 39], [88, 36], [100, 35], [112, 36], [122, 39]].map(([x, y], i) => S([[x, y - 1], [x + (x - 100) * 0.08, y - 9], [x + (x - 100) * 0.18, y - 18]], i < 3 ? R.hi : R.deep, 1.1, 0.55)),
+    // curl ends flipping back along the top and the upper sides
+    ...[[72, 8], [84, 0.5], [97, -2.5], [110, -2], [122, 1.5], [133, 8.5], [65, 20], [137, 21]].map(([x, y], i) => { const f = x < 100 ? 1 : -1, colr = x < 112 ? R.hi : R.deep; return S([[x - 3 * f, y + 1.6], [x - 1 * f, y - 2.2], [x + 2.4 * f, y - 1.6], [x + 2.2 * f, y + 1.4], [x + 0.2 * f, y + 2]], colr, 1.4, 0.9); }),
+    // roots: a soft shadow right along the hairline
+    S(lineL.concat(lineR.slice(1)).map(([x, y]) => [x, y - 1.6]), R.deep, 2.4, 0.5),
   ].join(''));
-  P.stroke(d, R.line, OW);
-  // a few stray wisps off the top
-  [[[90, -3.5], [87.5, -8], [90, -10.5]], [[121, -1], [125, -5], [123.5, -8]]].forEach((w) => P.stroke(curve(w), R.line, 1.4));
+  // full outline round the top and sides, a lighter line along the hairline so it reads as skin meeting hair
+  P.stroke(`M${pt(topL[0])}${scallop(topL, [2.4, 1.8, 3, 2.4, 3.2, 2.6, 3], false, [100, 40])}${scallop(topR, [3, 2.6, 3.2, 2.4, 3, 1.8, 2.4], false, [100, 40])}${segs(sideR)}`, R.line, OW);
+  P.stroke(`M${pt(lineR[0])}${segs(lineR)}${segs(lineL)}`, R.line, 1.5);
+  P.stroke(`M${pt(sideL[0])}${segs(sideL)}`, R.line, OW);
 });
 ART.hair.afro = hairOf((P, hc) => hairShape(P, blob([[56, 66], [48, 44], [54, 20], [76, 2], [100, -3], [124, 2], [146, 20], [152, 44], [144, 66], [136, 70], [64, 70]]), hc, { shX: 118, shX2: 124, hi: [[64, 22], [80, 8], [96, 4], [84, 14], [70, 28]], strands: [[[70, 40], [74, 46]], [[130, 30], [134, 38]], [[90, 10], [96, 14]], [[116, 12], [122, 18]], [[60, 52], [64, 58]], [[140, 52], [136, 58]]] }), (P, hc) => {
   const d = blob([[66, 58], [64, 40], [72, 30], [86, 26], [100, 25], [114, 26], [128, 30], [136, 40], [134, 58], [131, 46], [122, 39], [100, 36], [78, 39], [69, 46]]);
