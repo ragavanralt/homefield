@@ -952,8 +952,10 @@ const armPiece = (f0, f1, pick, o = {}) => (P, g, col, ph, c) => {
   if (ph === 'neck' && o.collar) { const nk = c.B.nk; P.stroke(curve([[CX - nk - 3.5, 109], [CX, 122.5], [CX + nk + 3.5, 109]]), INK, 5.2); P.stroke(curve([[CX - nk - 3.5, 109], [CX, 122.5], [CX + nk + 3.5, 109]]), k.main, 3.4); return; }
   if (ph !== 'arms') return;
   for (const side of sidesOf(c)) {
-    const J = cutF(g.armJ(side), f0, f1, 0.8);
-    P.tube(tube(J), ramp(k.main), { cap0: false, cap1: false });
+    let J = cutF(g.armJ(side), f0, f1, 0.8);
+    // a full sleeve starts at the neck, so it also covers the shoulder
+    if (f0 < 0.05) { const a = J[0], b = J[1]; J = [[a[0] - side * 4.5, a[1] - 15, a[2] * 0.96], [a[0] - side * 2, a[1] - 7, a[2] * 1.02], ...J]; }
+    P.tube(tube(J), ramp(k.main), { cap0: true, cap1: false });
     if (f0 >= 0.05) across(P, g, side, f0 + 0.06, 0.8, k.trim, 2.2);
     across(P, g, side, f1 - 0.05, 0.8, k.trim, 2.2);
     if (k.acc) across(P, g, side, f1 - 0.09, 0.8, k.acc, 1);
