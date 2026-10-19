@@ -649,3 +649,13 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
   .slip { bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important; }
   body.onboarding main { padding-bottom: 24px !important; }
 }
+
+/* saved fits */
+.pf-fits .pf-shop-h { flex-wrap: wrap; gap: 10px; }
+.fit-save { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.fit-in { min-width: 0; flex: 1 1 140px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: inherit; }
+.fit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
+.fit { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); min-width: 0; }
+.fit.worn { border-color: var(--fg); }
+.fit .avatar { width: 96px; height: 96px; }
+.fit-act { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }

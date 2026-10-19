@@ -341,6 +341,33 @@ export function unequip(slot) {
   return true;
 }
 
+// Saved fits: a named snapshot of the whole look (body, skin, hair colour, team, colours, worn items).
+export const MAX_FITS = 12;
+const snap = (a) => ({ skin: a.skin, hairColor: a.hairColor, body: a.body, team: a.team || '', col: { ...(a.col || {}) }, eq: { ...a.eq } });
+export function fitsList() { return getState().avatar.fits || []; }
+export function saveFit(name) {
+  const fits = fitsList();
+  if (fits.length >= MAX_FITS) return { ok: false, why: 'full' };
+  const clean = String(name || '').trim().slice(0, 24) || `Fit ${fits.length + 1}`;
+  const fit = { id: 'f' + Date.now().toString(36), name: clean, ...snap(getState().avatar) };
+  setAvatar((a) => { a.fits = [...(a.fits || []), fit]; });
+  return { ok: true, fit };
+}
+export function wearFit(id) {
+  const fit = fitsList().find((f) => f.id === id);
+  if (!fit) return false;
+  setAvatar((a) => {
+    const eq = {};
+    for (const [slot, item] of Object.entries(fit.eq || {})) if (a.owned.includes(item)) eq[slot] = item; // skip anything no longer owned
+    a.skin = fit.skin; a.hairColor = fit.hairColor; a.body = fit.body; a.team = fit.team || ''; a.col = { ...(fit.col || {}) };
+    a.eq = { ...a.eq, ...eq };
+    for (const slot of Object.keys(a.eq)) if (!(slot in eq) && !ALWAYS_ON.includes(slot)) delete a.eq[slot];
+  });
+  track('outfit_changed');
+  return true;
+}
+export function deleteFit(id) { setAvatar((a) => { a.fits = (a.fits || []).filter((f) => f.id !== id); }); }
+
 /** The team the character wears: the one chosen, else your first followed team, else a neutral blue. */
 export function avatarTeam(a = getState().avatar) {
   const teams = myTeams();

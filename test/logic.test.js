@@ -362,6 +362,18 @@ import * as S from '../js/specials.js';
     assert.ok(equip('buzz')); assert.equal(st.getState().avatar.eq.hair, 'buzz');
     assert.equal(unequip('hair'), false);
   });
+  t('fits: save, switch back, delete, and cap at the limit', () => {
+    equip('buzz'); equip('tee');
+    const r = m.saveFit('  Casual  '); assert.ok(r.ok); assert.equal(r.fit.name, 'Casual');
+    equip('short'); st.setAvatar((a) => { a.skin = 0; });
+    assert.ok(m.wearFit(r.fit.id));
+    assert.equal(st.getState().avatar.eq.hair, 'buzz'); assert.equal(st.getState().avatar.skin, 2);
+    assert.equal(m.wearFit('nope'), false);
+    m.deleteFit(r.fit.id); assert.equal(m.fitsList().length, 0);
+    for (let i = 0; i < m.MAX_FITS; i++) assert.ok(m.saveFit('x').ok);
+    assert.equal(m.saveFit('y').why, 'full');
+    for (const f of [...m.fitsList()]) m.deleteFit(f.id);
+  });
   t('shop: daily deal is on sale and stable within a day', () => {
     const d = dealToday(new Date(2026, 9, 18));
     assert.equal(d.id, dealToday(new Date(2026, 9, 18)).id);

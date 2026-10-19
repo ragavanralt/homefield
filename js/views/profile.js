@@ -4,7 +4,7 @@ import { getState, getBank, myTeams, setAvatar, onSlipChange, track } from '../s
 import { ensureLive } from '../live.js';
 import { pageHead } from '../components.js';
 import { levelFor, rankFor, betStats } from '../bets.js';
-import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
+import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, saveFit, wearFit, deleteFit, MAX_FITS, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
@@ -18,6 +18,7 @@ export async function render(root, params = {}) {
   let sec = 'team';
   let closetTab = 'fit'; // closet: your outfit or your backgrounds
   let only = false;
+  let naming = false; // the save-fit name box is open
   let picking = null; // item id whose colour menu is open
   let confirming = null, confirmCi = 0; // item waiting for a confirmed buy, and the colour being tried
   const host = h('div', { class: 'profile' });
@@ -74,6 +75,7 @@ export async function render(root, params = {}) {
       tabs, h('p', { class: 'muted pf-blurb' }, cur.blurb), body);
 
     host.append(left, right);
+    if (!shop) host.append(fitsCard(av));
     if (picking) host.append(colourSheet(itemById(picking), av, team));
     if (confirming) host.append(buySheet(itemById(confirming), av, bank, team));
 
@@ -81,6 +83,28 @@ export async function render(root, params = {}) {
       h('p', { class: 'muted' }, 'These cannot be bought. Do the thing and they unlock.'),
       h('div', { class: 'shop-grid' }, ITEMS.filter((i) => i.ach).map((it) => itemCard(it, av, bank, team, deal)))));
   }
+
+  // Saved fits: keep a full look and switch back to it in one tap.
+  function fitsCard(av) {
+    const fits = av.fits || [];
+    const input = h('input', { type: 'text', id: 'fit-name', maxlength: '24', placeholder: 'Name this fit', class: 'fit-in' });
+    const doSave = () => { const r = saveFit(input.value); naming = false; if (r.ok) toast(`Saved "${r.fit.name}"`); else toast(`You can keep ${MAX_FITS} fits. Delete one first.`); draw(); };
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave(); });
+    const head = h('div', { class: 'pf-shop-h' }, h('h2', { class: 'card-h' }, 'Saved fits', h('small', null, `${fits.length}/${MAX_FITS}`)),
+      naming ? h('div', { class: 'fit-save' }, input, h('button', { type: 'button', class: 'btn main small', id: 'fit-ok', onclick: doSave }, 'Save'), h('button', { type: 'button', class: 'btn small', onclick: () => { naming = false; draw(); } }, 'Cancel'))
+        : h('button', { type: 'button', class: 'btn main', id: 'fit-new', onclick: () => { naming = true; draw(); setTimeout(() => document.getElementById('fit-name')?.focus(), 0); } }, 'Save this fit'));
+    const grid = h('div', { class: 'fit-grid' }, fits.map((f) => {
+      const worn = JSON.stringify(snapOf(f)) === JSON.stringify(snapOf(av));
+      return h('article', { class: 'fit' + (worn ? ' worn' : ''), 'data-fit': f.id },
+        renderAvatar({ ...av, ...f, owned: av.owned }, avatarTeam({ ...av, ...f }), 'bust'),
+        h('div', { class: 'it-n' }, f.name),
+        h('div', { class: 'fit-act' },
+          worn ? h('span', { class: 'pill won' }, 'Wearing') : h('button', { type: 'button', class: 'btn small wear', onclick: () => { wearFit(f.id); draw(); } }, 'Wear'),
+          h('button', { type: 'button', class: 'btn small take', 'aria-label': `Delete ${f.name}`, onclick: () => { deleteFit(f.id); draw(); } }, 'Delete')));
+    }));
+    return h('section', { class: 'card pf-wide pf-fits' }, head, fits.length ? grid : h('p', { class: 'muted' }, 'Dress how you like, then save it. Switch between your fits in one tap.'));
+  }
+  const snapOf = (a) => ({ s: a.skin, h: a.hairColor, b: a.body, t: a.team || '', c: a.col || {}, e: a.eq });
 
   function itemCard(it, av, bank, team, deal) {
     const owned = av.owned.includes(it.id);
