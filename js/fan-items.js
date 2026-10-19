@@ -713,6 +713,7 @@ const nbaTank = (o) => top({
   detail: (P, c, R, d) => {
     const B = c.B;
     if (o.pin) P.clip(d, pins(o.pin));
+    if (o.pattern) P.clip(d, o.pattern);
     if (o.side) P.clip(d, [-1, 1].map((sd) => `<path d="${poly([[CX + sd * (B.ch - 1), 138], [CX + sd * (B.ch + 22), 138], [CX + sd * (B.hp + B.be + 22), 212], [CX + sd * (B.wa + B.be + 1), 212]])}" fill="${o.side}"/>`).join(''));
     if (o.side2) both((sd) => P.stroke(curve([[CX + sd * (B.ch - 1), 138], [CX + sd * (B.wa + B.be + 1), 207]]), o.side2, 1.8));
     if (o.city) word(P, o.city, 148, 9.5, 48, o.ink, o.out, 0.7);
@@ -730,7 +731,7 @@ ART.top.rt_phx93 = nbaTank({ main: '#1D1160', trim: '#E56020', trim2: '#F4F1EA',
 
 // football kits. o = { main, collar, cuff, cuff2, stripes, pattern, badge, sleeve, neck }
 const kit = (o) => top({
-  main: () => o.main, sleeve: 'short', neck: o.neck ?? 'v', grow: o.grow ?? 6, sgrow: o.sgrow ?? 6.5, hem: 209, ribCol: () => o.collar,
+  main: () => o.main, sleeve: o.tank ? 'none' : 'short', shape: o.tank ? 'tank' : undefined, neck: o.tank ? 'none' : (o.neck ?? 'v'), grow: o.grow ?? 6, sgrow: o.sgrow ?? 6.5, hem: 209, ribCol: () => o.collar,
   sleeveCol: o.sleeve ? () => o.sleeve : undefined,
   detail: (P, c, R, d) => {
     if (o.stripes) P.clip(d, vStripes(o.stripes[0], o.stripes[1], o.stripes[2]));
@@ -739,7 +740,8 @@ const kit = (o) => top({
     if (o.badge) shield(P, CX + 16, 140, o.badge[0], o.badge[1]);
     if (o.num) digits(P, o.num, CX - 16, 146, 11, o.num[1] || o.collar, INK);
   },
-  trim: (P, g, side, yEnd, c) => { const gr = 6.5 * (c.B.arm * 0.5 + 0.5); across(P, g, side, yEnd - 0.02, gr, o.cuff || o.collar, 3.2); if (o.cuff2) across(P, g, side, yEnd - 0.07, gr, o.cuff2, 1.4); },
+  trim: (P, g, side, yEnd, c) => { const gr = (o.sgrow ?? 6.5) * (c.B.arm * 0.5 + 0.5); if (o.sleeveArt) o.sleeveArt(P, g, side, yEnd, gr); across(P, g, side, yEnd - 0.02, gr, o.cuff || o.collar, 3.2); if (o.cuff2) across(P, g, side, yEnd - 0.07, gr, o.cuff2, 1.4); },
+  collar: o.tank ? (P, c) => { const nk = c.B.nk; P.stroke(curve([[CX - nk - 2, 112], [CX - nk + 2, 122], [CX, 127], [CX + nk - 2, 122], [CX + nk + 2, 112]]), o.collar, 3.4); armholes(P, c, 6, o.cuff || o.collar, 3); } : undefined,
 });
 ART.top.rt_blau = kit({ main: '#1A3C8C', stripes: [['#1A3C8C', '#9B1B30'], 15, CX - 97], collar: '#F2C230', cuff: '#F2C230', badge: ['#F2C230', '#9B1B30'], grow: 8, sgrow: 8 });
 ART.top.rt_bra02 = kit({ main: '#F9D616', collar: '#0A7A3C', cuff: '#0A7A3C', cuff2: '#1F4CA8', badge: ['#1F4CA8', '#0A7A3C'], neck: 'crew' });
@@ -887,3 +889,65 @@ const legPiece = (y0, y1, both2, stripes) => (P, g, col, ph, c) => {
 ART.legwear.legsleeve = legPiece(212, 300, false, [[290, 't2', 2.6], [294, 'tacc', 1.1]]);
 ART.legwear.kneesleeve = legPiece(246, 288, false, [[250, 't2', 2.4], [283, 't2', 2.4]]);
 ART.legwear.calfbands = legPiece(266, 277, true, [[270, 't2', 1.6], [273.4, 'tacc', 1.1]]);
+
+/* ---------- retros, second drop: more niche, closer to the real thing */
+const W2 = '#F4F1EA';
+// zigzag band across the chest
+const zigBand = (y, hgt, cols, step = 12) => cols.map((colr, k) => `<path d="${Array.from({ length: Math.ceil(180 / step) + 1 }, (_, i) => `${i ? 'L' : 'M'}${CX - 90 + i * step} ${y + k * hgt + (i % 2 ? hgt : 0)}`).join(' ')} L${CX + 90} ${y + (k + 1) * hgt + 30} L${CX - 90} ${y + (k + 1) * hgt + 30}Z" fill="${colr}"/>`).join('');
+// sleeve art drawn on the short sleeve, just above its cuff
+const sleeveFlames = (cols) => (P, g, side, yEnd, gr) => { const J = cutF(g.armJ(side), 0, yEnd, gr); const [x, y, w] = J[J.length - 1]; for (let k = 0; k < 4; k++) { const fx = x - w / 2 + 2 + k * (w - 4) / 3; P.fill(poly([[fx - 3, y - 1], [fx + 3, y - 1], [fx + 0.5, y - 10 - (k % 2) * 4]]), cols[k % cols.length]); } };
+const sleeveChevrons = (a, b) => (P, g, side, yEnd, gr) => { const J = cutF(g.armJ(side), 0, yEnd, gr); const [x, y, w] = J[J.length - 1]; for (let k = 0; k < 3; k++) P.stroke(`M${x - w / 2 + 1.5} ${y - 4 - k * 5} L${x} ${y - 8 - k * 5} L${x + w / 2 - 1.5} ${y - 4 - k * 5}`, k % 2 ? b : a, 2.2); };
+
+ART.top.rt_ita06 = kit({ main: '#1F4E9C', pattern: vStripes(['#1F4E9C', '#1B4690'], 6, CX - 93), collar: W2, cuff: '#C9A23A', cuff2: W2, badge: [W2, '#1F4E9C'], neck: 'v' });
+ART.top.rt_ger90 = kit({ main: W2, pattern: zigBand(134, 4, ['#16161A', '#D21034', '#F2C230', W2]), collar: '#16161A', cuff: '#16161A', cuff2: '#D21034', badge: [W2, '#16161A'], neck: 'crew' });
+ART.top.rt_fra98 = kit({ main: '#1D2D5C', pattern: band(146, 3, W2) + band(149, 3, '#D21034') + band(152, 3, W2), collar: W2, cuff: '#D21034', cuff2: W2, badge: [W2, '#D21034'] });
+ART.top.rt_eng96 = kit({ main: W2, collar: '#1C2A55', cuff: '#1C2A55', cuff2: '#6CACE4', badge: [W2, '#D21034'], sleeveArt: sleeveChevrons('#1C2A55', '#6CACE4') });
+ART.top.rt_nga18 = kit({ main: '#0B8A3E', pattern: Array.from({ length: 6 }, (_, k) => `<path d="${Array.from({ length: 24 }, (_, i) => `${i ? 'L' : 'M'}${CX - 90 + i * 8} ${116 + k * 5.4 + (i % 2 ? 4 : 0)}`).join(' ')}" fill="none" stroke="${k % 2 ? '#16161A' : '#E9F2E6'}" stroke-width="2.2"/>`).join(''), collar: '#E9F2E6', cuff: '#16161A', badge: ['#E9F2E6', '#0B8A3E'], neck: 'v', sleeveArt: sleeveChevrons('#16161A', '#E9F2E6') });
+ART.top.rt_mex98 = kit({ main: '#006847', pattern: [62, 52, 42, 32, 22].map((r, i) => `<circle cx="${CX}" cy="165" r="${r}" fill="none" stroke="${i % 2 ? '#2E8A63' : '#4FA57F'}" stroke-width="${i % 2 ? 4 : 2}" opacity="0.7"/>`).join('') + Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * Math.PI * 2; return `<path d="M${CX + Math.cos(a) * 24} ${165 + Math.sin(a) * 24} L${CX + Math.cos(a) * 60} ${165 + Math.sin(a) * 60}" stroke="#4FA57F" stroke-width="1.4" opacity="0.6"/>`; }).join(''), collar: W2, cuff: '#CE1126', cuff2: W2, badge: [W2, '#CE1126'] });
+ART.top.rt_lon92 = kit({ main: '#F7D417', pattern: Array.from({ length: 14 }, (_, i) => { const x = CX - 70 + (i % 5) * 32 + (Math.floor(i / 5) % 2) * 14, y = 118 + Math.floor(i / 5) * 32; return `<path d="${poly([[x, y], [x + 14, y + 6], [x + 4, y + 10], [x + 18, y + 20], [x - 2, y + 12], [x + 8, y + 8]])}" fill="${i % 3 ? '#16161A' : '#D21034'}" opacity="0.85"/>`; }).join(''), collar: '#16161A', cuff: '#16161A', badge: ['#D21034', '#F7D417'] });
+ART.top.rt_man99 = kit({ main: '#DA020E', collar: W2, cuff: W2, cuff2: '#16161A', badge: ['#F2C230', '#DA020E'], neck: 'crew' });
+ART.top.rt_tur97 = kit({ main: '#16161A', stripes: [[W2, '#16161A'], 11, CX - 93.5], collar: '#16161A', cuff: '#16161A', badge: ['#F2C230', '#16161A'] });
+ART.top.rt_jpn98 = kit({ main: '#1C3F94', collar: W2, cuff: W2, badge: [W2, '#D21034'], sleeveArt: sleeveFlames(['#D21034', W2]) });
+ART.top.rt_cmr02 = kit({ main: '#007A3D', tank: true, collar: '#F2C230', cuff: '#CE1126', badge: ['#F2C230', '#CE1126'] });
+
+ART.top.rt_van96 = nbaTank({ main: '#00B2A9', trim: '#7A4A2E', trim2: '#CE1141', ink: W2, out: '#16161A', num: '50', city: 'VANCOUVER', side: '#7A4A2E', side2: '#CE1141' });
+ART.top.rt_hou95 = nbaTank({ main: '#CE1141', trim: '#002D62', trim2: '#C4CED4', ink: W2, out: '#002D62', num: '34', city: 'HOUSTON', pin: '#002D62' });
+ART.top.rt_det98 = nbaTank({ main: '#00788C', trim: '#16161A', trim2: '#CE1141', ink: W2, out: '#16161A', num: '33', city: 'DETROIT', pattern: Array.from({ length: 7 }, (_, i) => `<path d="M${CX - 66 + i * 22} 212 Q${CX - 60 + i * 22} 190 ${CX - 54 + i * 22} ${180 - (i % 2) * 12} Q${CX - 50 + i * 22} 196 ${CX - 44 + i * 22} 212Z" fill="${i % 2 ? '#CE1141' : '#F2C230'}"/>`).join('') });
+ART.top.rt_uta97 = nbaTank({ main: '#4B2A7B', trim: '#00A3AD', trim2: W2, ink: W2, out: '#16161A', num: '12', city: 'UTAH', pattern: `<path d="${poly([[CX - 90, 196], [CX - 50, 168], [CX - 30, 182], [CX - 4, 158], [CX + 20, 180], [CX + 44, 164], [CX + 90, 194], [CX + 90, 230], [CX - 90, 230]])}" fill="#B5651D"/><path d="${poly([[CX - 90, 206], [CX - 46, 186], [CX - 20, 198], [CX + 12, 182], [CX + 50, 200], [CX + 90, 190], [CX + 90, 230], [CX - 90, 230]])}" fill="#00A3AD"/><path d="${poly([[CX - 12, 166], [CX - 4, 158], [CX + 6, 168]])}" fill="${W2}"/>` });
+ART.top.rt_den91 = nbaTank({ main: W2, trim: '#0E2240', trim2: '#FEC524', ink: '#0E2240', out: '#FEC524', num: '55', pattern: band(132, 3, '#E03A3E') + band(135, 3, '#F58426') + band(138, 3, '#FEC524') + band(141, 3, '#00A651') + band(144, 3, '#0E5AA7') + `<path d="${poly([[CX - 90, 132], [CX - 60, 132], [CX - 60, 122], [CX - 52, 122], [CX - 52, 116], [CX - 44, 116], [CX - 44, 126], [CX - 30, 126], [CX - 30, 132], [CX + 30, 132], [CX + 30, 120], [CX + 40, 120], [CX + 40, 112], [CX + 48, 112], [CX + 48, 126], [CX + 60, 126], [CX + 60, 132], [CX + 90, 132], [CX + 90, 133], [CX - 90, 133]])}" fill="#0E2240"/>` });
+ART.top.rt_gsw96 = nbaTank({ main: '#1D428A', trim: '#F58426', trim2: W2, ink: W2, out: '#F58426', num: '17', city: 'GOLDEN STATE', pattern: `<path d="${poly([[CX + 40, 100], [CX + 14, 160], [CX + 30, 160], [CX + 4, 230], [CX + 50, 148], [CX + 34, 148], [CX + 60, 100]])}" fill="#F58426" opacity="0.9"/>` });
+ART.top.rt_phi01 = nbaTank({ main: '#16161A', trim: '#C9A23A', trim2: '#ED174C', ink: W2, out: '#C9A23A', num: '3', city: 'PHILADELPHIA', side: '#C9A23A', side2: '#ED174C' });
+ART.top.rt_sac02 = nbaTank({ main: '#16161A', trim: '#5A2D81', trim2: '#C4CED4', ink: W2, out: '#5A2D81', num: '4', city: 'SACRAMENTO', side: '#5A2D81', side2: '#C4CED4' });
+
+// baseball: o = { main, pin, text, fill, line, pipe, pipe2, font, num, pullover }
+const baseball = (o) => top({
+  main: () => o.main, sleeve: 'short', neck: 'v', rib: false, grow: 5, sgrow: 6, hem: 209,
+  collar: (P, c) => { const nk = c.B.nk; P.stroke(curve([[CX - nk - 3.5, 112.5], [CX - nk * 0.4, 124], [CX, 138], [CX + nk * 0.4, 124], [CX + nk + 3.5, 112.5]]), o.pipe, 2.4); if (o.pipe2) P.stroke(curve([[CX - nk - 1.8, 114], [CX - nk * 0.4, 125.4], [CX, 136], [CX + nk * 0.4, 125.4], [CX + nk + 1.8, 114]]), o.pipe2, 1); },
+  detail: (P, c, R, d) => {
+    if (o.pin) P.clip(d, pins(o.pin, 6, 0.95));
+    if (!o.pullover) { P.stroke(curve([[CX + 1.5, 138], [CX + 1.5, 207]]), o.pipe, 2); if (o.pipe2) P.stroke(curve([[CX + 3.5, 138], [CX + 3.5, 207]]), o.pipe2, 1); [146, 160, 174, 188, 202].forEach((y) => P.dot(CX - 2, y, 1.4, o.btn || o.pipe)); }
+    if (o.text) word(P, o.text, 160, o.size || 10, 54, o.fill, o.line, 0.9, o.font || 'Georgia, serif');
+    if (o.num) digits(P, o.num, CX - 22, 182, 12, o.fill, o.line);
+  },
+  trim: (P, g, side, yEnd, c) => { const gr = 6 * (c.B.arm * 0.5 + 0.5); across(P, g, side, yEnd - 0.02, gr, o.pipe, 2.2); if (o.pipe2) across(P, g, side, yEnd - 0.05, gr, o.pipe2, 1.2); if (o.pipe3) across(P, g, side, yEnd - 0.08, gr, o.pipe3, 1.2); },
+});
+ART.top.rt_nyy = baseball({ main: '#F7F6F1', pin: '#1C2841', pipe: '#1C2841', btn: '#1C2841' });
+ART.top.rt_bos = baseball({ main: '#A9ADB4', text: 'BOSTON', fill: '#BD3039', line: '#0C2340', pipe: '#0C2340', pipe2: '#BD3039', size: 11, font: 'Arial Black, Arial, sans-serif' });
+ART.top.rt_mtl82 = baseball({ main: '#8EB8E5', text: 'MONTREAL', fill: '#E4002B', line: '#003DA5', pipe: '#003DA5', pipe2: W2, pipe3: '#E4002B', font: 'Brush Script MT, Georgia, cursive', size: 13 });
+ART.top.rt_tor92 = baseball({ main: '#F7F6F1', text: 'TORONTO', fill: '#134A8E', line: '#E8291C', pipe: '#134A8E', pipe2: '#E8291C', num: '12' });
+ART.top.rt_pit79 = baseball({ main: '#FDB827', text: 'PITTSBURGH', fill: '#16161A', line: W2, pipe: '#16161A', pipe2: W2, pullover: true, size: 9, font: 'Arial Black, Arial, sans-serif' });
+
+ART.top.rt_buf80 = sweater({ main: '#003087', collar: '#FFB81C', stripe: '#FFB81C', hem2: W2, num: '' });
+ART.top.rt_hfd90 = sweater({ main: '#00843D', collar: '#1C2A55', stripe: W2, hem2: '#1C2A55', chest: '#1C2A55' });
+ART.top.rt_que95 = sweater({ main: '#005BAA', collar: W2, stripe: W2, hem2: '#D21034' });
+
+// gridiron: o = { main, collar, bands: [[colour, offset, width]], ink, out, num }
+const gridiron = (o) => top({
+  main: () => o.main, sleeve: 'short', neck: 'v', grow: 7, sgrow: 10, hem: 209, ribCol: () => o.collar,
+  detail: (P) => digits(P, o.num, CX, 184, 40, o.ink, o.out),
+  trim: (P, g, side, yEnd, c) => { const gr = 10 * (c.B.arm * 0.5 + 0.5); o.bands.forEach(([colr, off, w]) => across(P, g, side, yEnd - off, gr, colr, w)); },
+});
+ART.top.rt_hou91 = gridiron({ main: '#6CACE4', collar: '#C8102E', bands: [[W2, 0.05, 3], [ '#C8102E', 0.1, 3], [W2, 0.15, 3]], ink: W2, out: '#C8102E', num: '1' });
+ART.top.rt_phi91 = gridiron({ main: '#00835D', collar: W2, bands: [[W2, 0.06, 3.6], [W2, 0.13, 3.6]], ink: W2, out: '#A5ACAF', num: '92' });
+const DOME = blob([[64, 50], [64, 34], [72, 18], [88, 9], [100, 7.5], [112, 9], [128, 18], [136, 34], [136, 50], [118, 45], [100, 44], [82, 45]]);
+ART.hat.rt_cap_mtl = capOf({ main: () => W2, bill: () => '#003DA5', extra: (P) => { P.clip(DOME, `<path d="${poly([[50, -10], [88, -10], [90, 60], [50, 60]])}" fill="#003DA5"/><path d="${poly([[112, -10], [150, -10], [150, 60], [110, 60]])}" fill="#E4002B"/>`); P.stroke(DOME, INK, OW); }, logo: (P) => P.ell(100, 9, 2.6, 1.8, '#E4002B') });

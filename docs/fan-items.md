@@ -2,7 +2,7 @@
 
 Updated Oct 19, 2026. Generated from js/avatar.js.
 
-Total: 207 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
+Total: 237 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
 
 ## Character basics (free)
 
@@ -17,11 +17,11 @@ Total: 207 items. Prices are in coins. "Team" means the item takes the colours o
 |---|---|
 | Expression | 6 |
 | Hair | 16 |
-| Hat | 15 |
+| Hat | 16 |
 | Face | 8 |
 | Facial hair | 4 |
 | Ears | 2 |
-| Top | 38 |
+| Top | 67 |
 | Jacket | 25 |
 | Neckwear | 5 |
 | Chain | 6 |
@@ -74,7 +74,7 @@ Gear in the colours of the team you follow.
 | Golden scarf | goldscarf | Neckwear | 0 | earned | Earned: Win 5 bets in a row |  |
 | Trophy cape | trophycape | Back | 0 | earned | Earned: Hit a parlay |  |
 
-## Retros (30)
+## Retros (60)
 
 Throwback jerseys, kits, shorts, hats and jackets from big moments in sports. Fixed colours.
 
@@ -88,7 +88,7 @@ Throwback jerseys, kits, shorts, hats and jackets from big moments in sports. Fi
 | Seattle '96 green jersey | rt_sea96 | Top | 3,500 | epic |  |  |
 | Phoenix '93 purple jersey | rt_phx93 | Top | 3,500 | epic |  |  |
 | Buffalo white-out jersey | rt_whiteout | Top | 4,000 | epic |  |  |
-| Blaugrana '99 baggy kit | rt_blau | Top | 5,000 | epic |  |  |
+| Barcelona '99 baggy kit | rt_blau | Top | 5,000 | epic |  |  |
 | Brazil '02 yellow kit | rt_bra02 | Top | 4,500 | epic |  |  |
 | Milan '94 red and black kit | rt_mil94 | Top | 4,000 | epic |  |  |
 | Argentina '86 stripes | rt_arg86 | Top | 5,500 | epic |  |  |
@@ -100,7 +100,7 @@ Throwback jerseys, kits, shorts, hats and jackets from big moments in sports. Fi
 | Luxury court shorts, LA purple | rt_lux_la | Pants | 6,500 | epic |  |  |
 | Luxury court shorts, Boston green | rt_lux_bos | Pants | 6,500 | epic |  |  |
 | Luxury court shorts, Charlotte teal | rt_lux_cha | Pants | 6,500 | epic |  |  |
-| Blaugrana '99 shorts | rt_blau_sh | Pants | 2,000 | epic |  |  |
+| Barcelona '99 shorts | rt_blau_sh | Pants | 2,000 | epic |  |  |
 | Brazil '02 shorts | rt_bra_sh | Pants | 2,000 | epic |  |  |
 | Tear-away pants, black and white | rt_tear | Pants | 2,500 | epic |  |  |
 | Chicago snapback, red and black | rt_cap_chi | Hat | 1,800 | rare |  |  |
@@ -110,6 +110,36 @@ Throwback jerseys, kits, shorts, hats and jackets from big moments in sports. Fi
 | Satin starter jacket, Chicago red | rt_satin_chi | Jacket | 7,000 | epic |  |  |
 | Satin bomber, LA blue | rt_satin_la | Jacket | 6,500 | epic |  |  |
 | '90s half-zip windbreaker, teal and purple | rt_halfzip | Jacket | 4,000 | epic |  |  |
+| Italy '06 blue kit | rt_ita06 | Top | 5,500 | epic |  |  |
+| Germany '90 white kit | rt_ger90 | Top | 5,500 | epic |  |  |
+| France '98 blue kit | rt_fra98 | Top | 5,000 | epic |  |  |
+| England '96 white kit | rt_eng96 | Top | 4,500 | epic |  |  |
+| Nigeria '18 zigzag kit | rt_nga18 | Top | 6,000 | epic |  |  |
+| Mexico '98 calendar kit | rt_mex98 | Top | 5,500 | epic |  |  |
+| North London '92 away kit | rt_lon92 | Top | 6,500 | epic |  |  |
+| Manchester '99 red kit | rt_man99 | Top | 5,000 | epic |  |  |
+| Turin '97 black and white stripes | rt_tur97 | Top | 4,500 | epic |  |  |
+| Japan '98 flame kit | rt_jpn98 | Top | 5,000 | epic |  |  |
+| Cameroon '02 sleeveless kit | rt_cmr02 | Top | 6,500 | epic |  |  |
+| Vancouver '96 teal jersey | rt_van96 | Top | 5,500 | epic |  |  |
+| Houston '95 red pinstripe jersey | rt_hou95 | Top | 5,000 | epic |  |  |
+| Detroit '98 teal flame jersey | rt_det98 | Top | 5,000 | epic |  |  |
+| Utah '97 mountain jersey | rt_uta97 | Top | 6,000 | epic |  |  |
+| Denver '91 rainbow jersey | rt_den91 | Top | 6,000 | epic |  |  |
+| Golden State '96 lightning jersey | rt_gsw96 | Top | 5,000 | epic |  |  |
+| Philadelphia '01 black jersey | rt_phi01 | Top | 5,500 | epic |  |  |
+| Sacramento '02 black jersey | rt_sac02 | Top | 4,500 | epic |  |  |
+| New York home pinstripes | rt_nyy | Top | 6,000 | epic |  |  |
+| Boston road grey jersey | rt_bos | Top | 5,000 | epic |  |  |
+| Montreal '82 powder blue jersey | rt_mtl82 | Top | 5,000 | epic |  |  |
+| Toronto '92 home jersey | rt_tor92 | Top | 5,000 | epic |  |  |
+| Pittsburgh '79 gold pullover | rt_pit79 | Top | 4,500 | epic |  |  |
+| Buffalo '80 blue hockey sweater | rt_buf80 | Top | 5,000 | epic |  |  |
+| Hartford '90 green hockey sweater | rt_hfd90 | Top | 4,500 | epic |  |  |
+| Quebec '95 blue hockey sweater | rt_que95 | Top | 4,500 | epic |  |  |
+| Houston '91 powder blue football jersey | rt_hou91 | Top | 5,000 | epic |  |  |
+| Philadelphia '91 kelly green football jersey | rt_phi91 | Top | 5,500 | epic |  |  |
+| Montreal '82 tricolour cap | rt_cap_mtl | Hat | 2,000 | epic |  |  |
 
 ## Look (30)
 
