@@ -171,7 +171,7 @@ export const BUILDS = [
   { id: 'lean', sh: 43, ch: 28, wa: 24, hp: 26, be: 0, arm: 0.8, leg: 0.84, nk: 11.5, jaw: 0, def: 0.6 },
   { id: 'athletic', sh: 49, ch: 33, wa: 27, hp: 28.5, be: 0, arm: 1, leg: 1, nk: 13, jaw: 0, def: 1 },
   { id: 'built', sh: 57, ch: 40, wa: 30, hp: 30.5, be: 0, arm: 1.3, leg: 1.16, nk: 16, jaw: 1.5, def: 1.3 },
-  { id: 'heavy', sh: 53, ch: 39, wa: 39, hp: 37, be: 7, arm: 1.22, leg: 1.26, nk: 16, jaw: 4, def: 0.3 },
+  { id: 'heavy', sh: 52, ch: 37, wa: 33.5, hp: 33, be: 3.5, arm: 1.14, leg: 1.15, nk: 15, jaw: 2.5, def: 0.3 },
 ];
 
 /** Everything items hang on. side: -1 = viewer's left, 1 = viewer's right. */
