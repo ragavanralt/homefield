@@ -2,7 +2,7 @@
 
 Updated Oct 19, 2026. Generated from js/avatar.js.
 
-Total: 284 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
+Total: 286 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
 
 ## Character basics (free)
 
@@ -21,7 +21,7 @@ Total: 284 items. Prices are in coins. "Team" means the item takes the colours o
 | Face | 9 |
 | Facial hair | 4 |
 | Ears | 2 |
-| Top | 72 |
+| Top | 74 |
 | Jacket | 38 |
 | Neckwear | 5 |
 | Chain | 7 |
@@ -231,7 +231,7 @@ Plain basics. Cheap, no logos.
 | Cargo shorts | cargoshorts | Pants | 100 | common |  | 4 |
 | Plain beanie | plainbeanie | Hat | 60 | common |  | 6 |
 
-## Streetwear (52)
+## Streetwear (54)
 
 The everyday fits, from baggy jeans to puffers.
 
@@ -269,6 +269,8 @@ The everyday fits, from baggy jeans to puffers.
 | Open zip hoodie | zipopen | Jacket | 700 | rare |  | 5 |
 | Chore coat | chore | Jacket | 900 | rare |  | 4 |
 | Open cardigan | cardigan | Jacket | 800 | rare |  | 5 |
+| One-sleeve tee, right | onesleeve | Top | 300 | common |  |  |
+| One-sleeve tee, left | onesleevel | Top | 300 | common |  |  |
 | Balloon bomber | balloon | Jacket | 2400 | epic |  | 4 |
 | Shearling jacket | shearling | Jacket | 3200 | epic |  | 3 |
 | Quilted anorak | anorak | Jacket | 1800 | rare |  | 4 |

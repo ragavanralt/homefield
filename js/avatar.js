@@ -146,6 +146,7 @@ export const ITEMS = [
   I('dz_bandana', 'bottom', 'Bandana print jeans', 'brand', 7500), I('dz_stars', 'bottom', 'Star stencil jeans', 'brand', 8000), I('dz_splatter', 'bottom', 'Paint splatter jeans', 'brand', 6500),
 
   // ---- More blanks
+  I('onesleeve', 'top', 'One-sleeve tee, right', 'street', 300), I('onesleevel', 'top', 'One-sleeve tee, left', 'street', 300),
   I('pockettee', 'top', 'Pocket tee', 'blank', 50), I('thermal', 'top', 'Waffle thermal', 'blank', 120), I('plainhood', 'top', 'Plain hoodie', 'blank', 200),
   I('zipblank', 'outer', 'Zip-up hoodie', 'blank', 250), I('sweatpants', 'bottom', 'Sweatpants', 'blank', 120), I('chinos', 'bottom', 'Chinos', 'blank', 150),
   I('meshshorts', 'bottom', 'Mesh shorts', 'blank', 80), I('cargoshorts', 'bottom', 'Cargo shorts', 'blank', 100), I('plainbeanie', 'hat', 'Plain beanie', 'blank', 60),

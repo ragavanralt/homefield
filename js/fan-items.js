@@ -39,7 +39,9 @@ function neckline(P, c, type, R, o = {}) {
 function top(o) {
   return (P, g, col, ph, c) => {
     const main = colOf(o, c, col), R = ramp(main), B = c.B, grow = o.grow ?? 3, hem = o.hem ?? 203;
-    const yEnd = { short: 0.36, elbow: 0.6, long: 0.9, none: null }[o.sleeve ?? 'short'];
+    const YE = { short: 0.36, elbow: 0.6, long: 0.9, none: null };
+    const kind = (side) => (side < 0 && o.sleeveL ? o.sleeveL : side > 0 && o.sleeveR ? o.sleeveR : o.sleeve ?? 'short');
+    const yEnd = YE[o.sleeve ?? 'short'] ?? YE[o.sleeveL] ?? YE[o.sleeveR];
     if (ph === 'body') {
       const d = o.shape === 'tank' ? tankD(B, grow, hem) : torsoD(B, grow, hem);
       P.part(d, R, { shade: bodyShade(B, grow, hem, 0, R) });
@@ -48,11 +50,13 @@ function top(o) {
       if (o.collar) o.collar(P, c, R, main);
     }
     if (ph === 'sleeves' && yEnd) both((side) => {
+      const ye = YE[kind(side)]; if (!ye) return;
       const SR = o.sleeveCol ? ramp(o.sleeveCol(c.pal, main)) : R;
-      sleeve(P, g, side, yEnd, (o.sgrow ?? 4) * (c.B.arm * 0.5 + 0.5), SR, { seam: !!o.sleeveCol });
-      if (o.trim) o.trim(P, g, side, yEnd, c, R, main);
+      sleeve(P, g, side, ye, (o.sgrow ?? 4) * (c.B.arm * 0.5 + 0.5), SR, { seam: !!o.sleeveCol });
+      if (o.trim) o.trim(P, g, side, ye, c, R, main);
     });
-    if (ph === 'cuffs' && yEnd && o.sleeve === 'long') both((side) => {
+    if (ph === 'cuffs' && yEnd) both((side) => {
+      if (kind(side) !== 'long') return;
       const SR = o.sleeveCol ? ramp(o.sleeveCol(c.pal, main)) : R;
       const T = tube(cutF(g.armJ(side), 0.85, 1.0, (o.sgrow ?? 4) * (c.B.arm * 0.5 + 0.5) + 0.5));
       P.tube(T, o.cuffCol ? ramp(o.cuffCol(c.pal, main)) : { ...SR, base: SR.sh, hi: SR.base, sh: SR.deep }, { cap0: false, cap1: false });
@@ -212,6 +216,8 @@ const cityText = (P, c, y, size, maxW, fill, line, lw = 1.4) => {
 const tout = (c) => c.pal.tout || c.pal.t2;
 const ini = (c) => (c.pal.city || 'H').replace(/[^A-Z]/g, '').charAt(0) || 'H';
 ART.top.tee = top({ def: '#64748B', sleeve: 'short' });
+ART.top.onesleeve = top({ def: '#2B2F3A', sleeve: 'none', sleeveR: 'long', grow: 3, sgrow: 4.5 });
+ART.top.onesleevel = top({ def: '#2B2F3A', sleeve: 'none', sleeveL: 'long', grow: 3, sgrow: 4.5 });
 ART.top.tank = top({ def: '#1F2937', sleeve: 'none', shape: 'tank', neck: 'none', grow: 1.5 });
 ART.top.boxy = top({ def: '#E9E4D8', sleeve: 'elbow', grow: 7, sgrow: 8, hem: 206, detail: (P, c, R) => { P.stroke(curve([[CX - 30, 160], [CX - 26, 190]]), R.sh, 1.4, 0.8); P.stroke(curve([[CX + 32, 150], [CX + 30, 196]]), R.deep, 1.4, 0.8); } });
 ART.top.graphic = top({ def: '#1C1C22', sleeve: 'short', detail: (P, c, R) => {
