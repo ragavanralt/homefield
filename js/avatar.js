@@ -20,6 +20,7 @@ export const SLOTS = [
 // Shop sections. Each item belongs to one. Real brands and logos are not used; the labels are made up.
 export const SECTIONS = [
   { id: 'team', label: 'Team shop', blurb: 'Gear in the colours of the team you follow.' },
+  { id: 'casual', label: 'Casual', blurb: 'Sport-brand style sleeves and calf bands in fixed colours: black, white, red and royal. Original marks, no real logos.' },
   { id: 'retro', label: 'Retros', blurb: 'Throwback jerseys, kits, shorts, hats and jackets from big moments in sports. Fixed colours.' },
   { id: 'look', label: 'Look', blurb: 'Hair, faces, beards and earrings.' },
   { id: 'blank', label: 'Blanks', blurb: 'Plain basics. Cheap, no logos.' },
@@ -162,6 +163,13 @@ export const ITEMS = [
 
   // ---- Team sleeves and bands
   I('armsleeve', 'armwear', 'Arm sleeve', 'team', 300, T), I('shooter', 'armwear', 'Shooter sleeve', 'team', 250, T),
+  I('armsleeves', 'armwear', 'Arm sleeves, both arms', 'team', 500, T), I('shootersleeves', 'armwear', 'Shooter sleeves, both arms', 'team', 420, T),
+  I('fullsleeve', 'armwear', 'Full sleeve, shoulder to wrist', 'team', 450, T), I('fullsleeves', 'armwear', 'Full sleeves, both arms', 'team', 800, T), I('fullleg', 'legwear', 'Full leg sleeve', 'team', 450, T),
+  // ---- Casual: sport-brand style pieces in fixed colours
+  I('blackcalf', 'legwear', 'Black calf bands', 'casual', 200), I('whitecalf', 'legwear', 'White calf bands', 'casual', 200), I('bredcalf', 'legwear', 'Black and red calf bands', 'casual', 350), I('royalcalf', 'legwear', 'Royal and gold calf bands', 'casual', 350),
+  I('blackleg', 'legwear', 'Black leg sleeve', 'casual', 350),
+  I('fsblack1', 'armwear', 'Black full sleeve', 'casual', 350), I('fsblack', 'armwear', 'Black full sleeves, both arms', 'casual', 700), I('fswhite', 'armwear', 'White full sleeves, both arms', 'casual', 700),
+  I('fsbred', 'armwear', 'Black and red full sleeves', 'casual', 900), I('fsroyal', 'armwear', 'Royal and gold full sleeves', 'casual', 900), I('elbowblack', 'armwear', 'Black elbow sleeves', 'casual', 250),
   I('legsleeve', 'legwear', 'Leg sleeve', 'team', 350, T), I('kneesleeve', 'legwear', 'Knee sleeve', 'team', 250, T), I('calfbands', 'legwear', 'Calf bands', 'team', 150, T),
 
   // ---- Earned
@@ -406,7 +414,7 @@ export function palette(team) {
 const FULL = '0 -14 200 354';
 const BUST = '42 -14 116 150';
 const HEADVB = '50 -12 100 124';
-const VB = { expr: HEADVB, hair: HEADVB, hat: HEADVB, face: HEADVB, beard: HEADVB, ear: HEADVB, top: '18 90 164 132', outer: '12 90 176 180', scarf: '46 92 108 112', chain: '50 94 100 84', wrist: '14 176 76 64', bottom: '28 178 144 162', shoes: '40 282 120 54', back: '-30 -20 260 364', hand: '70 120 130 170', bg: FULL, armwear: '96 100 70 130', legwear: '40 200 120 120' };
+const VB = { expr: HEADVB, hair: HEADVB, hat: HEADVB, face: HEADVB, beard: HEADVB, ear: HEADVB, top: '18 90 164 132', outer: '12 90 176 180', scarf: '46 92 108 112', chain: '50 94 100 84', wrist: '14 176 76 64', bottom: '28 178 144 162', shoes: '40 282 120 54', back: '-30 -20 260 364', hand: '70 120 130 170', bg: FULL, armwear: '34 100 132 130', legwear: '40 200 120 120' };
 const cache = new Map();
 
 /** Returns the SVG markup for a character. vb overrides the view box (shop previews and busts). */

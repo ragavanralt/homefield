@@ -942,6 +942,49 @@ ART.legwear.legsleeve = legPiece(212, 300, false, [[290, 't2', 2.6], [294, 'tacc
 ART.legwear.kneesleeve = legPiece(246, 288, false, [[250, 't2', 2.4], [283, 't2', 2.4]]);
 ART.legwear.calfbands = legPiece(266, 277, true, [[270, 't2', 1.6], [273.4, 'tacc', 1.1]]);
 
+/* ---------- more sleeves: both arms, full shoulder-to-wrist, and fixed-colour casual bands */
+const armPiece = (f0, f1, pair, pick) => (P, g, col, ph, c) => {
+  if (ph !== 'arms') return;
+  const k = pick(c);
+  for (const side of pair ? [-1, 1] : [1]) {
+    const J = cutF(g.armJ(side), f0, f1, 0.8);
+    P.tube(tube(J), ramp(k.main), { cap0: false, cap1: false });
+    if (f0 >= 0.05) across(P, g, side, f0 + 0.06, 0.8, k.trim, 2.2);
+    across(P, g, side, f1 - 0.05, 0.8, k.trim, 2.2);
+    if (k.acc) across(P, g, side, f1 - 0.09, 0.8, k.acc, 1);
+    if (k.mark) { const j = J[Math.min(2, J.length - 1)]; P.dot(j[0], j[1] + 2, 1.7, k.mark); }
+  }
+};
+const legPieceC = (y0, y1, pair, pick) => (P, g, col, ph, c) => {
+  if (ph !== 'legs') return;
+  const k = pick(c);
+  for (const side of pair ? [-1, 1] : [-1]) {
+    const J = cutJ(g.legJ(side), y1, 0.8, y0);
+    P.tube(tube(J), ramp(k.main), { cap0: false, cap1: false });
+    const band = (y, colr, w) => { const j = J.find((q) => q[1] >= y) || J[J.length - 1]; P.stroke(curve([[j[0] - j[2] / 2 + 0.6, y], [j[0] + j[2] / 2 - 0.6, y]]), colr, w); };
+    band(y0 + 4, k.trim, 1.8); band(y0 + 7.4, k.acc || k.trim, 1);
+    if (k.mark) { const j = J[Math.floor(J.length / 2)]; P.dot(j[0], (y0 + y1) / 2 + 1, 1.8, k.mark); }
+  }
+};
+const team = (c) => ({ main: c.pal.t1, trim: c.pal.t2, acc: c.pal.tacc });
+const fix = (main, trim, acc, mark) => () => ({ main, trim, acc, mark });
+ART.armwear.armsleeves = armPiece(0.1, 0.96, true, team);
+ART.armwear.shootersleeves = armPiece(0.5, 0.96, true, team);
+ART.armwear.fullsleeve = armPiece(0.02, 0.97, false, team);
+ART.armwear.fullsleeves = armPiece(0.02, 0.97, true, team);
+ART.armwear.fsblack = armPiece(0.02, 0.97, true, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
+ART.armwear.fswhite = armPiece(0.02, 0.97, true, fix('#F1F1EE', '#16181D', null, '#16181D'));
+ART.armwear.fsbred = armPiece(0.02, 0.97, true, fix('#16181D', '#C8102E', '#F2F2F2', '#C8102E'));
+ART.armwear.fsroyal = armPiece(0.02, 0.97, true, fix('#1D428A', '#FFC72C', null, '#FFC72C'));
+ART.armwear.fsblack1 = armPiece(0.02, 0.97, false, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
+ART.armwear.elbowblack = armPiece(0.35, 0.8, true, fix('#16181D', '#F2F2F2', null, null));
+ART.legwear.fullleg = legPieceC(212, 300, false, team);
+ART.legwear.bredcalf = legPieceC(266, 277, true, fix('#16181D', '#C8102E', '#F2F2F2', '#C8102E'));
+ART.legwear.whitecalf = legPieceC(266, 277, true, fix('#F1F1EE', '#16181D', null, '#16181D'));
+ART.legwear.royalcalf = legPieceC(266, 277, true, fix('#1D428A', '#FFC72C', null, '#FFC72C'));
+ART.legwear.blackcalf = legPieceC(262, 279, true, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
+ART.legwear.blackleg = legPieceC(212, 300, false, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
+
 /* ---------- retros, second drop: more niche, closer to the real thing */
 const W2 = '#F4F1EA';
 // zigzag band across the chest
