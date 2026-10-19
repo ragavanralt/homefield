@@ -1,7 +1,7 @@
 // Every wearable as a small SVG recipe drawn on the shared body (fan.js). A recipe is
 // (P, g, col, phase, c): P the pen, g the body geometry, col the chosen colour (or undefined), phase the
 // layer being drawn, c = { skin, sk, hair, pal, B, g }. Team gear reads c.pal (t1, t2, tink, tacc).
-import { ART, CX, OW, ramp, adj, mix, dk, lt, tube, cutJ, cutF, curve, blob, poly, torsoD, torsoPts, halfD, segs, pt } from './fan.js';
+import { ART, Pen, tubeD, CX, OW, ramp, adj, mix, dk, lt, tube, cutJ, cutF, curve, blob, poly, torsoD, torsoPts, halfD, segs, pt } from './fan.js';
 
 const GOLD = '#E8B93A', GOLD2 = '#A87A1A', GOLDHI = '#FFE9A0', SILVER = '#CDD3DC', SILVER2 = '#8E96A3', INK = '#16131A';
 const colOf = (o, c, col) => (o.main ? o.main(c.pal, col) : col || o.def || '#888888');
@@ -110,9 +110,13 @@ function pants(o) {
       if (o.bag) { const a = J[0], b = J[J.length - 1], n = 9, wf = a[2], wh = a[2] - grow + 3, wb = wf * (o.bag.hem ?? 1.06), xb = b[0] + side * (o.bag.out ?? 2.5);
         // fitted at the hip so nothing pokes out under a shirt, then it drops loose and straight
         J = Array.from({ length: n }, (_, i) => { const t = i / (n - 1), u = Math.min(1, t / 0.3), e = u * u * (3 - 2 * u); return [a[0] + (xb - a[0]) * t, a[1] + (b[1] - a[1]) * t, t < 0.3 ? wh + (wf - wh) * e : wf + (wb - wf) * ((t - 0.3) / 0.7)]; }); }
+      // never wider than the hips up top, so no pants poke out beside a shirt hem on any body type
+      J = J.map(([x, y, w]) => { if (y > 212) return [x, y, w]; const t = Math.max(0, Math.min(1, (y - 184) / 18)), lim = B.wa + B.be + (B.hp + B.be * 0.4 - B.wa - B.be) * t + (y > 203 ? (y - 203) * 0.6 : 0) - 0.5, over = Math.abs(x - CX) + w / 2 - lim; return over > 0 ? [x - side * over / 2 * Math.sign(x - CX) * side, y, w - over] : [x, y, w]; });
       const LR = o.legCol ? ramp(o.legCol(c.pal, main, side)) : R;
-      P.tube(tube(J), LR, { cap0: false, cap1: false });
-      if (o.legDetail) o.legDetail(P, g, side, J, c, LR, main);
+      const TJ = tube(J);
+      P.tube(TJ, LR, { cap0: false, cap1: false });
+      // leg details (stripes, pockets, folds) stay inside the leg
+      if (o.legDetail) { const Q = new Pen(); o.legDetail(Q, g, side, J, c, LR, main); P.clip(tubeD(TJ, false, false), Q.toString()); P.stroke(tubeD(TJ, false, false), LR.line, OW); }
     });
     // hips: one piece over the tops of both legs
     const w = B.wa + B.be * 0.9 + grow * 0.15 - 2.8, wh = B.hp + B.be * 0.4 + grow * 0.55 - 2.6;
@@ -301,7 +305,7 @@ const onWrist = (P, g, c, strap, face, ring) => {
   const [x, y, w] = g.watch(-1);
   const a = c.B.arm;
   P.add(`<g transform="rotate(${g.watchTurn(-1).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">`);
-  P.shape(blob([[x - w / 2 - 1, y - 4], [x + w / 2 + 1, y - 4], [x + w / 2 + 1, y + 2.5], [x - w / 2 - 1, y + 2.5]]), strap, { line: '#121212', w: 1.3 });
+  P.shape(blob([[x - w / 2 - 0.2, y - 4], [x + w / 2 + 0.2, y - 4], [x + w / 2 + 0.2, y + 2.5], [x - w / 2 - 0.2, y + 2.5]]), strap, { line: '#121212', w: 1.3 });
   if (face) { P.ell(x - 1, y - 0.8, 4.6 * a, 4.6, face, { line: ring || '#121212', w: 1.6 }); P.stroke(curve([[x - 1, y - 0.8], [x - 1, y - 3.4]]), ring || '#FFFFFF', 0.9); }
   P.add('</g>');
 };
@@ -356,7 +360,7 @@ const drape = (P, J, side, R) => {
 const cargoPocket = (P, J, side, R) => { const j = J.find((q) => q[1] >= 238) || J[J.length - 1]; const x = j[0] + side * j[2] * 0.22; P.shape(poly([[x - 7, j[1]], [x + 7, j[1]], [x + 7, j[1] + 16], [x - 7, j[1] + 16]]), R.base, { line: R.line, w: 1.3 }); P.stroke(curve([[x - 7, j[1] + 4], [x + 7, j[1] + 4]]), R.line, 1.1); };
 const jeanDetail = (P, g, side, J, c, R) => { knee(P, J, side, R); hemLine(P, J, R); };
 const shortsDetail = (P, g, side, J, c, R) => hemLine(P, J, R);
-const stripe = (colFn, w = 3) => (P, g, side, J, c, R, main) => { const p = J.map(([x, y, ww]) => [x + side * (ww / 2 - 2.5), y]); P.stroke(curve(p), colFn(c.pal, main), w); hemLine(P, J, R); };
+const stripe = (colFn, w = 3) => (P, g, side, J, c, R, main) => { const p = J.map(([x, y, ww]) => [x + side * (ww / 2 - Math.max(2.5, w / 2 + 1.2)), y]); P.stroke(curve(p), colFn(c.pal, main), w); hemLine(P, J, R); };
 const pocketsJ = (P, c, R, main, w) => both((s) => P.stroke(curve([[CX + s * (w - 1), 198], [CX + s * (w - 10), 206]]), R.line, 1.3, 0.8));
 
 ART.bottom.jeans = pants({ def: '#3A5A93', legDetail: jeanDetail, detail: pocketsJ, belt: null });
@@ -377,8 +381,8 @@ ART.bottom.tuxp = pants({ def: '#121216', grow: 4, straight: 0.82, legDetail: (P
 ART.bottom.fogsweats = pants({ def: '#8E9196', grow: 5.5, legDetail: (P, g, side, J, c, R) => { knee(P, J, side, R); const [x, y, w] = J[J.length - 1]; P.fill(poly([[x - w / 2, y - 7], [x + w / 2, y - 7], [x + w / 2 - 1, y], [x - w / 2 + 1, y]]), R.sh); }, band: (p, m) => dk(m, 0.12), fly: false, detail: (P) => P.add(`<rect x="${CX + 12}" y="200" width="10" height="3" fill="#2A2A2E"/>`) });
 ART.bottom.techjog = pants({ def: '#2A2D33', grow: 3.5, legDetail: (P, g, side, J, c, R) => { knee(P, J, side, R); const j = J.find((q) => q[1] >= 236); P.stroke(curve([[j[0] - 6, 236], [j[0] + 4, 232]]), '#16181C', 2); const [x, y, w] = J[J.length - 1]; P.fill(poly([[x - w / 2, y - 6], [x + w / 2, y - 6], [x + w / 2 - 1, y], [x - w / 2 + 1, y]]), R.sh); }, fly: false });
 ART.bottom.goldpants = pants({ def: GOLD, main: () => GOLD, grow: 4, legDetail: (P, g, side, J, c, R) => { knee(P, J, side, R); P.stroke(curve(J.slice(0, 4).map(([x, y, w]) => [x - w * 0.25, y])), GOLDHI, 2, 0.8); hemLine(P, J, R); }, detail: pocketsJ });
-ART.bottom.tshorts = pants({ main: (p) => p.t1, end: 256, grow: 8, bag: { hem: 1.08, out: 2 }, legDetail: (P, g, side, J, c, R, main) => { stripe((p) => p.t2, 6)(P, g, side, J, c, R, main); const q = J.map(([x, y, ww]) => [x + side * (ww / 2 - 6), y]); P.stroke(curve(q), c.pal.tink, 1.2); }, fly: false, band: (p) => p.t2 });
-ART.bottom.trackp = pants({ main: (p) => p.t2, grow: 4.5, legDetail: (P, g, side, J, c, R, main) => { stripe((p) => p.t1, 5)(P, g, side, J, c, R, main); const q = J.map(([x, y, ww]) => [x + side * (ww / 2 - 5.6), y]); P.stroke(curve(q), c.pal.tink, 1.1); }, fly: false, band: (p, m) => dk(m, 0.15) });
+ART.bottom.tshorts = pants({ main: (p) => p.t1, end: 256, grow: 8, bag: { hem: 1.08, out: 2 }, legDetail: (P, g, side, J, c, R, main) => { stripe((p) => p.t2, 6)(P, g, side, J, c, R, main); const q = J.map(([x, y, ww]) => [x + side * (ww / 2 - 7.6), y]); P.stroke(curve(q), c.pal.tink, 1.2); }, fly: false, band: (p) => p.t2 });
+ART.bottom.trackp = pants({ main: (p) => p.t2, grow: 4.5, legDetail: (P, g, side, J, c, R, main) => { stripe((p) => p.t1, 5)(P, g, side, J, c, R, main); const q = J.map(([x, y, ww]) => [x + side * (ww / 2 - 7.2), y]); P.stroke(curve(q), c.pal.tink, 1.1); }, fly: false, band: (p, m) => dk(m, 0.15) });
 // a five-point star centred on x, y
 const star = (x, y, r) => poly(Array.from({ length: 10 }, (_, i) => { const t = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; return [x + Math.cos(t) * rr, y + Math.sin(t) * rr]; }));
 // retro mesh shorts: long and loose, past the knee, a wide side panel. o = { pipe, pin, stars }

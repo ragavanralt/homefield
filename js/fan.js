@@ -170,7 +170,7 @@ export class Pen {
 export const BUILDS = [
   { id: 'lean', sh: 43, ch: 28, wa: 24, hp: 26, be: 0, arm: 0.8, leg: 0.84, nk: 11.5, jaw: 0, def: 0.6 },
   { id: 'athletic', sh: 49, ch: 33, wa: 27, hp: 28.5, be: 0, arm: 1, leg: 1, nk: 13, jaw: 0, def: 1 },
-  { id: 'built', sh: 57, ch: 40, wa: 30, hp: 30.5, be: 0, arm: 1.3, leg: 1.16, nk: 16, jaw: 1.5, def: 1.3 },
+  { id: 'built', sh: 55, ch: 38.5, wa: 31.5, hp: 32, be: 0, arm: 1.2, leg: 1.22, nk: 15.5, jaw: 1.5, def: 1.25 },
   { id: 'heavy', sh: 52, ch: 37, wa: 33.5, hp: 33, be: 3.5, arm: 1.14, leg: 1.15, nk: 15, jaw: 2.5, def: 0.3 },
 ];
 
@@ -184,7 +184,7 @@ export function geometry(B, pose = 'relaxed') {
   g.armJ = (side) => [[ax + 3, 127, 25 * a], [ax - 1.5, 141, 25 * a], [ax - 5, 158, 21 * a], [ax - 7.5, 175, 16 * a], [ax - 6.8, 187, 18.5 * a], [ax - 3.6, 206, 12 * a]].map(([x, y, w]) => [s(x, side), y, w]);
   g.wrist = (side) => { const j = g.armJ(side); return j[j.length - 1]; };
   // where a watch sits: a little up the forearm from the wrist
-  g.watch = (side) => { const j = g.armJ(side), p = j[4], q = j[5], t = 0.72; return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t]; };
+  g.watch = (side) => { const j = g.armJ(side), p = j[4], q = j[5], t = 0.5; return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t]; };
   g.watchTurn = (side) => { const j = g.armJ(side), p = j[4], q = j[5]; return Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI - 90; };
   g.handTurn = (side) => { const j = g.armJ(side), p = j[4], q = j[5]; return Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI - 90; };
   // legs: slight A-stance, thigh, knee, calf swell on the outside, narrow ankle
