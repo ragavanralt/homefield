@@ -584,33 +584,15 @@ const curlyFlow = (hl) => hairOf(null, (P, hc) => {
   P.add('</g>');
 });
 ART.hair.curly = curlyFlow(false);
-// Curls: the free everyday curly cut. A neat rounded top of loose curls, a curly edge at the hairline that leaves
-// the forehead clear, short sides down to the top of the ears. Mirrored so both sides match.
-ART.hair.curls = hairOf(null, (P, hc) => {
-  const R = curlRamp(hc);
-  const M = ([x, y]) => [200 - x, y];
-  const topR = [[100, 3], [111, 3], [121, 6.5], [129.5, 12.5], [135.5, 21], [138.5, 31], [138.5, 42]];
-  const sideR = [[138.5, 42], [137, 51], [136.2, 60], [134.6, 64.5], [132.6, 60], [132.2, 51], [130.6, 44]];
-  const lineR = [[130.6, 44], [126.5, 38.5], [119, 36.2], [110, 37.6], [100, 35.6]];
-  const topL = topR.map(M).reverse(), sideL = sideR.map(M).reverse(), lineL = lineR.map(M).reverse();
-  const amp = [2.6, 2.4, 2.8, 2.5, 2.7, 2.4];
-  const HL = `${scallop(lineR, [1.6, 1.9, 1.7, 1.9], false, [100, 0])}${scallop(lineL, [1.9, 1.7, 1.9, 1.6], false, [100, 0])}`;
-  const d = `M${pt(topL[0])}${scallop(topL, amp.slice().reverse(), false, [100, 40])}${scallop(topR, amp, false, [100, 40])}${segs(sideR)}${HL}${segs(sideL)}Z`;
-  P.fill(d, R.base);
-  const spots = [];
-  for (let row = 0; row < 4; row++) for (let i = 0; i < 7; i++) { const x = 70 + i * 10 + (row % 2) * 5, y = 10 + row * 7.6; if (Math.abs(x - 100) < 34 - row * 0.5 && x <= 132) spots.push([x, y]); }
-  const ring = ([x, y], colr, f) => `<path d="${curve([[x - 3.4 * f, y + 0.8], [x - 1.4 * f, y - 2.8], [x + 2.2 * f, y - 2.2], [x + 2.6 * f, y + 1], [x + 0.2 * f, y + 2.4], [x - 1 * f, y + 0.6]])}" fill="none" stroke="${colr}" stroke-width="1.4" stroke-linecap="round"/>`;
-  P.clip(d, [
-    `<path d="${poly([[118, -20], [170, -20], [170, 90], [122, 90]])}" fill="${R.sh}"/>`,
-    `<path d="${poly([[134, -20], [170, -20], [170, 90], [136, 90]])}" fill="${R.deep}" opacity="0.55"/>`,
-    `<path d="${blob([[60, 44], [69, 46], [68.5, 66], [63, 62]])}" fill="${R.deep}" opacity="0.45"/><path d="${blob([[140, 44], [131, 46], [131.5, 66], [137, 62]])}" fill="${R.deep}" opacity="0.6"/>`,
-    `<path d="${curve([[70, 18], [82, 9], [100, 6.5], [118, 9], [130, 18]])}" fill="none" stroke="${R.hi}" stroke-width="4" stroke-linecap="round" opacity="0.25"/>`,
-    ...spots.map((p2) => ring(p2, p2[0] < 100 ? R.hi : R.deep, p2[0] < 100 ? 1 : -1)),
-    `<path d="${curve(lineL.concat(lineR.slice(1)).map(([x, y]) => [x, y - 1.8]))}" fill="none" stroke="${R.deep}" stroke-width="2.4" stroke-linecap="round" opacity="0.5"/>`,
-  ].join(''));
-  P.stroke(`M${pt(topL[0])}${scallop(topL, amp.slice().reverse(), false, [100, 40])}${scallop(topR, amp, false, [100, 40])}${segs(sideR)}`, R.line, OW);
-  P.stroke(`M${pt(lineR[0])}${HL}`, R.line, 1.4);
-  P.stroke(`M${pt(sideL[0])}${segs(sideL)}`, R.line, OW);
+// Curls: the free everyday curly cut, the original thick version: round curl puffs over the top and sides,
+// with a fuller curly mass behind.
+ART.hair.curls = hairOf((P, hc) => hairShape(P, blob([[62, 68], [58, 50], [62, 30], [80, 12], [100, 6], [120, 12], [138, 30], [142, 50], [138, 68]]), hc, { noHi: true }), (P, hc) => {
+  const C = [[70, 36, 9], [80, 24, 10], [94, 18, 10], [108, 18, 10], [121, 24, 10], [130, 36, 9], [66, 48, 7], [134, 48, 7], [86, 36, 8], [100, 32, 8], [114, 36, 8]];
+  const R = ramp(hc, { k: 0.9 }); const line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22);
+  C.forEach(([x, y, r]) => P.ell(x, y, r, r, line, {}));
+  C.forEach(([x, y, r]) => P.ell(x, y, r - OW * 0.9, r - OW * 0.9, x > 108 ? R.sh : R.base, {}));
+  C.forEach(([x, y, r]) => P.stroke(curve([[x - r * 0.5, y - r * 0.3], [x - r * 0.1, y - r * 0.6]]), lt(hc, 0.18), 1.6, 0.9));
+  C.forEach(([x, y, r]) => P.stroke(curve([[x - r * 0.4, y + r * 0.35], [x, y + r * 0.55], [x + r * 0.45, y + r * 0.3]]), R.deep, 1.2, 0.8));
 });
 ART.hair.curlyhl = curlyFlow(true);
 ART.hair.afro = hairOf((P, hc) => hairShape(P, blob([[56, 66], [48, 44], [54, 20], [76, 2], [100, -3], [124, 2], [146, 20], [152, 44], [144, 66], [136, 70], [64, 70]]), hc, { shX: 118, shX2: 124, hi: [[64, 22], [80, 8], [96, 4], [84, 14], [70, 28]], strands: [[[70, 40], [74, 46]], [[130, 30], [134, 38]], [[90, 10], [96, 14]], [[116, 12], [122, 18]], [[60, 52], [64, 58]], [[140, 52], [136, 58]]] }), (P, hc) => {
