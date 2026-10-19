@@ -233,8 +233,9 @@ export function hand(P, side, wj, sk, scale = 1) {
 }
 
 /* ------------------------------------------------------------------ head and face */
-const HEAD_R = (jaw) => [[100, 22], [115, 24], [127, 31.5], [133, 44], [134.6, 58], [134.2, 70], [132.2 + jaw * 0.4, 81], [128.6 + jaw * 0.8, 90.5], [121 + jaw * 0.7, 99.5], [110.5 + jaw * 0.3, 105.6], [104, 107.2]];
-const HEAD = (jaw) => { const R = HEAD_R(jaw); return [...R, ...R.slice(1).reverse().map(([x, y]) => [200 - x, y])]; };
+// skull, temple, a cheekbone that sits widest near the eyes, a slight hollow below it, a defined jaw angle and a squarer chin
+const HEAD_R = (jaw) => [[100, 21], [113, 22.4], [124.5, 28], [131, 38], [133.4, 50], [135.2, 61], [135.3, 68.5], [133.6, 77], [131.4 + jaw * 0.4, 85], [130.4 + jaw * 0.8, 89.6], [128.6 + jaw * 0.8, 93.4], [122 + jaw * 0.6, 99.4], [113.5 + jaw * 0.3, 104.4], [106.5, 106.8], [100, 107.3]];
+const HEAD = (jaw) => { const R = HEAD_R(jaw); return [...R.slice(0, -1), ...R.slice(1).reverse().map(([x, y]) => [200 - x, y])]; };
 export function drawHead(P, sk, hairCol, opts = {}) {
   const jaw = opts.jaw || 0;
   const ink = '#1A1216';
@@ -249,24 +250,36 @@ export function drawHead(P, sk, hairCol, opts = {}) {
   }
   function Y0(v) { return v; }
   P.fill(headD, sk.base);
-  // cel shading: right side of the face, under the cheekbone, jaw, and a lit forehead
+  // cel shading: the right side turns away from the light; sockets, cheekbones, the hollows under them, the jaw and chin give structure
+  const op = (o) => ` opacity="${o}"`;
   P.clip(headD, [
-    // the right side of the face turns away from the light
-    `<path d="${blob([[119, 18], [142, 30], [142, 112], [106, 112], [118, 101], [125.5, 90], [127.5, 76], [127, 56], [123, 38]])}" fill="${sk.sh}"/>`,
-    `<path d="${blob([[134, 66], [141, 74], [139, 104], [112, 110], [121, 100], [129, 88]])}" fill="${sk.deep}"/>`,
-    // cheekbone hollows and the jaw line on the lit side
-    `<path d="${curve([[70.5, 88], [77, 97.5], [88, 104.2]])}" fill="none" stroke="${sk.sh}" stroke-width="2.6" stroke-linecap="round"/>`,
-    // lit forehead and the chin
+    `<path d="${blob([[119, 18], [142, 30], [142, 112], [106, 112], [117, 101], [124.5, 91], [127, 77], [126.5, 57], [122.5, 38]])}" fill="${sk.sh}"/>`,
+    `<path d="${blob([[134.5, 70], [141, 76], [139, 104], [112, 110], [121.5, 100.5], [128.6, 92]])}" fill="${sk.deep}"/>`,
+    // temples
+    `<path d="${blob([[65.5, 42], [71, 38], [73.5, 50], [67.5, 55]])}" fill="${sk.sh}"${op(0.6)}/>`,
+    // eye sockets under the brow ridge
+    `<path d="${blob([[75, 56.5], [86, 55.5], [94, 58.5], [92, 62], [84, 58.8], [76, 60]])}" fill="${sk.sh}"${op(0.55)}/>`,
+    `<path d="${blob([[125, 56.5], [114, 55.5], [106, 58.5], [108, 62], [116, 58.8], [124, 60]])}" fill="${sk.deep}"${op(0.45)}/>`,
+    // lit cheekbone and the hollow under it, both sides
+    `<path d="${blob([[70.5, 66], [78, 67.5], [82, 72], [74, 72.5]])}" fill="${sk.hi}"${op(0.9)}/>`,
+    `<path d="${blob([[68.5, 76], [74, 78], [83, 88.5], [86, 94], [79, 91], [71, 84]])}" fill="${sk.sh}"${op(0.5)}/>`,
+    `<path d="${blob([[131.5, 76], [126, 78], [117, 88.5], [114, 94], [121, 91], [129, 84]])}" fill="${sk.deep}"${op(0.4)}/>`,
+    // jaw line and the plane under the chin
+    `<path d="${blob([[68, 88], [74, 94], [86, 102], [99, 105.5], [99, 109], [84, 106], [70, 96]])}" fill="${sk.sh}"${op(0.6)}/>`,
+    // lit forehead, nose bridge and chin
     `<path d="${blob([[78, 33], [89, 27.5], [95, 30], [85, 36], [78, 40]])}" fill="${sk.hi}"/>`,
-    // the shadow side of the nose
-    `<path d="${blob([[104.4, 67], [107.6, 72], [107.4, 82.5], [104, 84], [104.8, 76]])}" fill="${sk.sh}"/>`,
+    `<path d="${blob([[97.6, 60], [99.6, 60], [99.2, 77], [97.6, 77]])}" fill="${sk.hi}"${op(0.8)}/>`,
+    `<path d="${blob([[96.5, 100.8], [102, 100.4], [103, 103.6], [97, 104]])}" fill="${sk.hi}"${op(0.75)}/>`,
+    // the shadow side of the nose and under it
+    `<path d="${blob([[103.6, 64], [107.4, 71], [107.6, 82.5], [104, 84], [104.4, 74]])}" fill="${sk.sh}"/>`,
+    `<path d="${blob([[94, 85.6], [100, 87.6], [106, 85.6], [104, 89], [96, 89]])}" fill="${sk.sh}"${op(0.8)}/>`,
   ].join(''));
   P.stroke(headD, sk.line, OW);
   if (opts.beforeFace) opts.beforeFace();
   // brows: tapered, slightly angled for a calm, confident look
   const brow = adj(hairCol, -0.06);
-  P.fill(blob([[93, 53.2], [84, 50.6], [76, 51.6], [74.2, 53.6], [84, 53.4], [92.6, 55.6]]), brow);
-  P.fill(blob([[107, 53.2], [116, 50.6], [124, 51.6], [125.8, 53.6], [116, 53.4], [107.4, 55.6]]), brow);
+  P.fill(poly([[93.4, 52.6], [86, 50], [78, 50.2], [73.8, 53], [79, 52.8], [86, 53.2], [92.8, 55.8]]), brow);
+  P.fill(poly([[106.6, 52.6], [114, 50], [122, 50.2], [126.2, 53], [121, 52.8], [114, 53.2], [107.2, 55.8]]), brow);
   // eyes: almond whites, iris + pupil + catchlight, a strong upper lid, a light lower lid
   for (const side of [-1, 1]) {
     const ex = CX + 15.5 * side, ey = 63.4;
@@ -286,6 +299,8 @@ export function drawHead(P, sk, hairCol, opts = {}) {
   P.stroke(curve([[105.4, 79.2], [106.4, 82.4], [103.8, 84.2]]), sk.line, 1.3, 0.85);
   P.ell(97.4, 84, 1.3, 0.8, sk.line, { op: 0.7 }); P.ell(102.6, 84, 1.3, 0.8, sk.line, { op: 0.7 });
   P.stroke(curve([[96.5, 86.6], [100, 87.2], [103.5, 86.6]]), sk.sh, 1.3, 0.8);
+  P.stroke(curve([[92.4, 83.6], [89.6, 88.5], [88.4, 93.6]]), sk.sh, 1.3, 0.7);
+  P.stroke(curve([[107.6, 83.6], [110.4, 88.5], [111.6, 93.6]]), sk.deep, 1.3, 0.6);
   // mouth: upper lip line with a soft dip, a fuller lower lip, corners
   const lip = mix(sk.base, '#9B4A49', 0.38), lipD = mix(sk.base, '#3A1A1C', 0.62);
   P.fill(blob([[90.6, 93.2], [100, 92.2], [109.4, 93.2], [105, 98.4], [100, 99.4], [95, 98.4]]), lip);
