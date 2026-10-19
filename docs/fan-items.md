@@ -3,7 +3,7 @@
 Saved before the fan art reset (Oct 18, 2026) so every item can be redrawn in the new style.
 Names, prices, shop sections and colour options stay the same; only the drawings change.
 
-Total: 134 items. Prices are in coins. "Team" means the item takes the colours of the team you follow. "Earned" items can't be bought.
+Total: 140 items. Prices are in coins. "Team" means the item takes the colours of the team you follow. "Earned" items can't be bought.
 
 ## Character basics (free)
 
@@ -16,6 +16,7 @@ Total: 134 items. Prices are in coins. "Team" means the item takes the colours o
 
 | Slot | Count |
 |---|---|
+| Expression | 6 |
 | Hair | 14 |
 | Hat | 11 |
 | Face | 8 |
@@ -66,15 +67,21 @@ Gear in the colours of the team you follow.
 | Golden scarf | goldscarf | Neckwear | 0 | earned | Earned: Win 5 bets in a row |  |
 | Trophy cape | trophycape | Back | 0 | earned | Earned: Hit a parlay |  |
 
-## Look (22)
+## Look (28)
 
 Hair, faces, beards and earrings.
 
 | Item | Id | Slot | Price | Tier | Notes | Colours |
 |---|---|---|---|---|---|---|
+| Smile | smile | Expression | 0 | free |  |  |
+| Smirk | smirk | Expression | 0 | free |  |  |
+| Big grin | grin | Expression | 150 | common |  |  |
+| Mean mug | meanmug | Expression | 300 | common |  |  |
+| Wink | wink | Expression | 450 | rare |  |  |
+| Tongue out | tongue | Expression | 600 | rare |  |  |
 | Short cut | short | Hair | 0 | free |  |  |
 | Buzz cut | buzz | Hair | 0 | free |  |  |
-| Curls | curly | Hair | 0 | free |  |  |
+| Curly flow | curly | Hair | 0 | free |  |  |
 | Skin fade | fade | Hair | 120 | common |  |  |
 | Slick back | slick | Hair | 150 | common |  |  |
 | Bob | bob | Hair | 150 | common |  |  |

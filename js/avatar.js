@@ -10,7 +10,7 @@ import './fan-items.js';
 export const SKINS = ['#E3B85B', '#F0D3B5', '#DDAE86', '#C58B5E', '#A06A44', '#7A4A2E', '#523320'];
 export const HAIR_COLORS = ['#1A1410', '#3D281B', '#6E4A2A', '#B8935A', '#B7BBC4', '#A8402B', '#2C57A8', '#5E3FA6', '#B23F7F', '#2F8A57'];
 export const SLOTS = [
-  { id: 'hair', label: 'Hair' }, { id: 'hat', label: 'Hat' }, { id: 'face', label: 'Face' }, { id: 'beard', label: 'Facial hair' }, { id: 'ear', label: 'Ears' },
+  { id: 'expr', label: 'Expression' }, { id: 'hair', label: 'Hair' }, { id: 'hat', label: 'Hat' }, { id: 'face', label: 'Face' }, { id: 'beard', label: 'Facial hair' }, { id: 'ear', label: 'Ears' },
   { id: 'top', label: 'Top' }, { id: 'outer', label: 'Jacket' }, { id: 'scarf', label: 'Neckwear' }, { id: 'chain', label: 'Chain' }, { id: 'wrist', label: 'Wrist' },
   { id: 'bottom', label: 'Pants' }, { id: 'shoes', label: 'Shoes' }, { id: 'back', label: 'Back' }, { id: 'hand', label: 'In hand' },
 ];
@@ -40,8 +40,9 @@ const tierOf = (price, ach) => (ach ? 'earned' : price === 0 ? 'free' : price < 
 const I = (id, slot, name, sec, price, extra = {}) => ({ id, slot, name, sec, price, tier: tierOf(price, extra.ach), ...extra });
 const T = { team: true };
 export const ITEMS = [
-  // ---- Look: hair, face, beards, ears
-  I('short', 'hair', 'Short cut', 'look', 0), I('buzz', 'hair', 'Buzz cut', 'look', 0), I('curly', 'hair', 'Curls', 'look', 0),
+  // ---- Look: expressions, hair, face, beards, ears
+  I('smile', 'expr', 'Smile', 'look', 0), I('smirk', 'expr', 'Smirk', 'look', 0), I('grin', 'expr', 'Big grin', 'look', 150), I('meanmug', 'expr', 'Mean mug', 'look', 300), I('wink', 'expr', 'Wink', 'look', 450), I('tongue', 'expr', 'Tongue out', 'look', 600),
+  I('short', 'hair', 'Short cut', 'look', 0), I('buzz', 'hair', 'Buzz cut', 'look', 0), I('curly', 'hair', 'Curly flow', 'look', 0),
   I('fade', 'hair', 'Skin fade', 'look', 120), I('slick', 'hair', 'Slick back', 'look', 150), I('bob', 'hair', 'Bob', 'look', 150), I('ponytail', 'hair', 'Ponytail', 'look', 150),
   I('afro', 'hair', 'Afro', 'look', 150), I('long', 'hair', 'Long hair', 'look', 150), I('bun', 'hair', 'Top bun', 'look', 120),
   I('braids', 'hair', 'Braids', 'look', 400), I('twists', 'hair', 'Twists', 'look', 400), I('mohawk', 'hair', 'Mohawk', 'look', 350), I('dreads', 'hair', 'Dreads', 'look', 450),
@@ -247,7 +248,7 @@ export function palette(team) {
 const FULL = '0 -14 200 354';
 const BUST = '42 -14 116 150';
 const HEADVB = '50 -12 100 124';
-const VB = { hair: HEADVB, hat: HEADVB, face: HEADVB, beard: HEADVB, ear: HEADVB, top: '18 90 164 132', outer: '12 90 176 180', scarf: '46 92 108 112', chain: '50 94 100 84', wrist: '14 176 76 64', bottom: '28 178 144 162', shoes: '40 282 120 54', back: '-30 -20 260 364', hand: '70 120 130 170' };
+const VB = { expr: HEADVB, hair: HEADVB, hat: HEADVB, face: HEADVB, beard: HEADVB, ear: HEADVB, top: '18 90 164 132', outer: '12 90 176 180', scarf: '46 92 108 112', chain: '50 94 100 84', wrist: '14 176 76 64', bottom: '28 178 144 162', shoes: '40 282 120 54', back: '-30 -20 260 364', hand: '70 120 130 170' };
 const cache = new Map();
 
 /** Returns the SVG markup for a character. vb overrides the view box (shop previews and busts). */
