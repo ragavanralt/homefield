@@ -510,6 +510,7 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 .pf-me { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 12px; }
 .pf-stage { display: grid; place-items: center; border-radius: 14px; padding: 14px 0 0; overflow: hidden;
   background: radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--stage, var(--violet)) 40%, var(--surface-2)), var(--surface-2) 75%); }
+.pf-stage.has-bg { padding: 0; background: var(--surface-2); }
 .pf-name { display: flex; flex-direction: column; }
 .pf-coins { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1; }
 .pf-row { display: flex; flex-direction: column; gap: 6px; }

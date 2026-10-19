@@ -342,7 +342,7 @@ export function drawHead(P, sk, hairCol, opts = {}) {
 // the head (and everything worn on it) is drawn in its own space and scaled down about the chin for a better head-to-body ratio
 export const HEAD_SCALE = 0.87;
 const HEADG = `<g transform="translate(100 107) scale(${HEAD_SCALE}) translate(-100 -107)">`;
-export const ART = { expr: {}, hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, outer: {}, scarf: {}, chain: {}, wrist: {}, bottom: {}, shoes: {}, back: {}, hand: {} };
+export const ART = { expr: {}, hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, outer: {}, scarf: {}, chain: {}, wrist: {}, bottom: {}, shoes: {}, back: {}, hand: {}, bg: {} };
 
 /** Draw the whole fan. ctx: { skin, hair, eq, colourOf(id), pal, build } -> svg inner markup */
 export function drawFan(ctx) {
@@ -355,6 +355,7 @@ export function drawFan(ctx) {
   const item = (slot) => { const id = ctx.eq[slot]; const f = id && ART[slot][id]; return f ? { f, col: ctx.colourOf(id), id } : null; };
   const run = (slot, phase) => { const it = item(slot); if (it) it.f(P, g, it.col, phase, c); };
 
+  if (ctx.bg) run('bg', 'bg');
   // ground shadow
   P.ell(CX, 326, 52, 6, '#000000', { op: 0.28 });
   run('back', 'back');

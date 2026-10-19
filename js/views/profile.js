@@ -16,6 +16,7 @@ export async function render(root, params = {}) {
   const unlocked = syncUnlocks();
   if (unlocked.length) toast(`New item unlocked: ${unlocked.map((i) => itemById(i)?.name).join(', ')}`);
   let sec = 'team';
+  let closetTab = 'fit'; // closet: your outfit or your backgrounds
   let only = false;
   let picking = null; // item id whose colour menu is open
   let confirming = null, confirmCi = 0; // item waiting for a confirmed buy, and the colour being tried
@@ -33,7 +34,7 @@ export async function render(root, params = {}) {
 
     // left: character
     const teams = myTeams();
-    const stage = h('div', { class: 'pf-stage', style: team ? { '--stage': team.color ? '#' + String(team.color).replace('#', '') : null } : null }, renderAvatar(av, team, 'lg'));
+    const stage = h('div', { class: 'pf-stage' + (av.eq.bg ? ' has-bg' : ''), style: team ? { '--stage': team.color ? '#' + String(team.color).replace('#', '') : null } : null }, renderAvatar(av, team, 'lg'));
     const coins = h('div', { class: 'pf-coins' }, h('i', { class: 'coin' }), fmt(bank.coins), h('small', null, 'coins'));
     const left = shop
       ? h('section', { class: 'card pf-me pf-mini' }, stage, coins, h('a', { class: 'btn', href: '#/profile' }, 'Change your look'))
@@ -51,7 +52,8 @@ export async function render(root, params = {}) {
     // right: shop
     const tabs = h('div', { class: 'seg pf-tabs', role: 'tablist' }, SECTIONS.map((s) => h('button', { type: 'button', role: 'tab', class: 'seg-b' + (sec === s.id ? ' on' : ''), 'aria-selected': sec === s.id ? 'true' : 'false', onclick: () => { sec = s.id; draw(); } }, s.label)));
     const cur = SECTIONS.find((s) => s.id === sec);
-    const items = shop ? ITEMS.filter((i) => i.sec === sec && !i.ach && (!only || av.owned.includes(i.id))) : ITEMS.filter((i) => av.owned.includes(i.id));
+    const items = shop ? ITEMS.filter((i) => i.sec === sec && !i.ach && (!only || av.owned.includes(i.id))) : ITEMS.filter((i) => av.owned.includes(i.id) && (closetTab === 'bg') === (i.slot === 'bg'));
+    const closetTabs = h('div', { class: 'seg pf-tabs', role: 'tablist' }, [['fit', 'Outfit'], ['bg', 'Backgrounds']].map(([id, label]) => h('button', { type: 'button', role: 'tab', class: 'seg-b' + (closetTab === id ? ' on' : ''), 'aria-selected': closetTab === id ? 'true' : 'false', onclick: () => { closetTab = id; draw(); } }, label)));
     const body = h('div', { class: 'shop-body' });
     for (const s of SLOTS) {
       const list = items.filter((i) => i.slot === s.id).sort((a, b) => a.price - b.price);
@@ -63,7 +65,7 @@ export async function render(root, params = {}) {
     const featured = (live.weekly.featured || []).map(itemById).filter(Boolean);
     const right = !shop ? h('section', { class: 'card pf-shop pf-closet' },
       h('div', { class: 'pf-shop-h' }, h('h2', { class: 'card-h' }, 'Your closet', h('small', null, `${av.owned.length} items`)), h('a', { class: 'btn main', href: '#/shop' }, 'Go to the shop')),
-      h('p', { class: 'muted pf-blurb' }, 'Tap Wear to put something on. The dots switch colours.'), body)
+      closetTabs, h('p', { class: 'muted pf-blurb' }, closetTab === 'bg' ? 'Pick the scene behind your fan. More in the shop under Backgrounds.' : 'Tap Wear to put something on. The dots switch colours.'), body)
       : h('section', { class: 'card pf-shop' },
       h('div', { class: 'pf-shop-h' }, h('h2', { class: 'card-h' }, 'Shop'),
         h('label', { class: 'pf-only' }, h('input', { type: 'checkbox', id: 'pf-owned', checked: only ? '' : null, onchange: (e) => { only = e.target.checked; draw(); } }), ' Owned only')),

@@ -2,10 +2,12 @@
 // Everything here is cosmetic. Nothing changes odds or payouts.
 import { getState, myTeams, buyItem, grantItem, setAvatar, track } from './store.js';
 import { betStats } from './bets.js';
-import { skinFromColors } from './util.js';
+import { skinFromColors, contrast, luminance, colorDistance, darken } from './util.js';
+import { teamColours } from './team-colors.js';
 import { dayKey, seeded } from './period.js';
 import { drawFan } from './fan.js';
 import './fan-items.js';
+import './fan-bgs.js';
 
 export const SKINS = ['#E3B85B', '#F0D3B5', '#DDAE86', '#C58B5E', '#A06A44', '#7A4A2E', '#523320'];
 export const HAIR_COLORS = ['#1A1410', '#3D281B', '#6E4A2A', '#B8935A', '#B7BBC4', '#A8402B', '#2C57A8', '#5E3FA6', '#B23F7F', '#2F8A57'];
@@ -13,6 +15,7 @@ export const SLOTS = [
   { id: 'expr', label: 'Expression' }, { id: 'hair', label: 'Hair' }, { id: 'hat', label: 'Hat' }, { id: 'face', label: 'Face' }, { id: 'beard', label: 'Facial hair' }, { id: 'ear', label: 'Ears' },
   { id: 'top', label: 'Top' }, { id: 'outer', label: 'Jacket' }, { id: 'scarf', label: 'Neckwear' }, { id: 'chain', label: 'Chain' }, { id: 'wrist', label: 'Wrist' },
   { id: 'bottom', label: 'Pants' }, { id: 'shoes', label: 'Shoes' }, { id: 'back', label: 'Back' }, { id: 'hand', label: 'In hand' },
+  { id: 'bg', label: 'Background' },
 ];
 // Shop sections. Each item belongs to one. Real brands and logos are not used; the labels are made up.
 export const SECTIONS = [
@@ -22,6 +25,7 @@ export const SECTIONS = [
   { id: 'street', label: 'Streetwear', blurb: 'The everyday fits, from baggy jeans to puffers.' },
   { id: 'formal', label: 'Formal', blurb: 'Shirts, suits, coats and good shoes.' },
   { id: 'brand', label: 'Designer', blurb: 'Labels and heavy jewellery. Priced like the real thing.' },
+  { id: 'bg', label: 'Backgrounds', blurb: 'The scene behind your fan: courts, rinks, stadiums and the city at night.' },
 ];
 // Body types are free. Upper body and legs are widened separately so a built frame gets broad
 // shoulders on normal legs, and clothes stretch with the body.
@@ -83,6 +87,7 @@ export const ITEMS = [
   I('sixhood', 'top', 'Sixside crest hoodie', 'brand', 4200), I('sixvarsity', 'outer', 'Sixside varsity', 'brand', 8500), I('duffel', 'hand', 'Maison monogram duffel', 'brand', 9000),
   I('cs_red', 'bottom', 'Courtside mesh shorts, red and black', 'brand', 4000), I('cs_purple', 'bottom', 'Courtside mesh shorts, purple and gold', 'brand', 4000),
   I('cs_green', 'bottom', 'Courtside mesh shorts, green and white', 'brand', 4000), I('cs_royal', 'bottom', 'Courtside mesh shorts, royal and white', 'brand', 4000),
+  I('cs_stars', 'bottom', 'Courtside pinstripe shorts, stars', 'brand', 4500), I('rj_purple', 'top', 'Courtside retro jersey, purple and gold', 'brand', 5000), I('rj_stars', 'top', 'Courtside pinstripe jersey, stars', 'brand', 5500),
 
   // ---- Team shop
   I('cap', 'hat', 'Team cap', 'team', 250, T), I('beanie', 'hat', 'Team beanie', 'team', 250, T), I('headband', 'hat', 'Headband', 'team', 150, T), I('durag', 'hat', 'Durag', 'team', 200, T),
@@ -93,6 +98,12 @@ export const ITEMS = [
   I('hightops', 'shoes', 'Team high tops', 'team', 500, T), I('retros', 'shoes', 'Team retros', 'team', 1200, T),
   I('scarf', 'scarf', 'Team scarf', 'team', 200, T), I('band', 'wrist', 'Wristband', 'team', 100, T), I('pendant', 'chain', 'Team pendant', 'team', 900, T), I('paint', 'face', 'Face paint', 'team', 150, T),
   I('backpack', 'back', 'Backpack', 'team', 400, T), I('cape', 'back', 'Team cape', 'team', 1500, T), I('finger', 'hand', 'Foam finger', 'team', 250, T), I('pennant', 'hand', 'Pennant', 'team', 150, T),
+
+  // ---- Backgrounds
+  I('night', 'bg', 'Night glow', 'bg', 0), I('dusk', 'bg', 'Dusk', 'bg', 0), I('teamwall', 'bg', 'Team wall', 'bg', 300, T),
+  I('court', 'bg', 'Home court', 'bg', 600, T), I('rink', 'bg', 'Rink', 'bg', 600), I('turf', 'bg', 'Gridiron', 'bg', 600), I('ballpark', 'bg', 'Ballpark', 'bg', 600),
+  I('locker', 'bg', 'Locker room', 'bg', 1200, T), I('lights', 'bg', 'Stadium lights', 'bg', 1500), I('city', 'bg', 'City at night', 'bg', 2000),
+  I('jumbo', 'bg', 'Jumbotron', 'bg', 3000, T), I('confetti', 'bg', 'Championship confetti', 'bg', 9000),
 
   // ---- Earned
   I('ghost', 'top', 'Ghost sheet', 'team', 0, { ach: 'Get rescued with free coins once' }), I('goldscarf', 'scarf', 'Golden scarf', 'team', 0, { ach: 'Win 5 bets in a row' }), I('trophycape', 'back', 'Trophy cape', 'team', 0, { ach: 'Hit a parlay' }),
@@ -141,6 +152,7 @@ const COLS = {
   techhood: [['Grey', '#8A8F96'], ['Black', '#1E1F23'], ['Navy', NV], ['Olive', OL], ['Dark grey', '#4A4E55']],
   techjog: [['Grey', '#8A8F96'], ['Black', '#1E1F23'], ['Navy', NV], ['Olive', OL], ['Dark grey', '#4A4E55']],
   sixhood: [['Black', '#141418'], ['Cream', CR], ['Forest', '#2F4F3A']],
+  cs_stars: [['Black', '#141418'], ['White', '#F2F1EC']], rj_stars: [['Black', '#141418'], ['White', '#F2F1EC']],
 };
 const SHADES = {
   carpenter: { '#66492E': 0.14 }, bagcargo: { '#4A5235': 0.14 }, flannel: { '#7A2222': 0.25 },
@@ -149,7 +161,7 @@ const SHADES = {
   leather: { '#0F0F15': 0.3 }, dressshirt: { '#FAFAF7': -0.3 }, turtleneck: { '#16161A': 0.2 }, blazer: { '#30343B': 0.15 }, suit: { '#18233B': 0.15 }, overcoat: { '#A57A4A': 0.12 },
   foghoodie: { '#7D8085': 0.12, '#878A8F': 0.05, '#666A70': 0.3 }, fogsweats: { '#7D8085': 0.12 }, techhood: { '#6F747B': 0.18 }, techjog: { '#6F747B': 0.18 }, sixhood: { '#0E0E12': 0.25 },
 };
-for (const id of ['shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal']) ITEMS.find((i) => i.id === id).short = true;
+for (const id of ['shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal', 'cs_stars']) ITEMS.find((i) => i.id === id).short = true;
 for (const it of ITEMS) if (COLS[it.id]) { it.colors = COLS[it.id].map(([n, k]) => ({ n, k })); it.shades = SHADES[it.id] || {}; }
 
 /** Darken (amt > 0) or lighten (amt < 0) a #rrggbb colour. */
@@ -166,7 +178,7 @@ export function setColour(id, i) {
   setAvatar((av) => { av.col = av.col || {}; av.col[id] = i; av.eq[it.slot] = id; });
   return true;
 }
-const NEUTRAL = { t1: '#4B5BA8', t2: '#2F3B7A', tink: '#FFFFFF', tacc: '#FFD43B' };
+const NEUTRAL = { t1: '#4B5BA8', t2: '#FFD43B', tink: '#FFFFFF', tout: '#1E2650', tacc: '#FFD43B', city: 'HOMEFIELD' };
 
 /** Earned items. Checked against your stats. */
 export const EARNED = {
@@ -236,10 +248,31 @@ export function avatarTeam(a = getState().avatar) {
   const teams = myTeams();
   return teams.find((t) => `${t.league}:${t.id}` === a.team) || teams[0] || null;
 }
+// Team gear uses up to three team colours: t1 the main body, t2 trim, tink lettering, tout the outline
+// around lettering, tacc small accents. city goes on jerseys and hoodies.
+export function cityOf(team) {
+  if (!team) return 'HOMEFIELD';
+  const name = String(team.name || ''), short = String(team.short || '');
+  const city = short && name.endsWith(short) ? name.slice(0, -short.length).trim() : '';
+  return (city || short || name || team.abbr || 'HOME').toUpperCase();
+}
 export function palette(team) {
   if (!team) return NEUTRAL;
-  const sk = skinFromColors(team.color, team.alt);
-  return { t1: sk.t1, t2: sk.t2, tink: sk.tink, tacc: sk.tacc };
+  const hex = (x) => (x ? (String(x).startsWith('#') ? String(x) : '#' + x) : '');
+  let cs = teamColours(team);
+  if (!cs) {
+    const sk = skinFromColors(team.color, team.alt), a = hex(team.alt);
+    const c2 = a && colorDistance(a, sk.t1) > 60 ? a : sk.t2;
+    cs = [sk.t1, c2, luminance(sk.t1) < 0.3 ? '#FFFFFF' : '#111111'];
+  }
+  const [t1, c2, c3] = cs, W = '#FFFFFF', D = '#0B1220';
+  const far = (x, y) => colorDistance(x, y) > 60;
+  const t2 = far(c2, t1) ? c2 : far(c3, t1) ? c3 : darken(t1, 0.42);
+  const dark = luminance(t1) < 0.3;
+  const tink = [c2, c3, W, D].find((x) => contrast(x, t1) >= 3 && (dark ? luminance(x) > 0.2 : luminance(x) < 0.2)) || (dark ? W : D);
+  const tout = [t2, c3, c2, dark ? D : W].find((x) => far(x, tink) && contrast(x, tink) >= 1.6) || (dark ? D : W);
+  const tacc = [c3, c2].find((x) => far(x, t1)) || tink;
+  return { t1, t2, tink, tout, tacc, city: cityOf(team) };
 }
 
 /* ---------- drawing ---------- */
@@ -248,7 +281,7 @@ export function palette(team) {
 const FULL = '0 -14 200 354';
 const BUST = '42 -14 116 150';
 const HEADVB = '50 -12 100 124';
-const VB = { expr: HEADVB, hair: HEADVB, hat: HEADVB, face: HEADVB, beard: HEADVB, ear: HEADVB, top: '18 90 164 132', outer: '12 90 176 180', scarf: '46 92 108 112', chain: '50 94 100 84', wrist: '14 176 76 64', bottom: '28 178 144 162', shoes: '40 282 120 54', back: '-30 -20 260 364', hand: '70 120 130 170' };
+const VB = { expr: HEADVB, hair: HEADVB, hat: HEADVB, face: HEADVB, beard: HEADVB, ear: HEADVB, top: '18 90 164 132', outer: '12 90 176 180', scarf: '46 92 108 112', chain: '50 94 100 84', wrist: '14 176 76 64', bottom: '28 178 144 162', shoes: '40 282 120 54', back: '-30 -20 260 364', hand: '70 120 130 170', bg: FULL };
 const cache = new Map();
 
 /** Returns the SVG markup for a character. vb overrides the view box (shop previews and busts). */
@@ -268,7 +301,7 @@ export function avatarSvg(av, team, vb) {
     skin: SKINS[av.skin] ?? SKINS[2],
     hair: HAIR_COLORS[av.hairColor] ?? HAIR_COLORS[0],
     eq: { ...eq, hair: eq.hair || 'short', top: eq.top || 'tee', bottom: eq.bottom || 'jeans', shoes: eq.shoes || 'sneakers' },
-    colourOf, pal, build: body.id,
+    colourOf, pal, build: body.id, bg: !vb || vb === FULL || vb === BUST,
   });
   const out = `<svg viewBox="${vb || FULL}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
   if (cache.size > 120) cache.delete(cache.keys().next().value);
