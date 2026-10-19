@@ -234,7 +234,7 @@ export function hand(P, side, wj, sk, scale = 1) {
 
 /* ------------------------------------------------------------------ head and face */
 // skull, temple, a cheekbone that sits widest near the eyes, a slight hollow below it, a defined jaw angle and a squarer chin
-const HEAD_R = (jaw) => [[100, 22], [115, 24], [127, 31.5], [133, 44], [134.6, 58], [134.2, 70], [132.2 + jaw * 0.4, 81], [128.6 + jaw * 0.8, 90.5], [121 + jaw * 0.7, 99.5], [110.5 + jaw * 0.3, 105.6], [104, 107.2]];
+const HEAD_R = (jaw) => [[100, 22], [115, 24], [127, 31.5], [133, 44], [134.6, 57], [134.4, 67], [132.6 + jaw * 0.4, 78], [130.6 + jaw * 0.8, 86.5], [128.6 + jaw * 0.8, 92], [121.5 + jaw * 0.7, 99.8], [111.5 + jaw * 0.3, 105.2], [104, 106.9]];
 const HEAD = (jaw) => { const R = HEAD_R(jaw); return [...R, ...R.slice(1).reverse().map(([x, y]) => [200 - x, y])]; };
 export function drawHead(P, sk, hairCol, opts = {}) {
   const jaw = opts.jaw || 0;
@@ -255,6 +255,10 @@ export function drawHead(P, sk, hairCol, opts = {}) {
     // the right side of the face turns away from the light
     `<path d="${blob([[119, 18], [142, 30], [142, 112], [106, 112], [118, 101], [125.5, 90], [127.5, 76], [127, 56], [123, 38]])}" fill="${sk.sh}"/>`,
     `<path d="${blob([[134, 66], [141, 74], [139, 104], [112, 110], [121, 100], [129, 88]])}" fill="${sk.deep}"/>`,
+    // soft cheek definition: a lit cheekbone and a gentle hollow under it on both sides
+    `<path d="${blob([[71, 66], [78, 67.6], [81.5, 71.5], [74, 72.4]])}" fill="${sk.hi}" opacity="0.6"/>`,
+    `<path d="${blob([[69.5, 75], [75, 77.5], [83, 87], [85, 92], [79, 89], [72, 82]])}" fill="${sk.sh}" opacity="0.38"/>`,
+    `<path d="${blob([[130.5, 75], [125, 77.5], [117, 87], [115, 92], [121, 89], [128, 82]])}" fill="${sk.deep}" opacity="0.3"/>`,
     // cheekbone hollows and the jaw line on the lit side
     `<path d="${curve([[70.5, 88], [77, 97.5], [88, 104.2]])}" fill="none" stroke="${sk.sh}" stroke-width="2.6" stroke-linecap="round"/>`,
     // lit forehead and the chin
@@ -335,6 +339,9 @@ export function drawHead(P, sk, hairCol, opts = {}) {
 }
 
 /* ------------------------------------------------------------------ registry of item recipes */
+// the head (and everything worn on it) is drawn in its own space and scaled down about the chin for a better head-to-body ratio
+export const HEAD_SCALE = 0.87;
+const HEADG = `<g transform="translate(100 107) scale(${HEAD_SCALE}) translate(-100 -107)">`;
 export const ART = { expr: {}, hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, outer: {}, scarf: {}, chain: {}, wrist: {}, bottom: {}, shoes: {}, back: {}, hand: {} };
 
 /** Draw the whole fan. ctx: { skin, hair, eq, colourOf(id), pal, build } -> svg inner markup */
@@ -351,7 +358,7 @@ export function drawFan(ctx) {
   // ground shadow
   P.ell(CX, 326, 52, 6, '#000000', { op: 0.28 });
   run('back', 'back');
-  run('hair', 'back');
+  P.add(HEADG); run('hair', 'back'); P.add('</g>');
   // legs (bare skin under trousers, so shorts show real legs)
   for (const side of [-1, 1]) {
     const T = tube(g.legJ(side));
@@ -416,9 +423,11 @@ export function drawFan(ctx) {
   run('top', 'cuffs'); run('outer', 'cuffs');
   run('wrist', 'wrist'); run('hand', 'hand');
   // head
+  P.add(HEADG);
   drawHead(P, sk, ctx.hair, { jaw: B.jaw, expr: ctx.eq.expr, beforeFace: () => run('beard', 'face') });
   run('ear', 'face'); run('face', 'face');
   run('hair', 'front');
   run('hat', 'head');
+  P.add('</g>');
   return P.toString();
 }
