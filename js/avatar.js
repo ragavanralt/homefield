@@ -144,6 +144,22 @@ export const ITEMS = [
   I('dz_gothic', 'bottom', 'Gothic patch jeans', 'brand', 15000), I('dz_graffiti', 'bottom', 'Graffiti print jeans', 'brand', 9000),
   I('dz_bandana', 'bottom', 'Bandana print jeans', 'brand', 7500), I('dz_stars', 'bottom', 'Star stencil jeans', 'brand', 8000), I('dz_splatter', 'bottom', 'Paint splatter jeans', 'brand', 6500),
 
+  // ---- More blanks
+  I('pockettee', 'top', 'Pocket tee', 'blank', 50), I('thermal', 'top', 'Waffle thermal', 'blank', 120), I('plainhood', 'top', 'Plain hoodie', 'blank', 200),
+  I('zipblank', 'outer', 'Zip-up hoodie', 'blank', 250), I('sweatpants', 'bottom', 'Sweatpants', 'blank', 120), I('chinos', 'bottom', 'Chinos', 'blank', 150),
+  I('meshshorts', 'bottom', 'Mesh shorts', 'blank', 80), I('cargoshorts', 'bottom', 'Cargo shorts', 'blank', 100), I('plainbeanie', 'hat', 'Plain beanie', 'blank', 60),
+
+  // ---- Trend pieces
+  I('balloon', 'outer', 'Balloon bomber', 'street', 2400), I('shearling', 'outer', 'Shearling jacket', 'street', 3200), I('anorak', 'outer', 'Quilted anorak', 'street', 1800),
+  I('fleece', 'outer', 'Pile fleece', 'street', 1200), I('linervest', 'outer', 'Quilted liner vest', 'street', 700), I('boucle', 'outer', 'Cropped bouclé jacket', 'street', 1600),
+  I('gorp', 'outer', 'Trail shell', 'street', 2000), I('suedeblue', 'outer', 'Blue suede trucker', 'street', 2600), I('leathercrop', 'outer', 'Cropped leather jacket', 'street', 2800),
+  I('fauxfur', 'outer', 'Faux fur coat', 'street', 3000), I('workjacket', 'outer', 'Hooded work jacket', 'street', 1500),
+  I('heavyhood', 'top', 'Heavyweight boxy hoodie', 'street', 600), I('mohair', 'top', 'Fuzzy mohair knit', 'street', 900),
+  I('balaclava', 'hat', 'Knit balaclava', 'street', 500), I('camp5', 'hat', 'Five-panel camp cap', 'street', 400),
+  I('clogs', 'shoes', 'Clogs', 'street', 700), I('trail', 'shoes', 'Trail runners', 'street', 900),
+  I('wrapshades', 'face', 'Wraparound sport shades', 'street', 600), I('pearls', 'chain', 'Pearl necklace', 'street', 1200), I('sling', 'back', 'Crossbody sling', 'street', 800),
+  I('pleated', 'bottom', 'Loose pleated trousers', 'formal', 1000), I('bigcoat', 'outer', 'Houndstooth overcoat', 'formal', 4200),
+
   // ---- Team sleeves and bands
   I('armsleeve', 'armwear', 'Arm sleeve', 'team', 300, T), I('shooter', 'armwear', 'Shooter sleeve', 'team', 250, T),
   I('legsleeve', 'legwear', 'Leg sleeve', 'team', 350, T), I('kneesleeve', 'legwear', 'Knee sleeve', 'team', 250, T), I('calfbands', 'legwear', 'Calf bands', 'team', 150, T),
@@ -206,6 +222,35 @@ const COLS = {
   zipopen: [['Charcoal', '#3A3D44'], ['Black', BK], ['Heather', HG], ['Navy', NV], ['Cream', CR]],
   chore: [['Indigo', '#2E4A6E'], ['Brown duck', '#7A5A3A'], ['Black', BK], ['Olive', OL]],
   cardigan: [['Burgundy', '#6B1E2A'], ['Cream', CR], ['Black', BK], ['Forest', '#2F4F3A'], ['Navy', NV]],
+  pockettee: [['White', W], ['Black', BK], ['Heather', HG], ['Navy', NV], ['Cream', CR], ['Olive', OL], ['Sky', '#8DB4D8']],
+  thermal: [['Oat', '#E6DFD0'], ['Black', BK], ['Heather', HG], ['Brown', '#6B4E3A']],
+  plainhood: [['Heather', HG], ['Black', BK], ['Navy', NV], ['Cream', CR], ['Forest', '#2F4F3A'], ['Brown', '#6B4E3A']],
+  zipblank: [['Charcoal', '#2A2D33'], ['Heather', HG], ['Navy', NV], ['Cream', CR]],
+  sweatpants: [['Heather', HG], ['Black', BK], ['Navy', NV], ['Cream', CR], ['Brown', '#6B4E3A']],
+  chinos: [['Khaki', '#B9A37A'], ['Navy', NV], ['Olive', OL], ['Black', BK], ['Stone', '#D2C8B0']],
+  meshshorts: [['Black', '#16161A'], ['Royal', '#264A99'], ['Red', '#9B2C2C'], ['White', '#E6E6E2'], ['Grey', '#7A7D84']],
+  cargoshorts: [['Khaki', '#9C8B63'], ['Olive', OL], ['Black', BK], ['Stone', '#B9B09A']],
+  plainbeanie: [['Black', BK], ['Grey', HG], ['Navy', NV], ['Cream', CR], ['Orange', '#E36414'], ['Brown', '#6B4E3A']],
+  balloon: [['Caramel', '#A0662E'], ['Black', BK], ['Chocolate', '#4A2E1E'], ['Olive', OL]],
+  shearling: [['Toffee', '#8B5A2B'], ['Black', BK], ['Chocolate', '#4A2E1E']],
+  anorak: [['Olive', '#4E5A3F'], ['Black', BK], ['Navy', NV], ['Sand', '#B9AC92']],
+  fleece: [['Cream', '#E9E2D0'], ['Black', BK], ['Moss', '#5B6440'], ['Brown', '#6B4E3A']],
+  linervest: [['Olive', '#3A4A3A'], ['Black', BK], ['Navy', NV], ['Orange', '#E36414']],
+  boucle: [['Beige', '#D8CDB6'], ['Black', BK], ['Cream', CR]],
+  gorp: [['Forest', '#2F4F3A'], ['Black', BK], ['Navy', NV], ['Sand', '#B9AC92']],
+  suedeblue: [['Blue suede', '#3E6FB5'], ['Tan suede', '#B07A4A'], ['Black suede', '#2A2B30']],
+  leathercrop: [['Chocolate', '#3B2418'], ['Tobacco', '#6B4226'], ['Caramel', '#A0662E'], ['Black', '#17171F']],
+  fauxfur: [['Brown', '#8A6A4A'], ['Cream', '#E6DCC8'], ['Black', '#1E1E22']],
+  workjacket: [['Brown duck', '#7A5A3A'], ['Black', BK], ['Moss', '#5B6440']],
+  heavyhood: [['Charcoal', '#4A4E55'], ['Black', BK], ['Cream', CR], ['Brown', '#6B4E3A'], ['Sage', '#9AA58C']],
+  mohair: [['Pink', '#B23F7F'], ['Cream', CR], ['Black', BK], ['Green', '#2F8A57'], ['Blue', '#2C57A8']],
+  balaclava: [['Charcoal', '#2A2D33'], ['Cream', CR], ['Black', BK], ['Brown', '#6B4E3A']],
+  camp5: [['Olive', '#4E5A3F'], ['Black', BK], ['Navy', NV], ['Tan', '#B9AC92']],
+  clogs: [['Brown', '#8B6B4A'], ['Black', BK], ['Taupe', '#A89A88']],
+  trail: [['Grey', '#6B7078'], ['Black', BK], ['Cream', '#E9E2D0'], ['Olive', OL]],
+  sling: [['Black', '#1C1C21'], ['Olive', OL], ['Grey', '#7A7D84']],
+  pleated: [['Brown', '#4A4038'], ['Grey', '#6B6B70'], ['Black', BK], ['Cream', CR]],
+  bigcoat: [['Charcoal', '#2C2C30'], ['Camel', '#B98B58'], ['Black', '#141416']],
 };
 const SHADES = {
   carpenter: { '#66492E': 0.14 }, bagcargo: { '#4A5235': 0.14 }, flannel: { '#7A2222': 0.25 },
@@ -214,7 +259,7 @@ const SHADES = {
   leather: { '#0F0F15': 0.3 }, dressshirt: { '#FAFAF7': -0.3 }, turtleneck: { '#16161A': 0.2 }, blazer: { '#30343B': 0.15 }, suit: { '#18233B': 0.15 }, overcoat: { '#A57A4A': 0.12 },
   foghoodie: { '#7D8085': 0.12, '#878A8F': 0.05, '#666A70': 0.3 }, fogsweats: { '#7D8085': 0.12 }, techhood: { '#6F747B': 0.18 }, techjog: { '#6F747B': 0.18 }, sixhood: { '#0E0E12': 0.25 },
 };
-for (const id of ['shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal', 'cs_stars', 'rt_lux_chi', 'rt_lux_la', 'rt_lux_bos', 'rt_lux_cha', 'rt_blau_sh', 'rt_bra_sh']) ITEMS.find((i) => i.id === id).short = true;
+for (const id of ['shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal', 'cs_stars', 'rt_lux_chi', 'rt_lux_la', 'rt_lux_bos', 'rt_lux_cha', 'rt_blau_sh', 'rt_bra_sh', 'meshshorts', 'cargoshorts']) ITEMS.find((i) => i.id === id).short = true;
 for (const it of ITEMS) if (COLS[it.id]) { it.colors = COLS[it.id].map(([n, k]) => ({ n, k })); it.shades = SHADES[it.id] || {}; }
 
 /** Darken (amt > 0) or lighten (amt < 0) a #rrggbb colour. */

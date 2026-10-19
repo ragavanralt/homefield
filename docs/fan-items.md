@@ -2,7 +2,7 @@
 
 Updated Oct 19, 2026. Generated from js/avatar.js.
 
-Total: 237 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
+Total: 268 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
 
 ## Character basics (free)
 
@@ -17,20 +17,20 @@ Total: 237 items. Prices are in coins. "Team" means the item takes the colours o
 |---|---|
 | Expression | 6 |
 | Hair | 16 |
-| Hat | 16 |
-| Face | 8 |
+| Hat | 19 |
+| Face | 9 |
 | Facial hair | 4 |
 | Ears | 2 |
-| Top | 67 |
-| Jacket | 25 |
+| Top | 72 |
+| Jacket | 38 |
 | Neckwear | 5 |
-| Chain | 6 |
+| Chain | 7 |
 | Wrist | 5 |
 | Arm sleeve | 2 |
-| Pants | 37 |
+| Pants | 42 |
 | Leg sleeve | 3 |
-| Shoes | 14 |
-| Back | 4 |
+| Shoes | 16 |
+| Back | 5 |
 | In hand | 5 |
 | Background | 12 |
 
@@ -178,7 +178,7 @@ Hair, faces, beards and earrings.
 | Gold hoops | hoops | Ears | 700 | rare |  |  |
 | Gold grill | grill | Face | 1,500 | rare |  |  |
 
-## Blanks (14)
+## Blanks (23)
 
 Plain basics. Cheap, no logos.
 
@@ -198,8 +198,17 @@ Plain basics. Cheap, no logos.
 | Ball | ball | In hand | 100 | common |  |  |
 | Shades | shades | Face | 150 | common |  |  |
 | Work boots | boots | Shoes | 180 | common |  | Brown, Wheat, Black |
+| Pocket tee | pockettee | Top | 50 | common |  | White, Black, Heather, Navy, Cream, Olive, Sky |
+| Waffle thermal | thermal | Top | 120 | common |  | Oat, Black, Heather, Brown |
+| Plain hoodie | plainhood | Top | 200 | common |  | Heather, Black, Navy, Cream, Forest, Brown |
+| Zip-up hoodie | zipblank | Jacket | 250 | common |  | Charcoal, Heather, Navy, Cream |
+| Sweatpants | sweatpants | Pants | 120 | common |  | Heather, Black, Navy, Cream, Brown |
+| Chinos | chinos | Pants | 150 | common |  | Khaki, Navy, Olive, Black, Stone |
+| Mesh shorts | meshshorts | Pants | 80 | common |  | Black, Royal, Red, White, Grey |
+| Cargo shorts | cargoshorts | Pants | 100 | common |  | Khaki, Olive, Black, Stone |
+| Plain beanie | plainbeanie | Hat | 60 | common |  | Black, Grey, Navy, Cream, Orange, Brown |
 
-## Streetwear (32)
+## Streetwear (52)
 
 The everyday fits, from baggy jeans to puffers.
 
@@ -237,8 +246,28 @@ The everyday fits, from baggy jeans to puffers.
 | Open zip hoodie | zipopen | Jacket | 700 | rare |  | Charcoal, Black, Heather, Navy, Cream |
 | Chore coat | chore | Jacket | 900 | rare |  | Indigo, Brown duck, Black, Olive |
 | Open cardigan | cardigan | Jacket | 800 | rare |  | Burgundy, Cream, Black, Forest, Navy |
+| Balloon bomber | balloon | Jacket | 2,400 | epic |  | Caramel, Black, Chocolate, Olive |
+| Shearling jacket | shearling | Jacket | 3,200 | epic |  | Toffee, Black, Chocolate |
+| Quilted anorak | anorak | Jacket | 1,800 | rare |  | Olive, Black, Navy, Sand |
+| Pile fleece | fleece | Jacket | 1,200 | rare |  | Cream, Black, Moss, Brown |
+| Quilted liner vest | linervest | Jacket | 700 | rare |  | Olive, Black, Navy, Orange |
+| Cropped bouclé jacket | boucle | Jacket | 1,600 | rare |  | Beige, Black, Cream |
+| Trail shell | gorp | Jacket | 2,000 | epic |  | Forest, Black, Navy, Sand |
+| Blue suede trucker | suedeblue | Jacket | 2,600 | epic |  | Blue suede, Tan suede, Black suede |
+| Cropped leather jacket | leathercrop | Jacket | 2,800 | epic |  | Chocolate, Tobacco, Caramel, Black |
+| Faux fur coat | fauxfur | Jacket | 3,000 | epic |  | Brown, Cream, Black |
+| Hooded work jacket | workjacket | Jacket | 1,500 | rare |  | Brown duck, Black, Moss |
+| Heavyweight boxy hoodie | heavyhood | Top | 600 | rare |  | Charcoal, Black, Cream, Brown, Sage |
+| Fuzzy mohair knit | mohair | Top | 900 | rare |  | Pink, Cream, Black, Green, Blue |
+| Knit balaclava | balaclava | Hat | 500 | rare |  | Charcoal, Cream, Black, Brown |
+| Five-panel camp cap | camp5 | Hat | 400 | rare |  | Olive, Black, Navy, Tan |
+| Clogs | clogs | Shoes | 700 | rare |  | Brown, Black, Taupe |
+| Trail runners | trail | Shoes | 900 | rare |  | Grey, Black, Cream, Olive |
+| Wraparound sport shades | wrapshades | Face | 600 | rare |  |  |
+| Pearl necklace | pearls | Chain | 1,200 | rare |  |  |
+| Crossbody sling | sling | Back | 800 | rare |  | Black, Olive, Grey |
 
-## Formal (16)
+## Formal (18)
 
 Shirts, suits, coats and good shoes.
 
@@ -260,6 +289,8 @@ Shirts, suits, coats and good shoes.
 | Bow tie | bowtie | Neckwear | 400 | rare |  |  |
 | Round glasses | glasses | Face | 500 | rare |  |  |
 | Dress watch | dresswatch | Wrist | 3,000 | epic |  |  |
+| Loose pleated trousers | pleated | Pants | 1,000 | rare |  | Brown, Grey, Black, Cream |
+| Houndstooth overcoat | bigcoat | Jacket | 4,200 | epic |  | Charcoal, Camel, Black |
 
 ## Designer (40)
 
