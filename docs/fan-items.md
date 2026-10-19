@@ -2,7 +2,7 @@
 
 Updated Oct 19, 2026. Generated from js/avatar.js.
 
-Total: 286 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
+Total: 280 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
 
 ## Character basics (free)
 
@@ -26,15 +26,15 @@ Total: 286 items. Prices are in coins. "Team" means the item takes the colours o
 | Neckwear | 5 |
 | Chain | 7 |
 | Wrist | 5 |
-| Arm sleeve | 12 |
+| Arm sleeve | 8 |
 | Pants | 42 |
-| Leg sleeve | 11 |
+| Leg sleeve | 9 |
 | Shoes | 16 |
 | Back | 5 |
 | In hand | 5 |
 | Background | 12 |
 
-## Team shop (39)
+## Team shop (35)
 
 Gear in the colours of the team you follow.
 
@@ -67,20 +67,16 @@ Gear in the colours of the team you follow.
 | Pennant | pennant | In hand | 150 | common | Team colours |  |
 | Arm sleeve | armsleeve | Arm sleeve | 300 | common | Team colours |  |
 | Shooter sleeve | shooter | Arm sleeve | 250 | common | Team colours |  |
-| Arm sleeves, both arms | armsleeves | Arm sleeve | 500 | rare | Team colours |  |
-| Shooter sleeves, both arms | shootersleeves | Arm sleeve | 420 | rare | Team colours |  |
-| Full sleeve, shoulder to wrist | fullsleeve | Arm sleeve | 450 | rare | Team colours |  |
-| Full sleeves, both arms | fullsleeves | Arm sleeve | 800 | rare | Team colours |  |
-| Full leg sleeves, both legs | fullleg | Leg sleeve | 700 | rare | Team colours |  |
-| Full leg sleeve, one leg | fullleg1 | Leg sleeve | 450 | rare | Team colours |  |
+| Full sleeve undershirt | fullsleeve | Arm sleeve | 450 | rare | Team colours |  |
 | Leg sleeve | legsleeve | Leg sleeve | 350 | common | Team colours |  |
 | Knee sleeve | kneesleeve | Leg sleeve | 250 | common | Team colours |  |
 | Calf bands | calfbands | Leg sleeve | 150 | common | Team colours |  |
+| Full leg sleeve | fullleg | Leg sleeve | 450 | rare | Team colours |  |
 | Ghost sheet | ghost | Top | - | earned | Earned: Get rescued with free coins once |  |
 | Golden scarf | goldscarf | Neckwear | - | earned | Earned: Win 5 bets in a row |  |
 | Trophy cape | trophycape | Back | - | earned | Earned: Hit a parlay |  |
 
-## Casual (12)
+## Casual (10)
 
 Sport-brand style sleeves and calf bands in fixed colours: black, white, red and royal. Original marks, no real logos.
 
@@ -90,14 +86,12 @@ Sport-brand style sleeves and calf bands in fixed colours: black, white, red and
 | White calf bands | whitecalf | Leg sleeve | 200 | common |  |  |
 | Black and red calf bands | bredcalf | Leg sleeve | 350 | common |  |  |
 | Royal and gold calf bands | royalcalf | Leg sleeve | 350 | common |  |  |
-| Black full leg sleeves, both legs | blackleg | Leg sleeve | 600 | rare |  |  |
-| Black full leg sleeve, one leg | blackleg1 | Leg sleeve | 350 | common |  |  |
-| Black full sleeve | fsblack1 | Arm sleeve | 350 | common |  |  |
-| Black full sleeves, both arms | fsblack | Arm sleeve | 700 | rare |  |  |
-| White full sleeves, both arms | fswhite | Arm sleeve | 700 | rare |  |  |
-| Black and red full sleeves | fsbred | Arm sleeve | 900 | rare |  |  |
-| Royal and gold full sleeves | fsroyal | Arm sleeve | 900 | rare |  |  |
-| Black elbow sleeves | elbowblack | Arm sleeve | 250 | common |  |  |
+| Black full leg sleeve | blackleg | Leg sleeve | 350 | common |  |  |
+| Black full sleeve undershirt | fsblack | Arm sleeve | 450 | rare |  |  |
+| White full sleeve undershirt | fswhite | Arm sleeve | 450 | rare |  |  |
+| Black and red full sleeve undershirt | fsbred | Arm sleeve | 600 | rare |  |  |
+| Royal and gold full sleeve undershirt | fsroyal | Arm sleeve | 600 | rare |  |  |
+| Black elbow sleeve | elbowblack | Arm sleeve | 250 | common |  |  |
 
 ## Retros (60)
 

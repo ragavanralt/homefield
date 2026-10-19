@@ -4,7 +4,7 @@ import { getState, getBank, myTeams, setAvatar, onSlipChange, track } from '../s
 import { ensureLive } from '../live.js';
 import { pageHead } from '../components.js';
 import { levelFor, rankFor, betStats } from '../bets.js';
-import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, saveFit, wearFit, deleteFit, MAX_FITS, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
+import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, setSide, sideOf, saveFit, wearFit, deleteFit, MAX_FITS, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
@@ -104,7 +104,7 @@ export async function render(root, params = {}) {
     }));
     return h('section', { class: 'card pf-wide pf-fits' }, head, fits.length ? grid : h('p', { class: 'muted' }, 'Dress how you like, then save it. Switch between your fits in one tap.'));
   }
-  const snapOf = (a) => ({ s: a.skin, h: a.hairColor, b: a.body, t: a.team || '', c: a.col || {}, e: a.eq });
+  const snapOf = (a) => ({ s: a.skin, h: a.hairColor, b: a.body, t: a.team || '', c: a.col || {}, d: a.side || {}, e: a.eq });
 
   function itemCard(it, av, bank, team, deal) {
     const owned = av.owned.includes(it.id);
@@ -123,7 +123,14 @@ export async function render(root, params = {}) {
       h('div', { class: 'it-n' }, it.name),
       h('small', { class: 'it-t' }, TIERS[it.tier].label),
       it.colors ? colourDots(it, av, owned) : null,
+      it.sided && owned ? sideToggle(it, av) : null,
       act);
+  }
+
+  // Left, both or right: which arm or leg a sleeve goes on. Left and right are as you see them.
+  function sideToggle(it, av) {
+    const cur = sideOf(av, it.id);
+    return h('div', { class: 'seg it-side', role: 'group', 'aria-label': 'Which side' }, [['left', 'L'], ['both', 'Both'], ['right', 'R']].map(([v, label]) => h('button', { type: 'button', class: 'seg-b' + (cur === v ? ' on' : ''), 'data-side': v, 'aria-pressed': cur === v ? 'true' : 'false', onclick: () => { setSide(it.id, v); draw(); } }, label)));
   }
 
   // Small swatches on the card. Owned items switch colour right there; the + opens the full menu.

@@ -162,15 +162,15 @@ export const ITEMS = [
   I('pleated', 'bottom', 'Loose pleated trousers', 'formal', 1000), I('bigcoat', 'outer', 'Houndstooth overcoat', 'formal', 4200),
 
   // ---- Team sleeves and bands
-  I('armsleeve', 'armwear', 'Arm sleeve', 'team', 300, T), I('shooter', 'armwear', 'Shooter sleeve', 'team', 250, T),
-  I('armsleeves', 'armwear', 'Arm sleeves, both arms', 'team', 500, T), I('shootersleeves', 'armwear', 'Shooter sleeves, both arms', 'team', 420, T),
-  I('fullsleeve', 'armwear', 'Full sleeve, shoulder to wrist', 'team', 450, T), I('fullsleeves', 'armwear', 'Full sleeves, both arms', 'team', 800, T), I('fullleg', 'legwear', 'Full leg sleeves, both legs', 'team', 700, T), I('fullleg1', 'legwear', 'Full leg sleeve, one leg', 'team', 450, T),
+  I('armsleeve', 'armwear', 'Arm sleeve', 'team', 300, { team: true, sided: true }), I('shooter', 'armwear', 'Shooter sleeve', 'team', 250, { team: true, sided: true }),
+  I('fullsleeve', 'armwear', 'Full sleeve undershirt', 'team', 450, { team: true, sided: true }),
+  I('legsleeve', 'legwear', 'Leg sleeve', 'team', 350, { team: true, sided: true }), I('kneesleeve', 'legwear', 'Knee sleeve', 'team', 250, { team: true, sided: true }), I('calfbands', 'legwear', 'Calf bands', 'team', 150, { team: true, sided: true }),
+  I('fullleg', 'legwear', 'Full leg sleeve', 'team', 450, { team: true, sided: true }),
   // ---- Casual: sport-brand style pieces in fixed colours
-  I('blackcalf', 'legwear', 'Black calf bands', 'casual', 200), I('whitecalf', 'legwear', 'White calf bands', 'casual', 200), I('bredcalf', 'legwear', 'Black and red calf bands', 'casual', 350), I('royalcalf', 'legwear', 'Royal and gold calf bands', 'casual', 350),
-  I('blackleg', 'legwear', 'Black full leg sleeves, both legs', 'casual', 600), I('blackleg1', 'legwear', 'Black full leg sleeve, one leg', 'casual', 350),
-  I('fsblack1', 'armwear', 'Black full sleeve', 'casual', 350), I('fsblack', 'armwear', 'Black full sleeves, both arms', 'casual', 700), I('fswhite', 'armwear', 'White full sleeves, both arms', 'casual', 700),
-  I('fsbred', 'armwear', 'Black and red full sleeves', 'casual', 900), I('fsroyal', 'armwear', 'Royal and gold full sleeves', 'casual', 900), I('elbowblack', 'armwear', 'Black elbow sleeves', 'casual', 250),
-  I('legsleeve', 'legwear', 'Leg sleeve', 'team', 350, T), I('kneesleeve', 'legwear', 'Knee sleeve', 'team', 250, T), I('calfbands', 'legwear', 'Calf bands', 'team', 150, T),
+  I('blackcalf', 'legwear', 'Black calf bands', 'casual', 200, { sided: true }), I('whitecalf', 'legwear', 'White calf bands', 'casual', 200, { sided: true }), I('bredcalf', 'legwear', 'Black and red calf bands', 'casual', 350, { sided: true }), I('royalcalf', 'legwear', 'Royal and gold calf bands', 'casual', 350, { sided: true }),
+  I('blackleg', 'legwear', 'Black full leg sleeve', 'casual', 350, { sided: true }),
+  I('fsblack', 'armwear', 'Black full sleeve undershirt', 'casual', 450, { sided: true }), I('fswhite', 'armwear', 'White full sleeve undershirt', 'casual', 450, { sided: true }),
+  I('fsbred', 'armwear', 'Black and red full sleeve undershirt', 'casual', 600, { sided: true }), I('fsroyal', 'armwear', 'Royal and gold full sleeve undershirt', 'casual', 600, { sided: true }), I('elbowblack', 'armwear', 'Black elbow sleeve', 'casual', 250, { sided: true }),
 
   // ---- Earned
   I('ghost', 'top', 'Ghost sheet', 'team', 0, { ach: 'Get rescued with free coins once' }), I('goldscarf', 'scarf', 'Golden scarf', 'team', 0, { ach: 'Win 5 bets in a row' }), I('trophycape', 'back', 'Trophy cape', 'team', 0, { ach: 'Hit a parlay' }),
@@ -276,6 +276,13 @@ export function shadeHex(hex, amt) {
   const f = (x) => Math.max(0, Math.min(255, Math.round(amt > 0 ? x * (1 - amt) : x + (255 - x) * -amt)));
   return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(f).map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
+export const sideOf = (av, id) => (av.side && av.side[id]) || 'both';
+export function setSide(id, v) {
+  const it = itemById(id);
+  if (!it || !it.sided || !['left', 'right', 'both'].includes(v) || !getState().avatar.owned.includes(id)) return false;
+  setAvatar((av) => { av.side = av.side || {}; av.side[id] = v; av.eq[it.slot] = id; });
+  return true;
+}
 export const colourIndex = (av, id) => (av.col && av.col[id]) || 0;
 export function setColour(id, i) {
   const it = itemById(id);
@@ -351,7 +358,7 @@ export function unequip(slot) {
 
 // Saved fits: a named snapshot of the whole look (body, skin, hair colour, team, colours, worn items).
 export const MAX_FITS = 12;
-const snap = (a) => ({ skin: a.skin, hairColor: a.hairColor, body: a.body, team: a.team || '', col: { ...(a.col || {}) }, eq: { ...a.eq } });
+const snap = (a) => ({ skin: a.skin, hairColor: a.hairColor, body: a.body, team: a.team || '', col: { ...(a.col || {}) }, side: { ...(a.side || {}) }, eq: { ...a.eq } });
 export function fitsList() { return getState().avatar.fits || []; }
 export function saveFit(name) {
   const fits = fitsList();
@@ -367,7 +374,7 @@ export function wearFit(id) {
   setAvatar((a) => {
     const eq = {};
     for (const [slot, item] of Object.entries(fit.eq || {})) if (a.owned.includes(item)) eq[slot] = item; // skip anything no longer owned
-    a.skin = fit.skin; a.hairColor = fit.hairColor; a.body = fit.body; a.team = fit.team || ''; a.col = { ...(fit.col || {}) };
+    a.skin = fit.skin; a.hairColor = fit.hairColor; a.body = fit.body; a.team = fit.team || ''; a.col = { ...(fit.col || {}) }; a.side = { ...(fit.side || {}) };
     a.eq = { ...a.eq, ...eq };
     for (const slot of Object.keys(a.eq)) if (!(slot in eq) && !ALWAYS_ON.includes(slot)) delete a.eq[slot];
   });
@@ -422,7 +429,7 @@ export function avatarSvg(av, team, vb) {
   const eq = av.eq || {};
   const pal = palette(team);
   const body = BODIES[av.body ?? 1] || BODIES[1];
-  const key = JSON.stringify([av.skin, av.hairColor, av.body, av.col, eq, pal, vb]);
+  const key = JSON.stringify([av.skin, av.hairColor, av.body, av.col, av.side, eq, pal, vb]);
   if (cache.has(key)) return cache.get(key);
   const colourOf = (id) => {
     const it = itemById(id);
@@ -434,7 +441,7 @@ export function avatarSvg(av, team, vb) {
     skin: SKINS[av.skin] ?? SKINS[2],
     hair: HAIR_COLORS[av.hairColor] ?? HAIR_COLORS[0],
     eq: { ...eq, hair: eq.hair || 'short', top: eq.top || 'tee', bottom: eq.bottom || 'jeans', shoes: eq.shoes || 'sneakers' },
-    colourOf, pal, build: body.id, bg: !vb || vb === FULL || vb === BUST,
+    colourOf, sideOf: (id) => (av.side && av.side[id]) || 'both', pal, build: body.id, bg: !vb || vb === FULL || vb === BUST,
     bareLegs: !!itemById(eq.bottom || 'jeans')?.short, // long pants hide the legs, so no skin shows between them
   });
   const out = `<svg viewBox="${vb || FULL}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;

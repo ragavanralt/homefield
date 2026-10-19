@@ -374,6 +374,14 @@ import * as S from '../js/specials.js';
     assert.equal(m.saveFit('y').why, 'full');
     for (const f of [...m.fitsList()]) m.deleteFit(f.id);
   });
+  t('sleeves: side toggle needs ownership and changes the drawing', () => {
+    assert.equal(m.setSide('fsblack', 'left'), false);
+    st.update((s) => { s.avatar.owned.push('fsblack'); });
+    assert.ok(m.setSide('fsblack', 'left')); assert.equal(m.sideOf(st.getState().avatar, 'fsblack'), 'left');
+    const left = avatarSvg(st.getState().avatar, null); m.setSide('fsblack', 'both');
+    assert.notEqual(left, avatarSvg(st.getState().avatar, null));
+    assert.equal(m.setSide('fsblack', 'up'), false);
+  });
   t('shop: daily deal is on sale and stable within a day', () => {
     const d = dealToday(new Date(2026, 9, 18));
     assert.equal(d.id, dealToday(new Date(2026, 9, 18)).id);

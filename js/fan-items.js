@@ -931,26 +931,27 @@ ART.outer.chore = outer({ def: '#2E4A6E', len: 222, grow: 7, sgrow: 7, gap: open
 ART.outer.cardigan = outer({ def: '#6B1E2A', len: 214, grow: 6, sgrow: 6.5, gap: openGap, cuff: (p, m) => dk(m, 0.12), detail: (P, c, R, d, m, B, grow, hemY) => { edges(P, R.line, 5.4, 112, hemY - 1, 1.6); edges(P, dk(m, 0.12), 3.6, 112, hemY - 1, 1.6); [150, 168, 186].forEach((y) => P.dot(CX - openGap(y) - 1.6, y, 1.7, '#E9E2D0')); hem(P, B, grow, hemY, ramp(dk(m, 0.12))); } });
 
 /* ---------- team sleeves and calf bands (team colours) */
+const sidesOf = (c) => (c.side === 'left' ? [-1] : c.side === 'right' ? [1] : [-1, 1]);
 const sleeveTube = (P, J, c, o = {}) => { const T = tube(J); P.tube(T, ramp(c.pal.t1), { cap0: false, cap1: false }); return T; };
-ART.armwear.armsleeve = (P, g, col, ph, c) => { if (ph !== 'arms') return; const g2 = 0.8; sleeveTube(P, cutF(g.armJ(1), 0.1, 0.96, g2), c); across(P, g, 1, 0.22, g2, c.pal.t2, 2.6); across(P, g, 1, 0.26, g2, c.pal.tacc, 1.1); across(P, g, 1, 0.9, g2, c.pal.t2, 2.2); };
-ART.armwear.shooter = (P, g, col, ph, c) => { if (ph !== 'arms') return; const g2 = 0.8; sleeveTube(P, cutF(g.armJ(1), 0.5, 0.96, g2), c); across(P, g, 1, 0.56, g2, c.pal.t2, 2.4); across(P, g, 1, 0.9, g2, c.pal.t2, 2); };
-const legPiece = (y0, y1, both2, stripes) => (P, g, col, ph, c) => {
+/* arm sleeves are defined with the armPiece factory further down */
+const legPiece = (y0, y1, stripes) => (P, g, col, ph, c) => {
   if (ph !== 'legs') return;
-  for (const side of both2 ? [-1, 1] : [-1]) {
+  for (const side of sidesOf(c)) {
     const J = cutJ(g.legJ(side), y1, 0.8, y0);
     sleeveTube(P, J, c);
     stripes.forEach(([y, colr, w]) => { const j = J.find((q) => q[1] >= y) || J[J.length - 1]; P.stroke(curve([[j[0] - j[2] / 2 + 0.6, y], [j[0] + j[2] / 2 - 0.6, y]]), c.pal[colr], w); });
   }
 };
-ART.legwear.legsleeve = legPiece(212, 300, false, [[290, 't2', 2.6], [294, 'tacc', 1.1]]);
-ART.legwear.kneesleeve = legPiece(246, 288, false, [[250, 't2', 2.4], [283, 't2', 2.4]]);
-ART.legwear.calfbands = legPiece(266, 277, true, [[270, 't2', 1.6], [273.4, 'tacc', 1.1]]);
+ART.legwear.legsleeve = legPiece(212, 300, [[290, 't2', 2.6], [294, 'tacc', 1.1]]);
+ART.legwear.kneesleeve = legPiece(246, 288, [[250, 't2', 2.4], [283, 't2', 2.4]]);
+ART.legwear.calfbands = legPiece(266, 277, [[270, 't2', 1.6], [273.4, 'tacc', 1.1]]);
 
 /* ---------- more sleeves: both arms, full shoulder-to-wrist, and fixed-colour casual bands */
-const armPiece = (f0, f1, pair, pick) => (P, g, col, ph, c) => {
-  if (ph !== 'arms') return;
+const armPiece = (f0, f1, pick, o = {}) => (P, g, col, ph, c) => {
   const k = pick(c);
-  for (const side of pair ? [-1, 1] : [1]) {
+  if (ph === 'neck' && o.collar) { const nk = c.B.nk; P.stroke(curve([[CX - nk - 3.5, 109], [CX, 122.5], [CX + nk + 3.5, 109]]), INK, 5.2); P.stroke(curve([[CX - nk - 3.5, 109], [CX, 122.5], [CX + nk + 3.5, 109]]), k.main, 3.4); return; }
+  if (ph !== 'arms') return;
+  for (const side of sidesOf(c)) {
     const J = cutF(g.armJ(side), f0, f1, 0.8);
     P.tube(tube(J), ramp(k.main), { cap0: false, cap1: false });
     if (f0 >= 0.05) across(P, g, side, f0 + 0.06, 0.8, k.trim, 2.2);
@@ -959,10 +960,10 @@ const armPiece = (f0, f1, pair, pick) => (P, g, col, ph, c) => {
     if (k.mark) { const j = J[Math.min(2, J.length - 1)]; P.dot(j[0], j[1] + 2, 1.7, k.mark); }
   }
 };
-const legPieceC = (y0, y1, pair, pick) => (P, g, col, ph, c) => {
+const legPieceC = (y0, y1, pick) => (P, g, col, ph, c) => {
   if (ph !== 'legs') return;
   const k = pick(c);
-  for (const side of pair ? [-1, 1] : [-1]) {
+  for (const side of sidesOf(c)) {
     const J = cutJ(g.legJ(side), y1, 0.8, y0);
     P.tube(tube(J), ramp(k.main), { cap0: false, cap1: false });
     const band = (y, colr, w) => { const j = J.find((q) => q[1] >= y) || J[J.length - 1]; P.stroke(curve([[j[0] - j[2] / 2 + 0.6, y], [j[0] + j[2] / 2 - 0.6, y]]), colr, w); };
@@ -972,24 +973,20 @@ const legPieceC = (y0, y1, pair, pick) => (P, g, col, ph, c) => {
 };
 const team = (c) => ({ main: c.pal.t1, trim: c.pal.t2, acc: c.pal.tacc });
 const fix = (main, trim, acc, mark) => () => ({ main, trim, acc, mark });
-ART.armwear.armsleeves = armPiece(0.1, 0.96, true, team);
-ART.armwear.shootersleeves = armPiece(0.5, 0.96, true, team);
-ART.armwear.fullsleeve = armPiece(0.02, 0.97, false, team);
-ART.armwear.fullsleeves = armPiece(0.02, 0.97, true, team);
-ART.armwear.fsblack = armPiece(0.02, 0.97, true, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
-ART.armwear.fswhite = armPiece(0.02, 0.97, true, fix('#F1F1EE', '#16181D', null, '#16181D'));
-ART.armwear.fsbred = armPiece(0.02, 0.97, true, fix('#16181D', '#C8102E', '#F2F2F2', '#C8102E'));
-ART.armwear.fsroyal = armPiece(0.02, 0.97, true, fix('#1D428A', '#FFC72C', null, '#FFC72C'));
-ART.armwear.fsblack1 = armPiece(0.02, 0.97, false, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
-ART.armwear.elbowblack = armPiece(0.35, 0.8, true, fix('#16181D', '#F2F2F2', null, null));
-ART.legwear.fullleg = legPieceC(212, 300, true, team);
-ART.legwear.fullleg1 = legPieceC(212, 300, false, team);
-ART.legwear.blackleg1 = legPieceC(212, 300, false, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
-ART.legwear.bredcalf = legPieceC(266, 277, true, fix('#16181D', '#C8102E', '#F2F2F2', '#C8102E'));
-ART.legwear.whitecalf = legPieceC(266, 277, true, fix('#F1F1EE', '#16181D', null, '#16181D'));
-ART.legwear.royalcalf = legPieceC(266, 277, true, fix('#1D428A', '#FFC72C', null, '#FFC72C'));
-ART.legwear.blackcalf = legPieceC(262, 279, true, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
-ART.legwear.blackleg = legPieceC(212, 300, true, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
+ART.armwear.armsleeve = armPiece(0.1, 0.96, team);
+ART.armwear.shooter = armPiece(0.5, 0.96, team);
+ART.armwear.fullsleeve = armPiece(0.02, 0.97, team, { collar: true });
+ART.armwear.fsblack = armPiece(0.02, 0.97, fix('#16181D', '#F2F2F2', null, '#F2F2F2'), { collar: true });
+ART.armwear.fswhite = armPiece(0.02, 0.97, fix('#F1F1EE', '#16181D', null, '#16181D'), { collar: true });
+ART.armwear.fsbred = armPiece(0.02, 0.97, fix('#16181D', '#C8102E', '#F2F2F2', '#C8102E'), { collar: true });
+ART.armwear.fsroyal = armPiece(0.02, 0.97, fix('#1D428A', '#FFC72C', null, '#FFC72C'), { collar: true });
+ART.armwear.elbowblack = armPiece(0.35, 0.8, fix('#16181D', '#F2F2F2', null, null));
+ART.legwear.fullleg = legPieceC(212, 300, team);
+ART.legwear.bredcalf = legPieceC(266, 277, fix('#16181D', '#C8102E', '#F2F2F2', '#C8102E'));
+ART.legwear.whitecalf = legPieceC(266, 277, fix('#F1F1EE', '#16181D', null, '#16181D'));
+ART.legwear.royalcalf = legPieceC(266, 277, fix('#1D428A', '#FFC72C', null, '#FFC72C'));
+ART.legwear.blackcalf = legPieceC(262, 279, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
+ART.legwear.blackleg = legPieceC(212, 300, fix('#16181D', '#F2F2F2', null, '#F2F2F2'));
 
 /* ---------- retros, second drop: more niche, closer to the real thing */
 const W2 = '#F4F1EA';

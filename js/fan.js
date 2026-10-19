@@ -353,7 +353,7 @@ export function drawFan(ctx) {
   sk.line = adj(ctx.skin, -0.5, -8, -0.08);
   const c = { skin: ctx.skin, sk, hair: ctx.hair, pal: ctx.pal, B, g };
   const item = (slot) => { const id = ctx.eq[slot]; const f = id && ART[slot][id]; return f ? { f, col: ctx.colourOf(id), id } : null; };
-  const run = (slot, phase) => { const it = item(slot); if (it) it.f(P, g, it.col, phase, c); };
+  const run = (slot, phase) => { const it = item(slot); if (it) { c.side = ctx.sideOf ? ctx.sideOf(it.id) : 'both'; it.f(P, g, it.col, phase, c); } };
 
   if (ctx.bg) run('bg', 'bg');
   // ground shadow
@@ -415,6 +415,7 @@ export function drawFan(ctx) {
   run('armwear', 'arms');
   run('top', 'body'); run('top', 'sleeves');
   run('outer', 'body'); run('outer', 'sleeves');
+  run('armwear', 'neck');
   run('back', 'neck'); run('scarf', 'neck'); run('chain', 'neck');
   // hands
   for (const side of [-1, 1]) {
