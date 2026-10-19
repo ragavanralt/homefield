@@ -179,7 +179,7 @@ app().querySelector('#buy-cancel').click(); await sleep(30);
 assert.ok(!app().querySelector('#confirm-buy') && !store.getState().avatar.owned.includes('cap')); ok('tapping a price opens a confirm sheet; cancel buys nothing');
 app().querySelector('.buy[data-id="cap"]').click(); await sleep(30); app().querySelector('#confirm-buy').click(); await sleep(50);
 assert.ok(store.getBank().coins < coinsBefore && store.getState().avatar.owned.includes('cap')); ok('buying an item takes coins');
-assert.ok(app().querySelector('.pf-me svg').innerHTML.includes('rgb(0,62,126)'), 'team colours'); ok('cap wears followed team colours');
+assert.ok(app().querySelector('.pf-me svg').innerHTML.toLowerCase().includes('#003e7e'), 'team colours'); ok('cap wears followed team colours');
 // colour menu: from the closet on the fan page, open the + on the free tee, pick black
 text = await visit('#/profile', { wait: 200 });
 const teeMore = app().querySelector('[data-item="tee"] .dot.more'); assert.ok(teeMore, 'tee colour button'); teeMore.click(); await sleep(30);

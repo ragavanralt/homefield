@@ -4,9 +4,8 @@ import { getState, myTeams, buyItem, grantItem, setAvatar, track } from './store
 import { betStats } from './bets.js';
 import { skinFromColors } from './util.js';
 import { dayKey, seeded } from './period.js';
-import { spriteMarkup } from './sprite.js';
-import { drawFan } from './sprite-art.js';
-import './sprite-items.js';
+import { drawFan } from './fan.js';
+import './fan-items.js';
 
 export const SKINS = ['#E3B85B', '#F0D3B5', '#DDAE86', '#C58B5E', '#A06A44', '#7A4A2E', '#523320'];
 export const HAIR_COLORS = ['#1A1410', '#3D281B', '#6E4A2A', '#B8935A', '#B7BBC4', '#A8402B', '#2C57A8', '#5E3FA6', '#B23F7F', '#2F8A57'];
@@ -243,38 +242,35 @@ export function palette(team) {
 }
 
 /* ---------- drawing ---------- */
-// A smooth illustrated figure on a 64 x 96 design grid, three-quarter view, drawn by sprite-art.js and
-// sprite-items.js. It is drawn several times larger than shown and shrunk so the edges are clean.
-// Crop windows below are in design units: [x, y, width, height].
-const FULL = [0, 0, 64, 96];
-const BUST = [14, 0, 36, 44];
-const VB = { hair: [16, 0, 32, 34], hat: [16, 0, 32, 34], face: [16, 0, 32, 34], beard: [16, 0, 32, 34], ear: [16, 0, 32, 34], top: [12, 26, 40, 34], outer: [12, 26, 40, 40], scarf: [14, 22, 36, 34], chain: [14, 22, 36, 30], wrist: [28, 38, 30, 28], bottom: [12, 44, 40, 40], shoes: [12, 72, 40, 24], back: FULL, hand: [20, 26, 44, 60] };
-// fine pixels per design unit (R) and how much the picture is shrunk afterwards (D). Tests in node stay tiny.
-const QUAL = typeof document === 'undefined' ? { hi: { R: 1, D: 1 }, mid: { R: 1, D: 1 }, lo: { R: 1, D: 1 } } : { hi: { R: 8, D: 2 }, mid: { R: 5, D: 1 }, lo: { R: 4, D: 2 } };
+// A front-facing illustrated fan, drawn as SVG by fan.js (body, head, face) and fan-items.js (every item).
+// View boxes are in the fan's 200 x 340 design space.
+const FULL = '0 -14 200 354';
+const BUST = '42 -14 116 150';
+const HEADVB = '50 -12 100 124';
+const VB = { hair: HEADVB, hat: HEADVB, face: HEADVB, beard: HEADVB, ear: HEADVB, top: '18 90 164 132', outer: '12 90 176 180', scarf: '46 92 108 112', chain: '50 94 100 84', wrist: '14 176 76 64', bottom: '28 178 144 162', shoes: '40 282 120 54', back: '-30 -20 260 364', hand: '70 120 130 170' };
 const cache = new Map();
 
-/** Returns the markup for a character. vb overrides the crop window (shop previews and busts). */
-export function avatarSvg(av, team, vb, quality) {
+/** Returns the SVG markup for a character. vb overrides the view box (shop previews and busts). */
+export function avatarSvg(av, team, vb) {
   const eq = av.eq || {};
-  const body = BODIES[av.body ?? 1] || BODIES[1];
-  const q = QUAL[quality || (vb ? 'mid' : 'hi')];
   const pal = palette(team);
-  const key = JSON.stringify([av.skin, av.hairColor, av.body, av.col, eq, pal, vb, q]);
+  const body = BODIES[av.body ?? 1] || BODIES[1];
+  const key = JSON.stringify([av.skin, av.hairColor, av.body, av.col, eq, pal, vb]);
   if (cache.has(key)) return cache.get(key);
   const colourOf = (id) => {
-    const i = av.col && av.col[id];
     const it = itemById(id);
-    return i && it && it.colors && it.colors[i] ? it.colors[i].k : undefined;
+    if (!it || !it.colors) return undefined;
+    const i = (av.col && av.col[id]) || 0;
+    return (it.colors[i] || it.colors[0]).k;
   };
-  const S = drawFan({
-    win: vb || FULL, R: q.R,
+  const inner = drawFan({
     skin: SKINS[av.skin] ?? SKINS[2],
     hair: HAIR_COLORS[av.hairColor] ?? HAIR_COLORS[0],
     eq: { ...eq, hair: eq.hair || 'short', top: eq.top || 'tee', bottom: eq.bottom || 'jeans', shoes: eq.shoes || 'sneakers' },
-    colourOf, pal, k: (body.up + body.low) / 2,
+    colourOf, pal, build: body.id,
   });
-  const out = spriteMarkup(S.crop(q.D), 'Your fan character');
-  if (cache.size > 80) cache.delete(cache.keys().next().value);
+  const out = `<svg viewBox="${vb || FULL}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
+  if (cache.size > 120) cache.delete(cache.keys().next().value);
   cache.set(key, out);
   return out;
 }
@@ -283,8 +279,7 @@ export function avatarSvg(av, team, vb, quality) {
 export function renderAvatar(av = getState().avatar, team = avatarTeam(av), cls = '') {
   const el = document.createElement('span');
   el.className = 'avatar ' + cls;
-  const bust = /\bbust\b/.test(cls);
-  el.innerHTML = avatarSvg(av, team, bust ? BUST : undefined, bust ? 'lo' : /\blg\b/.test(cls) ? 'hi' : 'mid');
+  el.innerHTML = avatarSvg(av, team, /\bbust\b/.test(cls) ? BUST : undefined);
   return el;
 }
 /** Preview of just one item on the current character, zoomed to where it is worn. */

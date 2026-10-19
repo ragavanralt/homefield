@@ -373,7 +373,7 @@ import * as S from '../js/specials.js';
       const svg = avatarSvg({ skin: 2, hairColor: 1, eq: { hair: 'short', top: 'tee', [it.slot]: it.id } }, team);
       assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>') && !svg.includes('undefined'), it.id);
     }
-    assert.ok(avatarSvg({ skin: 2, hairColor: 0, eq: { top: 'jersey' } }, team).includes('rgb(255,0,0)'));
+    assert.ok(avatarSvg({ skin: 2, hairColor: 0, eq: { top: 'jersey' } }, team).toLowerCase().includes('#ff0000'));
   });
   t('shop: every item has a section; designer pieces cost far more than blanks', () => {
     const secs = new Set(m.SECTIONS.map((s) => s.id));
@@ -392,7 +392,7 @@ import * as S from '../js/specials.js';
     const eq = { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' };
     const before = m.avatarSvg({ skin: 2, hairColor: 0, eq }, null);
     const black = m.avatarSvg({ skin: 2, hairColor: 0, eq, col: { tee: 2 } }, null);
-    assert.notEqual(before, black); assert.ok(black.includes('rgb(28,28,33)'));
+    assert.notEqual(before, black); assert.ok(black.toLowerCase().includes('#1c1c21'));
     assert.ok(m.setColour('tee', 1)); assert.equal(m.colourIndex(st.getState().avatar, 'tee'), 1);
     assert.equal(m.setColour('foghoodie', 1), false);
     assert.equal(m.setColour('tee', 99), false);
