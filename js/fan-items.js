@@ -705,6 +705,33 @@ const pins = (colr, step = 7, op = 0.9) => Array.from({ length: Math.ceil(180 / 
 const band = (y, hgt, colr, op = 1) => `<rect x="${CX - 90}" y="${y}" width="180" height="${hgt}" fill="${colr}" opacity="${op}"/>`;
 // a plain shield on the chest (an original shape, not any club's crest)
 const shield = (P, x, y, a, b2) => { const d = blob([[x - 5.5, y - 6.5], [x + 5.5, y - 6.5], [x + 5.5, y + 1], [x, y + 7.5], [x - 5.5, y + 1]]); P.shape(d, a, { line: INK, w: 1 }); P.clip(d, `<rect x="${x}" y="${y - 8}" width="7" height="16" fill="${b2}"/>`); P.stroke(d, INK, 1); };
+function starAt0h(x, y, r) { return poly(Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; return [x + Math.cos(a) * rr, y + Math.sin(a) * rr]; })); }
+// original club-style badges: a ring, a striped field, a motif, the city's letters, stars above, a ribbon below.
+// o = { shape: roundel|shield|oval, ring, field: [colours], dir: v|h, text, ink, stars, starCol, motif: ball|diamond|sun|disc|cross|band, motifCol, ribbon, ribbonCol }
+const crestPath = (shape, x, y, r) => shape === 'shield'
+  ? `M${x - r} ${y - r * 0.95} Q${x} ${y - r * 1.15} ${x + r} ${y - r * 0.95} L${x + r} ${y + r * 0.1} Q${x + r * 0.9} ${y + r * 0.85} ${x} ${y + r * 1.25} Q${x - r * 0.9} ${y + r * 0.85} ${x - r} ${y + r * 0.1}Z`
+  : shape === 'oval' ? `M${x} ${y - r * 1.15} A${r * 0.85} ${r * 1.15} 0 1 1 ${x - 0.01} ${y - r * 1.15}Z`
+  : `M${x} ${y - r} A${r} ${r} 0 1 1 ${x - 0.01} ${y - r}Z`;
+const crest = (P, x, y, r, o) => {
+  const out = crestPath(o.shape || 'roundel', x, y, r), inn = crestPath(o.shape || 'roundel', x, y + (o.shape === 'shield' ? r * 0.05 : 0), r * 0.74);
+  P.shape(out, o.ring, { line: INK, w: 1.2 });
+  const f = o.field || [o.ring], n = o.n || f.length * 2, w2 = (r * 2) / n;
+  P.fill(inn, f[0]);
+  let art = '';
+  if (f.length > 1) art += Array.from({ length: n }, (_, i) => o.dir === 'h' ? `<rect x="${x - r}" y="${y - r * 1.2 + i * (r * 2.4) / n}" width="${r * 2}" height="${(r * 2.4) / n + 0.1}" fill="${f[i % f.length]}"/>` : `<rect x="${x - r + i * w2}" y="${y - r * 1.4}" width="${w2 + 0.1}" height="${r * 2.8}" fill="${f[i % f.length]}"/>`).join('');
+  const mc = o.motifCol || '#F4F1EA';
+  if (o.motif === 'ball') art += `<circle cx="${x}" cy="${y}" r="${r * 0.36}" fill="#F4F1EA" stroke="${INK}" stroke-width="0.7"/><path d="${poly(Array.from({ length: 5 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI * 0.4; return [x + Math.cos(a) * r * 0.15, y + Math.sin(a) * r * 0.15]; }))}" fill="${INK}"/>`;
+  if (o.motif === 'diamond') art += `<path d="${poly([[x, y - r * 0.55], [x + r * 0.7, y], [x, y + r * 0.55], [x - r * 0.7, y]])}" fill="${mc}"/><circle cx="${x}" cy="${y}" r="${r * 0.26}" fill="${o.motifCol2 || '#1F4CA8'}"/>`;
+  if (o.motif === 'sun') art += `<circle cx="${x}" cy="${y}" r="${r * 0.26}" fill="#F2C230" stroke="#B88A10" stroke-width="0.5"/>` + Array.from({ length: 8 }, (_, i) => { const a = (i / 8) * Math.PI * 2; return `<path d="M${x + Math.cos(a) * r * 0.3} ${y + Math.sin(a) * r * 0.3} L${x + Math.cos(a) * r * 0.45} ${y + Math.sin(a) * r * 0.45}" stroke="#F2C230" stroke-width="0.8"/>`; }).join('');
+  if (o.motif === 'disc') art += `<circle cx="${x}" cy="${y}" r="${r * 0.34}" fill="${mc}"/>`;
+  if (o.motif === 'cross') art += `<rect x="${x - r * 0.12}" y="${y - r}" width="${r * 0.24}" height="${r * 2}" fill="${mc}"/><rect x="${x - r}" y="${y - r * 0.12}" width="${r * 2}" height="${r * 0.24}" fill="${mc}"/>`;
+  if (o.motif === 'band') art += `<rect x="${x - r}" y="${y - r * 0.2}" width="${r * 2}" height="${r * 0.4}" fill="${mc}"/>`;
+  if (art) P.clip(inn, art);
+  P.stroke(inn, INK, 0.8);
+  if (o.text) { const sz = r * (o.text.length > 1 ? 0.62 : 0.95); P.add(`<text x="${x}" y="${y + sz * 0.36}" font-family="Georgia, serif" font-weight="700" font-size="${sz.toFixed(1)}" text-anchor="middle" fill="${o.ink || '#F4F1EA'}" stroke="${INK}" stroke-width="${(r * 0.06).toFixed(2)}" paint-order="stroke">${o.text}</text>`); }
+  if (o.stars) for (let i = 0; i < o.stars; i++) { const t = o.stars === 1 ? 0 : (i / (o.stars - 1) - 0.5) * 1.1; P.fill(starAt0h(x + Math.sin(t) * r * 1.25, y - Math.cos(t) * r * 1.25 - r * 0.25, r * 0.2), o.starCol || '#F2C230'); }
+  if (o.ribbon) { const rb = poly([[x - r * 1.05, y + r * 0.95], [x + r * 1.05, y + r * 0.95], [x + r * 0.9, y + r * 1.35], [x + r * 1.05, y + r * 1.75], [x - r * 1.05, y + r * 1.75], [x - r * 0.9, y + r * 1.35]]); P.shape(rb, o.ribbonCol || o.ring, { line: INK, w: 0.8 }); P.add(`<text x="${x}" y="${y + r * 1.52}" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="${(r * 0.5).toFixed(1)}" text-anchor="middle" fill="${o.ribbonInk || '#F4F1EA'}"${o.ribbon.length * r * 0.5 * 0.74 > r * 1.8 ? ` textLength="${(r * 1.8).toFixed(1)}" lengthAdjust="spacingAndGlyphs"` : ''}>${o.ribbon}</text>`); }
+};
 const armholes = (P, c, grow, colr, w = 3) => { const B = c.B; both((s) => P.stroke(curve([[CX + s * (B.nk + 9), 112.5], [CX + s * (B.ch - 4 + grow * 0.5), 128], [CX + s * (B.ch + 1 + grow), 141]]), colr, w)); };
 
 // basketball tanks. o = { main, trim, trim2, ink, out, num, city, pin, side, side2 }
@@ -737,17 +764,17 @@ const kit = (o) => top({
     if (o.stripes) P.clip(d, vStripes(o.stripes[0], o.stripes[1], o.stripes[2]));
     if (o.pattern) P.clip(d, o.pattern);
     if (o.stripes || o.pattern) P.clip(d, `<path d="${poly([[CX + 22, 90], [CX + 90, 90], [CX + 90, 230], [CX + 26, 230]])}" fill="#000" opacity="0.14"/>`);
-    if (o.badge) shield(P, CX + 16, 140, o.badge[0], o.badge[1]);
+    if (o.badge) { if (Array.isArray(o.badge)) shield(P, CX + 16, 140, o.badge[0], o.badge[1]); else crest(P, CX + 11, 143, 6.2, o.badge); }
     if (o.num) digits(P, o.num, CX - 16, 146, 11, o.num[1] || o.collar, INK);
   },
   trim: (P, g, side, yEnd, c) => { const gr = (o.sgrow ?? 6.5) * (c.B.arm * 0.5 + 0.5); if (o.sleeveArt) o.sleeveArt(P, g, side, yEnd, gr); across(P, g, side, yEnd - 0.02, gr, o.cuff || o.collar, 3.2); if (o.cuff2) across(P, g, side, yEnd - 0.07, gr, o.cuff2, 1.4); },
   collar: o.tank ? (P, c) => { const nk = c.B.nk; P.stroke(curve([[CX - nk - 2, 112], [CX - nk + 2, 122], [CX, 127], [CX + nk - 2, 122], [CX + nk + 2, 112]]), o.collar, 3.4); armholes(P, c, 6, o.cuff || o.collar, 3); } : undefined,
 });
-ART.top.rt_blau = kit({ main: '#1A3C8C', stripes: [['#1A3C8C', '#9B1B30'], 15, CX - 97], collar: '#F2C230', cuff: '#F2C230', badge: ['#F2C230', '#9B1B30'], grow: 8, sgrow: 8 });
-ART.top.rt_bra02 = kit({ main: '#F9D616', collar: '#0A7A3C', cuff: '#0A7A3C', cuff2: '#1F4CA8', badge: ['#1F4CA8', '#0A7A3C'], neck: 'crew' });
-ART.top.rt_mil94 = kit({ main: '#16161A', stripes: [['#C8102E', '#16161A'], 10, CX - 95], collar: '#F4F1EA', cuff: '#F4F1EA', badge: ['#F4F1EA', '#C8102E'] });
-ART.top.rt_arg86 = kit({ main: '#F4F1EA', stripes: [['#74ACDF', '#F4F1EA'], 9, CX - 94.5], collar: '#1C2A55', cuff: '#1C2A55', badge: ['#74ACDF', '#F4F1EA'], neck: 'crew' });
-ART.top.rt_ned88 = kit({ main: '#F36C21', pattern: Array.from({ length: 9 }, (_, i) => `<path d="M${CX - 90 + i * 22} 230 L${CX - 79 + i * 22} 90 L${CX - 68 + i * 22} 230Z" fill="#FFB06B" opacity="0.6"/><path d="M${CX - 79 + i * 22} 90 L${CX - 68 + i * 22} 230 L${CX - 57 + i * 22} 90Z" fill="#C9480F" opacity="0.5"/>`).join(''), collar: '#F4F1EA', cuff: '#F4F1EA', cuff2: '#F36C21', badge: ['#F4F1EA', '#F36C21'] });
+ART.top.rt_blau = kit({ main: '#1A3C8C', stripes: [['#1A3C8C', '#9B1B30'], 15, CX - 97], collar: '#F2C230', cuff: '#F2C230', badge: { shape: 'roundel', ring: '#F2C230', field: ['#1A3C8C', '#9B1B30'], n: 5, motif: 'ball', text: '', ribbon: 'BCN', ribbonCol: '#9B1B30' }, grow: 8, sgrow: 8 });
+ART.top.rt_bra02 = kit({ main: '#F9D616', collar: '#0A7A3C', cuff: '#0A7A3C', cuff2: '#1F4CA8', badge: { shape: 'shield', ring: '#1F4CA8', field: ['#0A7A3C'], motif: 'diamond', motifCol: '#F9D616', stars: 5, starCol: '#0A7A3C' }, neck: 'crew' });
+ART.top.rt_mil94 = kit({ main: '#16161A', stripes: [['#C8102E', '#16161A'], 10, CX - 95], collar: '#F4F1EA', cuff: '#F4F1EA', badge: { shape: 'oval', ring: '#16161A', field: ['#C8102E', '#16161A'], n: 6, text: 'M', ink: '#F4F1EA' } });
+ART.top.rt_arg86 = kit({ main: '#F4F1EA', stripes: [['#74ACDF', '#F4F1EA'], 9, CX - 94.5], collar: '#1C2A55', cuff: '#1C2A55', badge: { shape: 'roundel', ring: '#1C2A55', field: ['#74ACDF', '#F4F1EA', '#74ACDF'], dir: 'h', n: 3, motif: 'sun', stars: 2 }, neck: 'crew' });
+ART.top.rt_ned88 = kit({ main: '#F36C21', pattern: Array.from({ length: 9 }, (_, i) => `<path d="M${CX - 90 + i * 22} 230 L${CX - 79 + i * 22} 90 L${CX - 68 + i * 22} 230Z" fill="#FFB06B" opacity="0.6"/><path d="M${CX - 79 + i * 22} 90 L${CX - 68 + i * 22} 230 L${CX - 57 + i * 22} 90Z" fill="#C9480F" opacity="0.5"/>`).join(''), collar: '#F4F1EA', cuff: '#F4F1EA', cuff2: '#F36C21', badge: { shape: 'shield', ring: '#1C2A55', field: ['#F36C21'], text: 'H', ink: '#F4F1EA', ribbon: 'NED', ribbonCol: '#F36C21' } });
 
 // gridiron jersey: big shoulders, sleeve stripes, block numbers
 ART.top.rt_whiteout = top({
@@ -764,12 +791,12 @@ const sweater = (o) => top({
     P.clip(d, band(190, 6, o.stripe) + (o.hem2 ? band(197, 3, o.hem2) : ''));
     [118, 124, 130].forEach((y) => P.stroke(curve([[CX - 3, y], [CX + 3, y + 3]]), o.stripe, 1.1));
     if (o.num) digits(P, o.num, CX, 180, 20, o.stripe, INK);
-    if (o.crest) { const [ch, a, b2] = o.crest; P.ell(CX, 172, 15, 15, a, { line: INK, w: 1.6 }); P.ell(CX, 172, 11.5, 11.5, 'none', { line: b2, w: 2 }); word(P, ch, 179, 18, 22, b2, INK, 1, 'Georgia, serif'); }
+    if (o.crest) crest(P, CX, 170, 14, o.crest);
   },
   trim: (P, g, side, yEnd, c) => { const gr = 7.5 * (c.B.arm * 0.5 + 0.5); across(P, g, side, 0.6, gr, o.stripe, 4.2); if (o.hem2) across(P, g, side, 0.66, gr, o.hem2, 2.2); },
 });
-ART.top.rt_tor67 = sweater({ main: '#00205B', collar: '#F4F1EA', stripe: '#F4F1EA', crest: ['T', '#00205B', '#F4F1EA'] });
-ART.top.rt_mtl = sweater({ main: '#AF1E2D', collar: '#192168', stripe: '#F4F1EA', chest: '#192168', hem2: '#192168', crest: ['M', '#AF1E2D', '#F4F1EA'] });
+ART.top.rt_tor67 = sweater({ main: '#00205B', collar: '#F4F1EA', stripe: '#F4F1EA', crest: { shape: 'roundel', ring: '#F4F1EA', field: ['#00205B'], text: 'T', ink: '#F4F1EA', stars: 3, starCol: '#F4F1EA', ribbon: 'TORONTO', ribbonCol: '#00205B' } });
+ART.top.rt_mtl = sweater({ main: '#AF1E2D', collar: '#192168', stripe: '#F4F1EA', chest: '#192168', hem2: '#192168', crest: { shape: 'roundel', ring: '#192168', field: ['#AF1E2D'], motif: 'band', motifCol: '#192168', text: 'M', ink: '#F4F1EA', ribbon: 'MONTREAL', ribbonCol: '#192168' } });
 
 // baseball button-up with piping
 ART.top.rt_tor93 = top({
@@ -850,8 +877,8 @@ ART.bottom.dz_graffiti = printJeans('#8DAED6', (P, J, sd) => {
 ART.bottom.dz_bandana = printJeans('#22324F', (P, J, sd) => {
   for (let t = 0.06; t < 0.98; t += 0.09) for (let u = -0.8; u <= 0.81; u += 0.4) { const [x, y] = onLeg(J, t, u * sd + (Math.round(t * 11) % 2) * 0.2); const k = Math.round((t * 11 + u * 5)) % 3; if (k === 0) P.add(`<path d="M${x} ${y - 2.8} q2.6 2.2 0 4.6 q-2.2 -1.6 0 -4.6Z" fill="#F4F1EA" opacity="0.9"/>`); else if (k === 1) P.dot(x, y, 1, '#F4F1EA', 0.85); else P.ell(x, y, 1.6, 1.6, 'none', { line: '#F4F1EA', w: 0.7 }); }
 });
-const starAt = (x, y, r) => poly(Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; return [x + Math.cos(a) * rr, y + Math.sin(a) * rr]; }));
-ART.bottom.dz_stars = printJeans('#2A2B30', (P, J, sd) => { [[0.18, 0.1, 6], [0.42, -0.3, 4.5], [0.62, 0.3, 5.5], [0.84, -0.1, 4]].forEach(([t, u, r]) => { const [x, y] = onLeg(J, t, u * sd); P.fill(starAt(x, y, r), '#F4F1EA', 0.92); }); });
+const starAt0 = (x, y, r) => poly(Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; return [x + Math.cos(a) * rr, y + Math.sin(a) * rr]; }));
+ART.bottom.dz_stars = printJeans('#2A2B30', (P, J, sd) => { [[0.18, 0.1, 6], [0.42, -0.3, 4.5], [0.62, 0.3, 5.5], [0.84, -0.1, 4]].forEach(([t, u, r]) => { const [x, y] = onLeg(J, t, u * sd); P.fill(starAt0(x, y, r), '#F4F1EA', 0.92); }); });
 ART.bottom.dz_splatter = printJeans('#7FA0C9', (P, J, sd) => {
   const r = rnd(sd > 0 ? 5 : 17), cols = ['#F4F1EA', '#16161A', '#E8463A'];
   for (let k = 0; k < 7; k++) { const [x, y] = onLeg(J, 0.08 + r() * 0.85, (r() - 0.5) * 1.5), c2 = cols[k % 3], s = 2.5 + r() * 3; P.fill(blob(Array.from({ length: 7 }, (_, i) => { const a = (i / 7) * Math.PI * 2; const rr = s * (0.7 + r() * 0.6); return [x + Math.cos(a) * rr, y + Math.sin(a) * rr]; })), c2, 0.9); for (let q = 0; q < 3; q++) P.dot(x + (r() - 0.5) * 12, y + (r() - 0.5) * 10, 0.6 + r() * 0.8, c2, 0.9); }
@@ -899,17 +926,17 @@ const zigBand = (y, hgt, cols, step = 12) => cols.map((colr, k) => `<path d="${A
 const sleeveFlames = (cols) => (P, g, side, yEnd, gr) => { const J = cutF(g.armJ(side), 0, yEnd, gr); const [x, y, w] = J[J.length - 1]; for (let k = 0; k < 4; k++) { const fx = x - w / 2 + 2 + k * (w - 4) / 3; P.fill(poly([[fx - 3, y - 1], [fx + 3, y - 1], [fx + 0.5, y - 10 - (k % 2) * 4]]), cols[k % cols.length]); } };
 const sleeveChevrons = (a, b) => (P, g, side, yEnd, gr) => { const J = cutF(g.armJ(side), 0, yEnd, gr); const [x, y, w] = J[J.length - 1]; for (let k = 0; k < 3; k++) P.stroke(`M${x - w / 2 + 1.5} ${y - 4 - k * 5} L${x} ${y - 8 - k * 5} L${x + w / 2 - 1.5} ${y - 4 - k * 5}`, k % 2 ? b : a, 2.2); };
 
-ART.top.rt_ita06 = kit({ main: '#1F4E9C', pattern: vStripes(['#1F4E9C', '#1B4690'], 6, CX - 93), collar: W2, cuff: '#C9A23A', cuff2: W2, badge: [W2, '#1F4E9C'], neck: 'v' });
-ART.top.rt_ger90 = kit({ main: W2, pattern: zigBand(134, 4, ['#16161A', '#D21034', '#F2C230', W2]), collar: '#16161A', cuff: '#16161A', cuff2: '#D21034', badge: [W2, '#16161A'], neck: 'crew' });
-ART.top.rt_fra98 = kit({ main: '#1D2D5C', pattern: band(146, 3, W2) + band(149, 3, '#D21034') + band(152, 3, W2), collar: W2, cuff: '#D21034', cuff2: W2, badge: [W2, '#D21034'] });
-ART.top.rt_eng96 = kit({ main: W2, collar: '#1C2A55', cuff: '#1C2A55', cuff2: '#6CACE4', badge: [W2, '#D21034'], sleeveArt: sleeveChevrons('#1C2A55', '#6CACE4') });
-ART.top.rt_nga18 = kit({ main: '#0B8A3E', pattern: Array.from({ length: 6 }, (_, k) => `<path d="${Array.from({ length: 24 }, (_, i) => `${i ? 'L' : 'M'}${CX - 90 + i * 8} ${116 + k * 5.4 + (i % 2 ? 4 : 0)}`).join(' ')}" fill="none" stroke="${k % 2 ? '#16161A' : '#E9F2E6'}" stroke-width="2.2"/>`).join(''), collar: '#E9F2E6', cuff: '#16161A', badge: ['#E9F2E6', '#0B8A3E'], neck: 'v', sleeveArt: sleeveChevrons('#16161A', '#E9F2E6') });
-ART.top.rt_mex98 = kit({ main: '#006847', pattern: [62, 52, 42, 32, 22].map((r, i) => `<circle cx="${CX}" cy="165" r="${r}" fill="none" stroke="${i % 2 ? '#2E8A63' : '#4FA57F'}" stroke-width="${i % 2 ? 4 : 2}" opacity="0.7"/>`).join('') + Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * Math.PI * 2; return `<path d="M${CX + Math.cos(a) * 24} ${165 + Math.sin(a) * 24} L${CX + Math.cos(a) * 60} ${165 + Math.sin(a) * 60}" stroke="#4FA57F" stroke-width="1.4" opacity="0.6"/>`; }).join(''), collar: W2, cuff: '#CE1126', cuff2: W2, badge: [W2, '#CE1126'] });
-ART.top.rt_lon92 = kit({ main: '#F7D417', pattern: Array.from({ length: 14 }, (_, i) => { const x = CX - 70 + (i % 5) * 32 + (Math.floor(i / 5) % 2) * 14, y = 118 + Math.floor(i / 5) * 32; return `<path d="${poly([[x, y], [x + 14, y + 6], [x + 4, y + 10], [x + 18, y + 20], [x - 2, y + 12], [x + 8, y + 8]])}" fill="${i % 3 ? '#16161A' : '#D21034'}" opacity="0.85"/>`; }).join(''), collar: '#16161A', cuff: '#16161A', badge: ['#D21034', '#F7D417'] });
-ART.top.rt_man99 = kit({ main: '#DA020E', collar: W2, cuff: W2, cuff2: '#16161A', badge: ['#F2C230', '#DA020E'], neck: 'crew' });
-ART.top.rt_tur97 = kit({ main: '#16161A', stripes: [[W2, '#16161A'], 11, CX - 93.5], collar: '#16161A', cuff: '#16161A', badge: ['#F2C230', '#16161A'] });
-ART.top.rt_jpn98 = kit({ main: '#1C3F94', collar: W2, cuff: W2, badge: [W2, '#D21034'], sleeveArt: sleeveFlames(['#D21034', W2]) });
-ART.top.rt_cmr02 = kit({ main: '#007A3D', tank: true, collar: '#F2C230', cuff: '#CE1126', badge: ['#F2C230', '#CE1126'] });
+ART.top.rt_ita06 = kit({ main: '#1F4E9C', pattern: vStripes(['#1F4E9C', '#1B4690'], 6, CX - 93), collar: W2, cuff: '#C9A23A', cuff2: W2, badge: { shape: 'shield', ring: '#C9A23A', field: ['#009246', '#F4F1EA', '#CE2B37'], n: 3, text: 'I', ink: '#1F4E9C', stars: 4 }, neck: 'v' });
+ART.top.rt_ger90 = kit({ main: W2, pattern: zigBand(134, 4, ['#16161A', '#D21034', '#F2C230', W2]), collar: '#16161A', cuff: '#16161A', cuff2: '#D21034', badge: { shape: 'roundel', ring: '#16161A', field: ['#16161A', '#D21034', '#F2C230'], dir: 'h', n: 3, text: 'D', stars: 3 }, neck: 'crew' });
+ART.top.rt_fra98 = kit({ main: '#1D2D5C', pattern: band(146, 3, W2) + band(149, 3, '#D21034') + band(152, 3, W2), collar: W2, cuff: '#D21034', cuff2: W2, badge: { shape: 'shield', ring: '#C9A23A', field: ['#1D2D5C'], motif: 'band', motifCol: '#D21034', text: 'F', stars: 1 } });
+ART.top.rt_eng96 = kit({ main: W2, collar: '#1C2A55', cuff: '#1C2A55', cuff2: '#6CACE4', badge: { shape: 'shield', ring: '#1C2A55', field: ['#F4F1EA'], motif: 'cross', motifCol: '#D21034', ribbon: 'ENG', ribbonCol: '#1C2A55' }, sleeveArt: sleeveChevrons('#1C2A55', '#6CACE4') });
+ART.top.rt_nga18 = kit({ main: '#0B8A3E', pattern: Array.from({ length: 6 }, (_, k) => `<path d="${Array.from({ length: 24 }, (_, i) => `${i ? 'L' : 'M'}${CX - 90 + i * 8} ${116 + k * 5.4 + (i % 2 ? 4 : 0)}`).join(' ')}" fill="none" stroke="${k % 2 ? '#16161A' : '#E9F2E6'}" stroke-width="2.2"/>`).join(''), collar: '#E9F2E6', cuff: '#16161A', badge: { shape: 'roundel', ring: '#0B8A3E', field: ['#0B8A3E', '#F4F1EA', '#0B8A3E'], n: 3, text: 'N', ink: '#16161A' }, neck: 'v', sleeveArt: sleeveChevrons('#16161A', '#E9F2E6') });
+ART.top.rt_mex98 = kit({ main: '#006847', pattern: [62, 52, 42, 32, 22].map((r, i) => `<circle cx="${CX}" cy="165" r="${r}" fill="none" stroke="${i % 2 ? '#2E8A63' : '#4FA57F'}" stroke-width="${i % 2 ? 4 : 2}" opacity="0.7"/>`).join('') + Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * Math.PI * 2; return `<path d="M${CX + Math.cos(a) * 24} ${165 + Math.sin(a) * 24} L${CX + Math.cos(a) * 60} ${165 + Math.sin(a) * 60}" stroke="#4FA57F" stroke-width="1.4" opacity="0.6"/>`; }).join(''), collar: W2, cuff: '#CE1126', cuff2: W2, badge: { shape: 'shield', ring: '#C9A23A', field: ['#006847', '#F4F1EA', '#CE1126'], n: 3, text: 'M', ink: '#C9A23A' } });
+ART.top.rt_lon92 = kit({ main: '#F7D417', pattern: Array.from({ length: 14 }, (_, i) => { const x = CX - 70 + (i % 5) * 32 + (Math.floor(i / 5) % 2) * 14, y = 118 + Math.floor(i / 5) * 32; return `<path d="${poly([[x, y], [x + 14, y + 6], [x + 4, y + 10], [x + 18, y + 20], [x - 2, y + 12], [x + 8, y + 8]])}" fill="${i % 3 ? '#16161A' : '#D21034'}" opacity="0.85"/>`; }).join(''), collar: '#16161A', cuff: '#16161A', badge: { shape: 'shield', ring: '#C9A23A', field: ['#D21034'], text: 'NL', ink: '#F4F1EA', ribbon: 'LDN', ribbonCol: '#16161A' } });
+ART.top.rt_man99 = kit({ main: '#DA020E', collar: W2, cuff: W2, cuff2: '#16161A', badge: { shape: 'roundel', ring: '#F2C230', field: ['#DA020E'], text: 'M', ink: '#F2C230', ribbon: 'MCR', ribbonCol: '#16161A' }, neck: 'crew' });
+ART.top.rt_tur97 = kit({ main: '#16161A', stripes: [[W2, '#16161A'], 11, CX - 93.5], collar: '#16161A', cuff: '#16161A', badge: { shape: 'oval', ring: '#C9A23A', field: ['#16161A', '#F4F1EA'], n: 6, text: 'T', ink: '#C9A23A', stars: 2, starCol: '#C9A23A' } });
+ART.top.rt_jpn98 = kit({ main: '#1C3F94', collar: W2, cuff: W2, badge: { shape: 'roundel', ring: '#1C3F94', field: ['#F4F1EA'], motif: 'disc', motifCol: '#D21034', text: '', ribbon: 'JPN', ribbonCol: '#1C3F94' }, sleeveArt: sleeveFlames(['#D21034', W2]) });
+ART.top.rt_cmr02 = kit({ main: '#007A3D', tank: true, collar: '#F2C230', cuff: '#CE1126', badge: { shape: 'shield', ring: '#F2C230', field: ['#007A3D', '#CE1126', '#FCD116'], n: 3, stars: 1, starCol: '#FCD116', text: 'C', ink: '#F4F1EA' } });
 
 ART.top.rt_van96 = nbaTank({ main: '#00B2A9', trim: '#7A4A2E', trim2: '#CE1141', ink: W2, out: '#16161A', num: '50', city: 'VANCOUVER', side: '#7A4A2E', side2: '#CE1141' });
 ART.top.rt_hou95 = nbaTank({ main: '#CE1141', trim: '#002D62', trim2: '#C4CED4', ink: W2, out: '#002D62', num: '34', city: 'HOUSTON', pin: '#002D62' });
@@ -938,9 +965,9 @@ ART.top.rt_mtl82 = baseball({ main: '#8EB8E5', text: 'MONTREAL', fill: '#E4002B'
 ART.top.rt_tor92 = baseball({ main: '#F7F6F1', text: 'TORONTO', fill: '#134A8E', line: '#E8291C', pipe: '#134A8E', pipe2: '#E8291C', num: '12' });
 ART.top.rt_pit79 = baseball({ main: '#FDB827', text: 'PITTSBURGH', fill: '#16161A', line: W2, pipe: '#16161A', pipe2: W2, pullover: true, size: 9, font: 'Arial Black, Arial, sans-serif' });
 
-ART.top.rt_buf80 = sweater({ main: '#003087', collar: '#FFB81C', stripe: '#FFB81C', hem2: W2, crest: ['B', '#003087', '#FFB81C'] });
-ART.top.rt_hfd90 = sweater({ main: '#00843D', collar: '#1C2A55', stripe: W2, hem2: '#1C2A55', crest: ['H', '#1C2A55', W2] });
-ART.top.rt_que95 = sweater({ main: '#005BAA', collar: W2, stripe: W2, hem2: '#D21034', crest: ['Q', W2, '#D21034'] });
+ART.top.rt_buf80 = sweater({ main: '#003087', collar: '#FFB81C', stripe: '#FFB81C', hem2: W2, crest: { shape: 'shield', ring: '#FFB81C', field: ['#003087'], motif: 'band', motifCol: '#FFB81C', text: 'B', ink: '#F4F1EA', ribbon: 'BUFFALO', ribbonCol: '#003087' } });
+ART.top.rt_hfd90 = sweater({ main: '#00843D', collar: '#1C2A55', stripe: W2, hem2: '#1C2A55', crest: { shape: 'roundel', ring: '#1C2A55', field: ['#00843D', '#F4F1EA'], n: 6, text: 'H', ink: '#1C2A55', ribbon: 'HARTFORD', ribbonCol: '#1C2A55' } });
+ART.top.rt_que95 = sweater({ main: '#005BAA', collar: W2, stripe: W2, hem2: '#D21034', crest: { shape: 'shield', ring: '#D21034', field: ['#F4F1EA'], motif: 'cross', motifCol: '#005BAA', text: 'Q', ink: '#D21034', ribbon: 'QUEBEC', ribbonCol: '#005BAA' } });
 
 // gridiron: o = { main, collar, bands: [[colour, offset, width]], ink, out, num }
 const gridiron = (o) => top({
