@@ -18,7 +18,7 @@ function bodyShade(B, grow, hem, top, R) {
 }
 function sleeve(P, g, side, f, grow, R, o = {}) {
   const T = tube(cutF(g.armJ(side), 0, f, grow));
-  P.tube(T, R, { cap0: o.cap0 ?? true, cap1: false, extra: o.extra });
+  P.tube(T, R, { cap0: o.cap0 ?? true, cap1: false, extra: o.extra, open: o.seam ? 0 : side, hem: true });
   return T;
 }
 /** the visible skin and collar at a neckline */
@@ -49,7 +49,7 @@ function top(o) {
     }
     if (ph === 'sleeves' && yEnd) both((side) => {
       const SR = o.sleeveCol ? ramp(o.sleeveCol(c.pal, main)) : R;
-      sleeve(P, g, side, yEnd, (o.sgrow ?? 4) * (c.B.arm * 0.5 + 0.5), SR);
+      sleeve(P, g, side, yEnd, (o.sgrow ?? 4) * (c.B.arm * 0.5 + 0.5), SR, { seam: !!o.sleeveCol });
       if (o.trim) o.trim(P, g, side, yEnd, c, R, main);
     });
     if (ph === 'cuffs' && yEnd && o.sleeve === 'long') both((side) => {
@@ -87,7 +87,7 @@ function outer(o) {
       if (o.collar) o.collar(P, c, R, main, B);
     }
     if (ph === 'sleeves' && o.sleeve !== 'none') both((side) => {
-      const T = sleeve(P, g, side, o.sleeve === 'short' ? 0.38 : 0.92, (o.sgrow ?? 6.5) * (B.arm * 0.5 + 0.5), SR);
+      const T = sleeve(P, g, side, o.sleeve === 'short' ? 0.38 : 0.92, (o.sgrow ?? 6.5) * (B.arm * 0.5 + 0.5), SR, { seam: !!o.sleeveCol });
       if (o.stripe) { const pts = T.J.map(([x, y, w], i) => [x - side * w * 0.36, y]); const colr = o.stripe(c.pal, main); P.stroke(curve(pts.slice(0, -1)), colr, 2.6); }
     });
     if (ph === 'cuffs' && o.sleeve !== 'none' && o.sleeve !== 'short') both((side) => {
@@ -421,33 +421,34 @@ ART.hair.fade = hairOf(null, (P, hc, c) => {
   hairShape(P, blob([[70, 40], [70, 28], [80, 15], [96, 9], [112, 10], [126, 17], [131, 30], [130, 40], [122, 37], [110, 39], [100, 35], [88, 38], [78, 36]]), hc, { strands: [[[88, 20], [96, 30]], [[106, 18], [110, 28]]], lights: [[[82, 20], [94, 14]]] });
 });
 ART.hair.slick = hairOf(null, (P, hc) => hairShape(P, blob([[66, 56], [63.5, 42], [67, 27], [80, 15], [98, 10], [116, 11.5], [130, 20], [136.5, 36], [136.5, 56], [133, 55], [132, 42], [124, 32.5], [110, 30], [96, 30.5], [82, 33], [72, 40], [68, 56]]), hc, { strands: [[[78, 30], [96, 18], [118, 18]], [[84, 32], [102, 24], [124, 26]]], lights: [[[76, 26], [94, 16], [112, 15]], [[90, 26], [108, 22]]], noHi: true }));
-// loose brown curls with a middle part: volume at the sides, curls framing the temples, forehead open in the middle
+// Waves: loose curls and waves with volume on top, short-ish sides, and a messy fringe of curly locks over the forehead.
+// One continuous shape (no separate balls), with wavy strands drawn through it.
 ART.hair.curly = hairOf((P, hc) => {
-  const R = ramp(hc, { k: 0.9 }); if (rgbL(hc) < 0.2) { R.base = adj(hc, 0.06); R.sh = adj(hc, 0.01); R.deep = adj(hc, 0.14); } const line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22);
-  // the mass behind the head: a little wider than the skull, bumpy curl edge, down to about the ears
-  const C = [[60, 64, 8], [57, 52, 9], [59, 38, 10], [66, 25, 11], [78, 15, 11], [92, 10, 11], [108, 10, 11], [122, 15, 11], [134, 25, 11], [141, 38, 10], [143, 52, 9], [140, 64, 8]];
-  C.forEach(([x, y, r]) => P.ell(x, y, r + OW * 0.6, r + OW * 0.6, line));
-  P.fill(blob([[58, 70], [56, 40], [72, 16], [100, 8], [128, 16], [144, 40], [142, 70], [100, 40]]), R.sh);
-  C.forEach(([x, y, r]) => P.ell(x, y, r, r, x > 112 ? R.sh : R.base));
-  C.forEach(([x, y, r]) => P.stroke(curve([[x - r * 0.55, y + r * 0.1], [x - r * 0.1, y - r * 0.5], [x + r * 0.45, y - r * 0.2]]), x > 112 ? R.deep : lt(hc, 0.14), 1.4, 0.9));
+  // a little extra volume behind the crown
+  hairShape(P, blob([[63, 58], [61, 40], [67, 20], [80, 5], [100, -2], [120, 2], [134, 15], [139, 34], [138, 58], [100, 40]]), hc, { noHi: true, shX: 118, shX2: 122 });
 }, (P, hc) => {
-  const R = ramp(hc, { k: 0.9 }); if (rgbL(hc) < 0.2) { R.base = adj(hc, 0.06); R.sh = adj(hc, 0.01); R.deep = adj(hc, 0.14); } const line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22);
-  // two curtains of curls from a middle part, sweeping out over the temples to about the brows
-  const half = (s) => {
-    const X = (x) => CX + x * s, base = s > 0 ? R.sh : R.base;
-    const curls = [[X(7), 27, 6], [X(15), 33, 6.6], [X(24), 38.5, 7], [X(32), 44, 7], [X(36), 54, 6.4]];
-    const d = blob([[X(1), 17], [X(16), 14], [X(31), 20], [X(39), 34], [X(40), 50], [X(36), 52], [X(30), 42], [X(20), 36], [X(10), 30], [X(1.5), 24]]);
-    curls.forEach(([x, y, r]) => P.ell(x, y, r + OW * 0.6, r + OW * 0.6, line));
-    P.fill(d, base);
-    curls.forEach(([x, y, r]) => P.ell(x, y, r, r, base));
-    P.stroke(curve([[X(1), 17], [X(16), 14], [X(31), 20], [X(39), 34], [X(41), 48]]), line, OW);
-    P.stroke(curve([[X(1), 16], [X(1.5), 24]]), line, 1.4);
-    // curl swirls: an S down each lock and a C in each tip
-    P.stroke(curve([[X(8), 19], [X(16), 21], [X(22), 27]]), s > 0 ? R.deep : lt(hc, 0.16), 1.5);
-    P.stroke(curve([[X(20), 18], [X(30), 25], [X(34), 34]]), R.deep, 1.3);
-    curls.forEach(([x, y, r]) => P.stroke(curve([[x - r * 0.45 * s, y + r * 0.35], [x - r * 0.05 * s, y - r * 0.4], [x + r * 0.45 * s, y - r * 0.05], [x + r * 0.1 * s, y + r * 0.35]]), s > 0 ? R.deep : lt(hc, 0.14), 1.3));
-  };
-  half(-1); half(1);
+  const R = ramp(hc, { k: 0.9 });
+  if (rgbL(hc) < 0.2) { R.base = adj(hc, 0.07); R.sh = adj(hc, 0.02); R.deep = adj(hc, 0.16); R.hi = adj(hc, 0.14); }
+  const line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22);
+  const d = blob([
+    [67, 58], [64.5, 46], [64, 33], [66.5, 21], [72, 12], [80, 5], [89, 2.5], [96, -1.5], [104, 1], [112, -0.5], [120, 4], [128, 11], [134, 21], [137, 35], [137, 56],
+    [134, 54.5], [133, 44], [130.5, 36], [125, 33], [118.5, 36.5], [114, 31], [107.5, 37.5], [103.5, 32.5], [97.5, 42.5], [93.5, 35], [87.5, 45], [83.5, 37], [78, 46], [73.5, 40.5], [70, 48], [68.8, 57],
+  ]);
+  P.fill(d, R.base);
+  // strands sweep from the crown down and across to the left, each ending in a lock of the fringe
+  const waves = [
+    [[110, 4], [104, 14], [100, 24], [97.5, 40]], [[100, 2], [94, 12], [90, 24], [87.5, 43]], [[90, 5], [84, 14], [80, 26], [78, 44]],
+    [[118, 7], [114, 16], [110, 26], [107.5, 36]], [[126, 13], [122, 22], [118, 34]], [[80, 8], [73, 18], [70, 30], [70.5, 46]], [[131, 22], [133, 34], [134, 50]],
+  ];
+  P.clip(d, [
+    `<path d="${poly([[118, -10], [160, -10], [160, 80], [122, 80]])}" fill="${R.sh}"/>`,
+    ...waves.map((w) => `<path d="${curve(w)}" fill="none" stroke="${R.deep}" stroke-width="1.5" stroke-linecap="round"/>`),
+    ...[[84, 10], [96, 6], [108, 7], [120, 12], [76, 20], [128, 22], [92, 20], [114, 20]].map(([x, y]) => `<path d="${curve([[x - 3, y + 2], [x - 1, y - 2], [x + 2.5, y - 1], [x + 2, y + 2.5]])}" fill="none" stroke="${R.deep}" stroke-width="1.3" stroke-linecap="round"/>`),
+    ...waves.slice(0, 4).map((w) => `<path d="${curve(w.map(([x, y]) => [x - 3, y + 1]).slice(0, 3))}" fill="none" stroke="${R.hi}" stroke-width="1.7" stroke-linecap="round"/>`),
+  ].join(''));
+  P.stroke(d, line, OW);
+  // a few loose curls flicking off the fringe
+  [[[87.5, 45], [86, 49], [88.5, 51.5], [91, 49]], [[97.5, 42.5], [96.5, 46.5], [99, 49]], [[78, 46], [76.5, 50], [79, 52]]].forEach((c2) => P.stroke(curve(c2), line, 1.6));
 });
 ART.hair.afro = hairOf((P, hc) => hairShape(P, blob([[56, 66], [48, 44], [54, 20], [76, 2], [100, -3], [124, 2], [146, 20], [152, 44], [144, 66], [136, 70], [64, 70]]), hc, { shX: 118, shX2: 124, hi: [[64, 22], [80, 8], [96, 4], [84, 14], [70, 28]], strands: [[[70, 40], [74, 46]], [[130, 30], [134, 38]], [[90, 10], [96, 14]], [[116, 12], [122, 18]], [[60, 52], [64, 58]], [[140, 52], [136, 58]]] }), (P, hc) => {
   const d = blob([[66, 58], [64, 40], [72, 30], [86, 26], [100, 25], [114, 26], [128, 30], [136, 40], [134, 58], [131, 46], [122, 39], [100, 36], [78, 39], [69, 46]]);

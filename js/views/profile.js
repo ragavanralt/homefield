@@ -4,7 +4,7 @@ import { getState, getBank, myTeams, setAvatar, onSlipChange, track } from '../s
 import { ensureLive } from '../live.js';
 import { pageHead } from '../components.js';
 import { levelFor, rankFor, betStats } from '../bets.js';
-import { SKINS, HAIR_COLORS, BODIES, POSES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
+import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
@@ -41,7 +41,6 @@ export async function render(root, params = {}) {
       h('div', { class: 'pf-name' }, h('b', null, `Level ${lvl} · ${rankFor(lvl)}`), h('small', null, `${st.won}-${st.lost} record · best streak ${st.bestStreak}`)),
       coins,
       h('div', { class: 'pf-row' }, h('small', null, 'Body type (free)'), h('div', { class: 'seg pf-body' }, BODIES.map((b, i) => h('button', { type: 'button', class: 'seg-b' + ((av.body ?? 1) === i ? ' on' : ''), 'data-body': b.id, onclick: () => { setAvatar((a) => { a.body = i; }); draw(); } }, b.label)))),
-      h('div', { class: 'pf-row' }, h('small', null, 'Pose (free)'), h('div', { class: 'seg pf-pose' }, POSES.map((p, i) => h('button', { type: 'button', class: 'seg-b' + ((av.pose ?? 0) === i ? ' on' : ''), 'data-pose': p.id, onclick: () => { setAvatar((a) => { a.pose = i; }); draw(); } }, p.label)))),
       h('div', { class: 'pf-row' }, h('small', null, 'Skin'), h('div', { class: 'swatches' }, SKINS.map((c, i) => h('button', { type: 'button', class: 'sw' + (av.skin === i ? ' on' : ''), style: { background: c }, 'aria-label': `Skin ${i + 1}`, onclick: () => { setAvatar((a) => { a.skin = i; }); draw(); } })))),
       h('div', { class: 'pf-row' }, h('small', null, 'Hair colour'), h('div', { class: 'swatches' }, HAIR_COLORS.map((c, i) => h('button', { type: 'button', class: 'sw' + (av.hairColor === i ? ' on' : ''), style: { background: c }, 'aria-label': `Hair colour ${i + 1}`, onclick: () => { setAvatar((a) => { a.hairColor = i; }); draw(); } })))),
       teams.length ? h('div', { class: 'pf-row' }, h('small', null, 'Team colours'),

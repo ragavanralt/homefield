@@ -100,7 +100,7 @@ export function cutJ(J, yEnd, grow = 0, from = -Infinity) {
   return out.length > 1 ? out : [out[0], [out[0][0], out[0][1] + 0.5, out[0][2]]];
 }
 
-/** part of a tube between fractions f0..f1 of its length (sleeves follow the arm whatever the pose) */
+/** part of a tube between fractions f0..f1 of its length (sleeves follow the arm) */
 export function cutF(J, f0, f1, grow = 0) {
   const L = [0];
   for (let i = 1; i < J.length; i++) L.push(L[i - 1] + Math.hypot(J[i][0] - J[i - 1][0], J[i][1] - J[i - 1][1]));
@@ -134,7 +134,15 @@ export class Pen {
     this.fill(bandD(T, a + (b - a) * (o.shAt ?? 0.66), b), Rm.sh);
     if (o.deep !== false) this.fill(bandD(T, a + (b - a) * (o.deepAt ?? 0.88), b), Rm.deep);
     if (o.extra) o.extra(this, T);
-    this.stroke(d, Rm.line, o.w ?? OW);
+    if (o.open) {
+      // seamless shoulder: outline the outer edge from the top of the cap down, and the inner edge from the armpit down
+      const outer = o.open < 0 ? T.L : T.R, inner = o.open < 0 ? T.R : T.L;
+      const [x0, y0, w0] = T.J[0], [x1, y1] = T.J[1], len = Math.hypot(x1 - x0, y1 - y0) || 1;
+      const top = [x0 - ((x1 - x0) / len) * w0 * 0.42 + (outer[0][0] - x0) * 0.35, y0 - ((y1 - y0) / len) * w0 * 0.42];
+      this.stroke(curve([top, ...outer]), Rm.line, o.w ?? OW);
+      this.stroke(curve(inner.slice(1)), Rm.line, o.w ?? OW);
+      if (o.cap1 === false && o.hem) this.stroke(`M${pt(T.L[T.L.length - 1])} L${pt(T.R[T.R.length - 1])}`, Rm.line, o.w ?? OW);
+    } else this.stroke(d, Rm.line, o.w ?? OW);
     return this;
   }
   /** a closed shape with a shade on its right part (clipped to the shape) */
@@ -172,18 +180,13 @@ export function geometry(B, pose = 'relaxed') {
   const s = (x, side) => (side < 0 ? x : 2 * CX - x); // shapes are defined on the left; mirror for the right
   // arms: hanging a little away from the body (open, relaxed), slight bend at the elbow
   const a = B.arm, ax = CX - B.sh + 12;
-  // poses: relaxed (arms hanging a little away from the body), hands on hips, or one hand on the hip
-  const onHip = (side) => pose === 'hips' || (pose === 'onehip' && side < 0);
-  g.onHip = onHip;
-  g.armJ = (side) => (onHip(side)
-    ? [[ax + 2, 127, 25 * a], [ax - 6, 140, 25 * a], [ax - 13, 153, 21 * a], [CX - B.sh - 11, 166, 16.5 * a], [CX - B.wa - B.be - 11, 179, 18 * a], [CX - B.wa - B.be - 2, 190, 12.5 * a]]
-    : [[ax + 2, 127, 25 * a], [ax - 4, 141, 25 * a], [ax - 8.5, 159, 21 * a], [ax - 11.5, 177, 16 * a], [ax - 13, 190, 18.5 * a], [ax - 15.5, 211, 12 * a]]
-  ).map(([x, y, w]) => [s(x, side), y, w]);
+  // arms hang close to the body with a soft bend at the elbow; the forearm drifts back toward the thigh
+  g.armJ = (side) => [[ax + 3, 127, 25 * a], [ax - 1.5, 141, 25 * a], [ax - 5, 158, 21 * a], [ax - 7.5, 175, 16 * a], [ax - 6.8, 187, 18.5 * a], [ax - 3.6, 206, 12 * a]].map(([x, y, w]) => [s(x, side), y, w]);
   g.wrist = (side) => { const j = g.armJ(side); return j[j.length - 1]; };
   // where a watch sits: a little up the forearm from the wrist
   g.watch = (side) => { const j = g.armJ(side), p = j[4], q = j[5], t = 0.72; return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t]; };
   g.watchTurn = (side) => { const j = g.armJ(side), p = j[4], q = j[5]; return Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI - 90; };
-  g.handTurn = (side) => (onHip(side) ? (side < 0 ? -28 : 28) : 0);
+  g.handTurn = (side) => { const j = g.armJ(side), p = j[4], q = j[5]; return Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI - 90; };
   // legs: slight A-stance, thigh, knee, calf swell on the outside, narrow ankle
   const l = B.leg, lx = CX - 15 - (B.hp - 28.5) * 0.45;
   g.legJ = (side) => [[lx + 2.2, 196, 31 * l], [lx, 226, 30 * l], [lx - 1, 256, 21 * l], [lx - 2.2, 270, 24.5 * l], [lx - 2, 288, 16 * l], [lx - 2.2, 304, 12.5 * l]].map(([x, y, w]) => [s(x, side), y, w]);
@@ -297,7 +300,7 @@ export const ART = { hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, o
 /** Draw the whole fan. ctx: { skin, hair, eq, colourOf(id), pal, build } -> svg inner markup */
 export function drawFan(ctx) {
   const B = BUILDS.find((b) => b.id === ctx.build) || BUILDS[1];
-  const g = geometry(B, ctx.pose);
+  const g = geometry(B);
   const P = new Pen();
   const sk = ramp(ctx.skin, { hs: 0.25 });
   sk.line = adj(ctx.skin, -0.5, -8, -0.08);
@@ -348,7 +351,7 @@ export function drawFan(ctx) {
   for (const side of [-1, 1]) {
     const T = tube(g.armJ(side));
     P.tube(T, sk, {
-      cap1: false, lit: 'left', extra: (PP, TT) => {
+      cap1: false, lit: 'left', open: side, extra: (PP, TT) => {
         if (B.def <= 0.5) return;
         const J = g.armJ(side), k = B.arm;
         const at = (i, t) => lerp2(TT.L[i], TT.R[i], side < 0 ? t : 1 - t); // t from the outer edge

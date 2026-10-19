@@ -31,12 +31,6 @@ export const BODIES = [
   { id: 'built', label: 'Built', up: 1.14, low: 1.12 },
   { id: 'heavy', label: 'Heavy', up: 1.26, low: 1.22 },
 ];
-// Poses are free and change only the arms, so every item fits every pose.
-export const POSES = [
-  { id: 'relaxed', label: 'Relaxed' },
-  { id: 'onehip', label: 'One hip' },
-  { id: 'hips', label: 'Both hips' },
-];
 export const ALWAYS_ON = ['hair', 'top', 'bottom', 'shoes'];
 export const TIERS = { free: { label: 'Free' }, common: { label: 'Common' }, rare: { label: 'Rare' }, epic: { label: 'Epic' }, legend: { label: 'Legendary' }, earned: { label: 'Earned' } };
 
@@ -47,7 +41,7 @@ const I = (id, slot, name, sec, price, extra = {}) => ({ id, slot, name, sec, pr
 const T = { team: true };
 export const ITEMS = [
   // ---- Look: hair, face, beards, ears
-  I('short', 'hair', 'Short cut', 'look', 0), I('buzz', 'hair', 'Buzz cut', 'look', 0), I('curly', 'hair', 'Curls', 'look', 0),
+  I('short', 'hair', 'Short cut', 'look', 0), I('buzz', 'hair', 'Buzz cut', 'look', 0), I('curly', 'hair', 'Waves', 'look', 0),
   I('fade', 'hair', 'Skin fade', 'look', 120), I('slick', 'hair', 'Slick back', 'look', 150), I('bob', 'hair', 'Bob', 'look', 150), I('ponytail', 'hair', 'Ponytail', 'look', 150),
   I('afro', 'hair', 'Afro', 'look', 150), I('long', 'hair', 'Long hair', 'look', 150), I('bun', 'hair', 'Top bun', 'look', 120),
   I('braids', 'hair', 'Braids', 'look', 400), I('twists', 'hair', 'Twists', 'look', 400), I('mohawk', 'hair', 'Mohawk', 'look', 350), I('dreads', 'hair', 'Dreads', 'look', 450),
@@ -261,8 +255,7 @@ export function avatarSvg(av, team, vb) {
   const eq = av.eq || {};
   const pal = palette(team);
   const body = BODIES[av.body ?? 1] || BODIES[1];
-  const pose = (POSES[av.pose ?? 0] || POSES[0]).id;
-  const key = JSON.stringify([av.skin, av.hairColor, av.body, pose, av.col, eq, pal, vb]);
+  const key = JSON.stringify([av.skin, av.hairColor, av.body, av.col, eq, pal, vb]);
   if (cache.has(key)) return cache.get(key);
   const colourOf = (id) => {
     const it = itemById(id);
@@ -274,7 +267,7 @@ export function avatarSvg(av, team, vb) {
     skin: SKINS[av.skin] ?? SKINS[2],
     hair: HAIR_COLORS[av.hairColor] ?? HAIR_COLORS[0],
     eq: { ...eq, hair: eq.hair || 'short', top: eq.top || 'tee', bottom: eq.bottom || 'jeans', shoes: eq.shoes || 'sneakers' },
-    colourOf, pal, build: body.id, pose,
+    colourOf, pal, build: body.id,
   });
   const out = `<svg viewBox="${vb || FULL}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
   if (cache.size > 120) cache.delete(cache.keys().next().value);
