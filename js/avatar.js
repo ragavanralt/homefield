@@ -302,6 +302,7 @@ export function avatarSvg(av, team, vb) {
     hair: HAIR_COLORS[av.hairColor] ?? HAIR_COLORS[0],
     eq: { ...eq, hair: eq.hair || 'short', top: eq.top || 'tee', bottom: eq.bottom || 'jeans', shoes: eq.shoes || 'sneakers' },
     colourOf, pal, build: body.id, bg: !vb || vb === FULL || vb === BUST,
+    bareLegs: !!itemById(eq.bottom || 'jeans')?.short, // long pants hide the legs, so no skin shows between them
   });
   const out = `<svg viewBox="${vb || FULL}" role="img" aria-label="Your fan character" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
   if (cache.size > 120) cache.delete(cache.keys().next().value);

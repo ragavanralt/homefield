@@ -102,6 +102,7 @@ function pants(o) {
   return (P, g, col, ph, c) => {
     if (ph !== 'legs') return;
     const main = colOf(o, c, col), R = ramp(main), B = c.B, grow = (o.grow ?? 3.2) * (B.leg * 0.4 + 0.6), end = o.end ?? 306;
+    const Js = {};
     both((side) => {
       let J = cutJ(g.legJ(side), end, grow, 194);
       if (o.flare) J = J.map(([x, y, w], i) => [x + (o.flare * 0.15 * side) * (i / (J.length - 1)), y, w + o.flare * (i / (J.length - 1)) ** 1.6]);
@@ -112,19 +113,38 @@ function pants(o) {
         J = Array.from({ length: n }, (_, i) => { const t = i / (n - 1), u = Math.min(1, t / 0.3), e = u * u * (3 - 2 * u); return [a[0] + (xb - a[0]) * t, a[1] + (b[1] - a[1]) * t, t < 0.3 ? wh + (wf - wh) * e : wf + (wb - wf) * ((t - 0.3) / 0.7)]; }); }
       // never wider than the hips up top, so no pants poke out beside a shirt hem on any body type
       J = J.map(([x, y, w]) => { if (y > 212) return [x, y, w]; const t = Math.max(0, Math.min(1, (y - 184) / 18)), lim = B.wa + B.be + (B.hp + B.be * 0.4 - B.wa - B.be) * t + (y > 203 ? (y - 203) * 0.6 : 0) - 0.5, over = Math.abs(x - CX) + w / 2 - lim; return over > 0 ? [x - side * over / 2 * Math.sign(x - CX) * side, y, w - over] : [x, y, w]; });
+      // keep a gap between the legs below the crotch so they read as two legs, not one block
+      if (J.length && J[J.length - 1][1] > 230 && !J.some(([, y]) => y > 222 && y < 232)) { const i = J.findIndex(([, y]) => y >= 232); if (i > 0) { const a = J[i - 1], b = J[i], t = (226 - a[1]) / (b[1] - a[1]); if (t > 0 && t < 1) J.splice(i, 0, [a[0] + (b[0] - a[0]) * t, 226, a[2] + (b[2] - a[2]) * t]); } }
+      J = J.map(([x, y, w]) => { const m = y <= 222 ? -99 : 0.5 + Math.min(3.2, (y - 222) * 0.05), d = Math.abs(x - CX) - w / 2; return d < m ? [x + side * (m - d) / 2, y, w - (m - d)] : [x, y, w]; });
+      if (o.one) { Js[side] = J; return; }
       const LR = o.legCol ? ramp(o.legCol(c.pal, main, side)) : R;
       const TJ = tube(J);
       P.tube(TJ, LR, { cap0: false, cap1: false });
       // leg details (stripes, pockets, folds) stay inside the leg
       if (o.legDetail) { const Q = new Pen(); o.legDetail(Q, g, side, J, c, LR, main); P.clip(tubeD(TJ, false, false), Q.toString()); P.stroke(tubeD(TJ, false, false), LR.line, OW); }
     });
-    // hips: one piece over the tops of both legs
     const w = B.wa + B.be * 0.9 + grow * 0.15 - 2.8, wh = B.hp + B.be * 0.4 + grow * 0.55 - 2.6;
+    if (o.one) {
+      // shorts: one clean piece from the waist to a straight hem, with a short split between the legs
+      const edge = (side, k) => { const [x, , ww] = Js[side][Js[side].length - 1]; return x + k * side * ww / 2; };
+      const hy = Js[1][Js[1].length - 1][1], cy = hy - 13;
+      const sideR = [[CX + w, 191], [CX + wh + 0.6, 206], [edge(1, 1), hy]], sideL = [[edge(-1, 1), hy], [CX - wh - 0.6, 206], [CX - w, 191]];
+      const d = `M${pt([CX - w, 191])} L${pt(sideR[0])}${segs(sideR)} L${pt([Math.max(CX + 2, edge(1, -1)), hy + 0.6])} L${pt([CX, cy])} L${pt([Math.min(CX - 2, edge(-1, -1)), hy + 0.6])} L${pt(sideL[0])}${segs(sideL)}Z`;
+      P.fill(d, R.base);
+      const Q = new Pen();
+      Q.add(`<path d="${poly([[CX + wh * 0.42, 180], [CX + 90, 180], [CX + 90, 340], [CX + wh * 0.5, 340]])}" fill="${R.sh}"/><path d="${poly([[CX + wh * 0.88, 180], [CX + 90, 180], [CX + 90, 340], [CX + wh * 0.92, 340]])}" fill="${R.deep}"/><path d="${poly([[CX - wh - 2, 180], [CX - wh * 0.78, 180], [CX - wh * 0.82, 340], [CX - wh - 6, 340]])}" fill="${R.hi}" opacity="0.6"/>`);
+      if (o.legDetail) both((side) => o.legDetail(Q, g, side, Js[side], c, R, main));
+      Q.stroke(curve([[CX - 1, 212], [CX - 0.5, 224], [CX, cy]]), R.sh, 1.3, 0.8);
+      P.clip(d, Q.toString());
+      P.stroke(d, R.line, OW);
+    } else {
+    // hips: one piece over the tops of both legs
     const hipD = blob([[CX - w, 191], [CX + w, 191], [CX + wh + 0.6, 206], [CX + wh * 0.55, 218], [CX, 224], [CX - wh * 0.55, 218], [CX - wh - 0.6, 206]]);
     P.fill(hipD, R.base);
     P.clip(hipD, `<path d="${poly([[CX + wh * 0.45, 180], [CX + 80, 180], [CX + 80, 240], [CX + wh * 0.4, 240]])}" fill="${R.sh}"/><path d="${poly([[CX + wh * 0.86, 180], [CX + 80, 180], [CX + 80, 240], [CX + wh * 0.8, 240]])}" fill="${R.deep}"/>`);
     P.stroke(curve([[CX - wh - 0.6, 207], [CX - w, 191], [CX + w, 191], [CX + wh + 0.6, 207]]), R.line, OW);
     P.stroke(curve([[CX, 207], [CX, 224]]), R.line, 1.4);
+    }
     // waistband
     const bandCol = o.band ? o.band(c.pal, main) : dk(main, 0.06);
     P.part(poly([[CX - w, 191], [CX + w, 191], [CX + w + 0.8, 197], [CX - w - 0.8, 197]]), { ...ramp(bandCol) }, { line: R.line, w: 1.4 });
@@ -365,10 +385,10 @@ const pocketsJ = (P, c, R, main, w) => both((s) => P.stroke(curve([[CX + s * (w 
 
 ART.bottom.jeans = pants({ def: '#3A5A93', legDetail: jeanDetail, detail: pocketsJ, belt: null });
 ART.bottom.joggers = pants({ def: '#46546A', grow: 4.5, legDetail: (P, g, side, J, c, R) => { knee(P, J, side, R); const [x, y, w] = J[J.length - 1]; P.fill(poly([[x - w / 2, y - 7], [x + w / 2, y - 7], [x + w / 2 - 1, y], [x - w / 2 + 1, y]]), R.sh); }, band: (p, m) => dk(m, 0.12), fly: false, detail: (P) => { P.stroke(curve([[CX - 3, 197], [CX - 4, 208]]), '#E8E6E0', 1.4); P.stroke(curve([[CX + 3, 197], [CX + 4, 208]]), '#E8E6E0', 1.4); } });
-ART.bottom.shorts = pants({ def: '#6B8FC9', end: 246, grow: 4.5, legDetail: shortsDetail, detail: pocketsJ });
+ART.bottom.shorts = pants({ one: true, def: '#6B8FC9', end: 250, grow: 6, legDetail: shortsDetail, detail: pocketsJ });
 ART.bottom.cargo = pants({ def: '#9C8B63', grow: 5, legDetail: (P, g, side, J, c, R) => { cargoPocket(P, J, side, R); knee(P, J, side, R); hemLine(P, J, R); }, detail: pocketsJ });
 ART.bottom.baggy = pants({ def: '#4F6E9F', grow: 11, end: 310, bag: { hem: 1.1, out: 3 }, legDetail: (P, g, side, J, c, R) => { drape(P, J, side, R); hemLine(P, J, R); }, detail: pocketsJ });
-ART.bottom.jorts = pants({ def: '#4F6E9F', end: 262, grow: 11, bag: { hem: 1.08, out: 2 }, legDetail: shortsDetail, detail: pocketsJ });
+ART.bottom.jorts = pants({ one: true, def: '#4F6E9F', end: 262, grow: 11, bag: { hem: 1.08, out: 2 }, legDetail: shortsDetail, detail: pocketsJ });
 ART.bottom.parachute = pants({ def: '#1E1F23', grow: 11, end: 309, bag: { hem: 1.06, out: 2.5 }, legDetail: (P, g, side, J, c, R) => { [232, 258, 286].forEach((y) => { const j = J.find((q) => q[1] >= y) || J[J.length - 1]; P.stroke(curve([[j[0] - j[2] / 2 + 2, y], [j[0] + 2, y + 4], [j[0] + j[2] / 2 - 2, y]]), R.hi, 1.6, 0.7); }); const [x, y, w] = J[J.length - 1]; P.fill(poly([[x - w / 2, y - 6], [x + w / 2, y - 6], [x + w / 2 - 2, y], [x - w / 2 + 2, y]]), R.sh); }, fly: false });
 ART.bottom.bagcargo = pants({ def: '#58613F', grow: 11, end: 310, bag: { hem: 1.1, out: 3 }, legDetail: (P, g, side, J, c, R) => { drape(P, J, side, R); cargoPocket(P, J, side, R); hemLine(P, J, R); }, detail: pocketsJ });
 ART.bottom.carpenter = pants({ def: '#7A5A3A', grow: 7, straight: 0.9, legDetail: (P, g, side, J, c, R) => { const j = J.find((q) => q[1] >= 248); const k = J.find((q) => q[1] >= 272) || J[J.length - 1]; P.shape(poly([[j[0] - j[2] / 2 + 1.5, 248], [j[0] + j[2] / 2 - 1.5, 248], [k[0] + k[2] / 2 - 1.5, 272], [k[0] - k[2] / 2 + 1.5, 272]]), dk(R.base, 0.06), { line: R.line, w: 1.3 }); if (side > 0) P.stroke(curve([[J[1][0] + 8, 214], [J[1][0] + 9, 236]]), R.line, 2.2); hemLine(P, J, R); }, detail: pocketsJ });
@@ -381,12 +401,12 @@ ART.bottom.tuxp = pants({ def: '#121216', grow: 4, straight: 0.82, legDetail: (P
 ART.bottom.fogsweats = pants({ def: '#8E9196', grow: 5.5, legDetail: (P, g, side, J, c, R) => { knee(P, J, side, R); const [x, y, w] = J[J.length - 1]; P.fill(poly([[x - w / 2, y - 7], [x + w / 2, y - 7], [x + w / 2 - 1, y], [x - w / 2 + 1, y]]), R.sh); }, band: (p, m) => dk(m, 0.12), fly: false, detail: (P) => P.add(`<rect x="${CX + 12}" y="200" width="10" height="3" fill="#2A2A2E"/>`) });
 ART.bottom.techjog = pants({ def: '#2A2D33', grow: 3.5, legDetail: (P, g, side, J, c, R) => { knee(P, J, side, R); const j = J.find((q) => q[1] >= 236); P.stroke(curve([[j[0] - 6, 236], [j[0] + 4, 232]]), '#16181C', 2); const [x, y, w] = J[J.length - 1]; P.fill(poly([[x - w / 2, y - 6], [x + w / 2, y - 6], [x + w / 2 - 1, y], [x - w / 2 + 1, y]]), R.sh); }, fly: false });
 ART.bottom.goldpants = pants({ def: GOLD, main: () => GOLD, grow: 4, legDetail: (P, g, side, J, c, R) => { knee(P, J, side, R); P.stroke(curve(J.slice(0, 4).map(([x, y, w]) => [x - w * 0.25, y])), GOLDHI, 2, 0.8); hemLine(P, J, R); }, detail: pocketsJ });
-ART.bottom.tshorts = pants({ main: (p) => p.t1, end: 256, grow: 8, bag: { hem: 1.08, out: 2 }, legDetail: (P, g, side, J, c, R, main) => { stripe((p) => p.t2, 6)(P, g, side, J, c, R, main); const q = J.map(([x, y, ww]) => [x + side * (ww / 2 - 7.6), y]); P.stroke(curve(q), c.pal.tink, 1.2); }, fly: false, band: (p) => p.t2 });
+ART.bottom.tshorts = pants({ one: true, main: (p) => p.t1, end: 256, grow: 8, bag: { hem: 1.08, out: 2 }, legDetail: (P, g, side, J, c, R, main) => { stripe((p) => p.t2, 6)(P, g, side, J, c, R, main); const q = J.map(([x, y, ww]) => [x + side * (ww / 2 - 7.6), y]); P.stroke(curve(q), c.pal.tink, 1.2); }, fly: false, band: (p) => p.t2 });
 ART.bottom.trackp = pants({ main: (p) => p.t2, grow: 4.5, legDetail: (P, g, side, J, c, R, main) => { stripe((p) => p.t1, 5)(P, g, side, J, c, R, main); const q = J.map(([x, y, ww]) => [x + side * (ww / 2 - 7.2), y]); P.stroke(curve(q), c.pal.tink, 1.1); }, fly: false, band: (p, m) => dk(m, 0.15) });
 // a five-point star centred on x, y
 const star = (x, y, r) => poly(Array.from({ length: 10 }, (_, i) => { const t = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; return [x + Math.cos(t) * rr, y + Math.sin(t) * rr]; }));
 // retro mesh shorts: long and loose, past the knee, a wide side panel. o = { pipe, pin, stars }
-const courtside = (a, b, o = {}) => pants({ main: (p, col) => col || a, end: 268, grow: 13, bag: { hem: 1.14, out: 3 }, fly: false, band: () => b,
+const courtside = (a, b, o = {}) => pants({ one: true, main: (p, col) => col || a, end: 268, grow: 13, bag: { hem: 1.14, out: 3 }, fly: false, band: () => b,
   legDetail: (P, g, side, J, c, R, main) => {
     if (o.pin) { const pin = o.pin(main); for (let k = -3; k <= 2; k++) P.stroke(curve(J.map(([x, y, w]) => [x + (k + 0.5) * w / 7.5 - side * 3, y])), pin, 0.9, 0.85); }
     P.stroke(curve(J.map(([x, y, w]) => [x + side * (w / 2 - 4), y])), b, 7);

@@ -361,7 +361,7 @@ export function drawFan(ctx) {
   run('back', 'back');
   P.add(HEADG); run('hair', 'back'); P.add('</g>');
   // legs (bare skin under trousers, so shorts show real legs)
-  for (const side of [-1, 1]) {
+  for (const side of ctx.bareLegs === false ? [] : [-1, 1]) {
     const T = tube(g.legJ(side));
     P.tube(T, sk, { cap0: false });
     if (B.def > 0.5) { // knee cap, the calf line on the outer edge, shin light
