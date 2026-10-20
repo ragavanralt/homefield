@@ -3,6 +3,7 @@
 import { SOCIAL } from './social-config.js';
 import { getState, update, spendCoins, addCoins, onSaved, mergeClaims } from './store.js';
 import { betStats } from './bets.js';
+import { itemById, priceOf } from './avatar.js';
 
 export const VERSION = 1;
 const SKEY = 'homefield:social';
@@ -162,6 +163,11 @@ export function mergeFan(local, remote) {
     out.bank.peak = Math.max(out.bank.peak || 0, out.bank.coins);
   }
   if (later.lastDaily) { out.bank.lastDaily = later.lastDaily; out.bank.dailyStreak = later.dailyStreak || 0; }
+  // Things bought on the other device have to be paid for here too, or a sync would hand the coins back.
+  const haveOwned = new Set(((useLocal ? local : remote).avatar || {}).owned || []);
+  const unpaid = [...new Set([...((local.avatar || {}).owned || []), ...((remote.avatar || {}).owned || [])])].filter((id) => !haveOwned.has(id));
+  const cost = unpaid.reduce((n, id) => { const it = itemById(id); return n + (it && !it.ach ? priceOf(it) || 0 : 0); }, 0);
+  if (cost) out.bank.coins = Math.max(0, (out.bank.coins || 0) - cost);
   out.bank.rescued = [lb.rescued || '', rb.rescued || ''].sort().pop();
   out.claims = mergeClaimSets(local.claims, remote.claims);
   const la = local.avatar || {}, ra = remote.avatar || {};
