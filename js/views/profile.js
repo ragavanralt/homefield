@@ -133,6 +133,7 @@ export async function render(root, params = {}) {
       h('small', { class: 'it-t' }, TIERS[it.tier].label),
       it.colors ? colourDots(it, av, owned) : null,
       it.sided && owned ? sideToggle(it, av) : null,
+      it.zip && owned ? zipToggle(it, av) : null,
       act);
   }
 
@@ -140,6 +141,12 @@ export async function render(root, params = {}) {
   function sideToggle(it, av) {
     const cur = sideOf(av, it.id);
     return h('div', { class: 'seg it-side', role: 'group', 'aria-label': 'Which side' }, [['left', 'L'], ['both', 'Both'], ['right', 'R']].map(([v, label]) => h('button', { type: 'button', class: 'seg-b' + (cur === v ? ' on' : ''), 'data-side': v, 'aria-pressed': cur === v ? 'true' : 'false', onclick: () => { setSide(it.id, v); draw(); } }, label)));
+  }
+
+  // Zipped up or open: jackets with a zip show the top underneath when open.
+  function zipToggle(it, av) {
+    const cur = sideOf(av, it.id) === 'open' ? 'open' : 'closed';
+    return h('div', { class: 'seg it-side it-zip', role: 'group', 'aria-label': 'Zip' }, [['closed', 'Zipped'], ['open', 'Open']].map(([v, label]) => h('button', { type: 'button', class: 'seg-b' + (cur === v ? ' on' : ''), 'data-zip': v, 'aria-pressed': cur === v ? 'true' : 'false', onclick: () => { setSide(it.id, v); draw(); } }, label)));
   }
 
   // Small swatches on the card. Owned items switch colour right there; the + opens the full menu.

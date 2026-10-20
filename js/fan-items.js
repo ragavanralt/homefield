@@ -76,17 +76,19 @@ function outer(o) {
     const main = colOf(o, c, col), R = ramp(main), B = c.B, grow = o.grow ?? 6, hem = o.len ?? 214;
     const SR = o.sleeveCol ? ramp(o.sleeveCol(c.pal, main)) : R;
     if (ph === 'body') {
-      if (o.closed) {
+      const open = !!o.zip && c.side === 'open';
+      if (o.closed && !open) {
         const d = torsoD(B, grow, hem, 2);
         P.part(d, R, { shade: bodyShade(B, grow, hem, 2, R) });
         if (o.detail) o.detail(P, c, R, d, main, B, grow, hem);
       } else {
-        const gap = o.gap || ((y) => (y < 150 ? 3 + (150 - y) * 0.28 : 3 + (y - 150) * 0.03));
+        const gap = open ? openGap : o.gap || ((y) => (y < 150 ? 3 + (150 - y) * 0.28 : 3 + (y - 150) * 0.03));
         both((side) => {
           const d = halfD(B, side, grow, hem, 2, gap);
           P.part(d, R, { shade: side > 0 ? bodyShade(B, grow, hem, 2, R).slice(0, 2) : bodyShade(B, grow, hem, 2, R).slice(2) });
         });
-        if (o.detail) o.detail(P, c, R, null, main, B, grow, hem);
+        if (open) { edges(P, INK, 2.2, 118, hem - 4, 0.6); edges(P, o.zipCol || SILVER, 0.9, 118, hem - 4, 0.6); both((s) => P.stroke(curve([[CX + s * 26, 178], [CX + s * 20, 196]]), R.line, 1.2, 0.8)); }
+        else if (o.detail) o.detail(P, c, R, null, main, B, grow, hem);
       }
       if (o.collar) o.collar(P, c, R, main, B);
     }
@@ -186,7 +188,16 @@ function shoes(o) {
 }
 
 /* ============================================================ TOPS */
-const hood = (P, c, R) => { const nk = c.B.nk; P.shape(blob([[CX - nk - 12, 114], [CX - nk - 3, 106], [CX + nk + 3, 106], [CX + nk + 12, 114], [CX + nk + 4, 120], [CX, 124], [CX - nk - 4, 120]]), R.sh, { line: R.line }); P.stroke(curve([[CX - nk - 3, 113], [CX, 121], [CX + nk + 3, 113]]), R.line, 1.3, 0.8); };
+const hood = (P, c, R) => {
+  const nk = c.B.nk, sk = c.sk;
+  // a draped cowl: a thick ring that reaches the shoulders, with the neck showing through the middle
+  P.shape(blob([[CX - nk - 20, 120], [CX - nk - 12, 106], [CX - nk - 3, 102], [CX + nk + 3, 102], [CX + nk + 12, 106], [CX + nk + 20, 120], [CX + nk + 10, 129], [CX, 133], [CX - nk - 10, 129]]), R.sh, { line: R.line });
+  const mouth = blob([[CX - nk - 1, 104], [CX + nk + 1, 104], [CX + nk * 0.8, 114], [CX, 119], [CX - nk * 0.8, 114]]);
+  P.fill(mouth, sk.base);
+  P.clip(mouth, `<path d="${blob([[CX - nk - 4, 100], [CX + nk + 4, 100], [CX + nk + 3, 108], [CX, 114], [CX - nk - 3, 108]])}" fill="${sk.sh}" opacity="0.5"/>`);
+  P.stroke(curve([[CX - nk - 1, 105], [CX - nk * 0.8, 114], [CX, 119], [CX + nk * 0.8, 114], [CX + nk + 1, 105]]), R.line, 1.6);
+  P.stroke(curve([[CX - nk - 14, 122], [CX - nk * 0.6, 128], [CX, 130], [CX + nk * 0.6, 128], [CX + nk + 14, 122]]), R.line, 1, 0.45);
+};
 const strings = (P, R) => { P.stroke(curve([[CX - 5, 121], [CX - 5.5, 136], [CX - 4.5, 140]]), '#E8E6E0', 1.8); P.stroke(curve([[CX + 5, 121], [CX + 5.6, 134], [CX + 4.6, 138]]), '#E8E6E0', 1.8); };
 const pocket = (P, R, main) => { P.shape(blob([[CX - 18, 168], [CX + 18, 168], [CX + 22, 192], [CX - 22, 192]]), dk(main, 0.05), { line: R.line, w: 1.4 }); P.stroke(curve([[CX, 168.5], [CX, 191.5]]), R.line, 1.2, 0.7); };
 const hem = (P, B, grow, y, R) => { const w = B.hp + B.be * 0.3 + grow + 0.4; P.fill(poly([[CX - w, y - 6], [CX + w, y - 6], [CX + w + 0.3, y], [CX - w - 0.3, y]]), R.sh); P.stroke(curve([[CX - w, y - 6], [CX + w, y - 6]]), R.line, 1.1, 0.7); };
@@ -1057,7 +1068,7 @@ ART.hat.rt_cap_mtl = capOf({ main: () => W2, bill: () => '#003DA5', extra: (P) =
 ART.top.pockettee = top({ def: '#ECEBE7', sleeve: 'short', detail: (P, c, R) => { const x = CX + 18; P.shape(poly([[x - 7, 136], [x + 7, 136], [x + 7, 150], [x, 152], [x - 7, 150]]), R.base, { line: R.line, w: 1.2 }); } });
 ART.top.thermal = top({ def: '#E6DFD0', sleeve: 'long', detail: (P, c, R, d) => P.clip(d, Array.from({ length: 30 }, (_, i) => `<path d="M${CX - 90 + i * 6} 100 L${CX - 90 + i * 6} 230" stroke="${R.sh}" stroke-width="0.8" opacity="0.5"/>`).join('') + Array.from({ length: 22 }, (_, i) => `<path d="M${CX - 90} ${110 + i * 6} L${CX + 90} ${110 + i * 6}" stroke="${R.sh}" stroke-width="0.8" opacity="0.5"/>`).join('')) });
 ART.top.plainhood = hoodie({ o: { def: '#8E9196' } });
-ART.outer.zipblank = outer({ def: '#2A2D33', closed: true, len: 208, grow: 5, sgrow: 6, collar: (P, c, R) => hood(P, c, R), cuff: (p, m) => dk(m, 0.12), detail: (P, c, R, d, m, B, grow, hemY) => { zip(116, hemY - 2)(P); both((s) => P.stroke(curve([[CX + s * 22, 176], [CX + s * 16, 196]]), R.line, 1.2, 0.8)); hem(P, B, grow, hemY, ramp(dk(m, 0.1))); } });
+ART.outer.zipblank = outer({ def: '#2A2D33', zip: true, closed: true, len: 208, grow: 5, sgrow: 6, collar: (P, c, R) => hood(P, c, R), cuff: (p, m) => dk(m, 0.12), detail: (P, c, R, d, m, B, grow, hemY) => { zip(116, hemY - 2)(P); both((s) => P.stroke(curve([[CX + s * 22, 176], [CX + s * 16, 196]]), R.line, 1.2, 0.8)); hem(P, B, grow, hemY, ramp(dk(m, 0.1))); } });
 ART.bottom.sweatpants = pants({ def: '#8E9196', grow: 5, fly: false, band: (p, m) => dk(m, 0.12), legDetail: (P, g, sd, J, c, R) => { const [x, y, w] = J[J.length - 1]; P.fill(poly([[x - w / 2, y - 7], [x + w / 2, y - 7], [x + w / 2 - 1.5, y], [x - w / 2 + 1.5, y]]), R.sh); P.stroke(curve([[x - w / 2 + 1, y - 7], [x + w / 2 - 1, y - 7]]), R.line, 1, 0.7); }, detail: (P) => { P.stroke(curve([[CX - 3, 196], [CX - 4, 208]]), '#E8E6E0', 1.4); P.stroke(curve([[CX + 3, 196], [CX + 4, 208]]), '#E8E6E0', 1.4); } });
 ART.bottom.chinos = pants({ def: '#B9A37A', grow: 3.5, straight: 0.82, legDetail: (P, g, sd, J, c, R) => { P.stroke(curve(J.slice(1).map(([x, y]) => [x - sd * 1.5, y])), R.sh, 1, 0.6); hemLine(P, J, R); }, detail: pocketsJ });
 ART.bottom.meshshorts = pants({ one: true, def: '#16161A', end: 262, grow: 11, bag: { hem: 1.1, out: 2.5 }, fly: false, legDetail: (P, g, sd, J, c, R) => { for (let k = 0; k < 36; k++) { const j = J[1 + (k % (J.length - 2))]; P.dot(j[0] + ((k * 7) % 13 - 6) * j[2] / 15, j[1] + ((k * 5) % 9 - 4), 0.5, R.hi, 0.5); } hemLine(P, J, R); } });
@@ -1093,7 +1104,7 @@ ART.top.mohair = top({ def: '#B23F7F', sleeve: 'long', grow: 7, sgrow: 7, hem: 2
 ART.bottom.pleated = pants({ def: '#4A4038', grow: 9, bag: { hem: 1.02, out: 1.5 }, belt: '#2A1A10', legDetail: (P, g, sd, J, c, R) => { P.stroke(curve(J.slice(0, 4).map(([x, y], i) => [x - sd * 2, y + (i ? 0 : 6)])), R.line, 1.1, 0.7); P.stroke(curve(J.slice(1).map(([x, y]) => [x + sd * 2, y])), R.sh, 1, 0.6); hemLine(P, J, R); }, detail: pocketsJ });
 ART.outer.bigcoat = outer({ def: '#2C2C30', len: 290, grow: 12, sgrow: 9, collar: lapels(1.3), detail: (P, c, R) => { both((s) => P.clip(halfD(c.B, s, 12, 290, 2, (y) => (y < 150 ? 3 + (150 - y) * 0.28 : 3 + (y - 150) * 0.03)), Array.from({ length: 300 }, (_, i) => { const x = CX - 70 + (i % 20) * 7, y = 104 + Math.floor(i / 20) * 7 + (i % 2) * 3.5; return `<path d="M${x} ${y} l2 2 l-1 2 l3 -1" stroke="#9A9AA0" stroke-width="1" fill="none" opacity="0.7"/>`; }).join(''))); buttons([176, 206, 236], CX + 6, '#121214')(P); } });
 // hooded work jacket in brown duck
-ART.outer.workjacket = outer({ def: '#7A5A3A', closed: true, len: 210, grow: 9, sgrow: 8, cuff: (p, m) => dk(m, 0.2), collar: (P, c, R) => hood(P, c, ramp('#5E5E62')), detail: (P, c, R, d, m, B, grow, hemY) => { zip(112, hemY - 2, '#C9A23A')(P); both((s) => { const x = CX + s * 24; P.shape(poly([[x - 9, 176], [x + 9, 176], [x + 9, 196], [x - 9, 196]]), R.base, { line: R.line, w: 1.2 }); }); P.shape(poly([[CX + 16, 138], [CX + 30, 138], [CX + 30, 152], [CX + 16, 152]]), R.base, { line: R.line, w: 1.1 }); P.clip(d, Array.from({ length: 12 }, (_, i) => `<path d="M${CX - 90} ${110 + i * 9} L${CX + 90} ${116 + i * 9}" stroke="${R.sh}" stroke-width="0.8" opacity="0.4"/>`).join('')); hem(P, B, grow, hemY, ramp(dk(m, 0.12))); } });
+ART.outer.workjacket = outer({ def: '#7A5A3A', zip: true, zipCol: '#C9A23A', closed: true, len: 210, grow: 9, sgrow: 8, cuff: (p, m) => dk(m, 0.2), collar: (P, c, R) => hood(P, c, ramp('#5E5E62')), detail: (P, c, R, d, m, B, grow, hemY) => { zip(112, hemY - 2, '#C9A23A')(P); both((s) => { const x = CX + s * 24; P.shape(poly([[x - 9, 176], [x + 9, 176], [x + 9, 196], [x - 9, 196]]), R.base, { line: R.line, w: 1.2 }); }); P.shape(poly([[CX + 16, 138], [CX + 30, 138], [CX + 30, 152], [CX + 16, 152]]), R.base, { line: R.line, w: 1.1 }); P.clip(d, Array.from({ length: 12 }, (_, i) => `<path d="M${CX - 90} ${110 + i * 9} L${CX + 90} ${116 + i * 9}" stroke="${R.sh}" stroke-width="0.8" opacity="0.4"/>`).join('')); hem(P, B, grow, hemY, ramp(dk(m, 0.12))); } });
 // knit balaclava and a five-panel camp cap
 ART.hat.balaclava = (P, g, col, ph) => { if (ph !== 'head') return; const m = col || '#2A2D33', R = ramp(m); const outerD = blob([[58, 100], [56, 50], [62, 22], [80, 4], [100, 0], [120, 4], [138, 22], [144, 50], [142, 100], [124, 112], [100, 116], [76, 112]]); const hole = blob([[72, 52], [100, 46], [128, 52], [130, 80], [122, 102], [100, 110], [78, 102], [70, 80]]); P.add(`<path d="${outerD} ${hole}" fill="${R.base}" fill-rule="evenodd" stroke="${R.line}" stroke-width="${OW}"/>`); const cid = 'bc' + Math.random().toString(36).slice(2, 8); P.add(`<clipPath id="${cid}"><path d="${outerD} ${hole}" clip-rule="evenodd"/></clipPath><g clip-path="url(#${cid})"><path d="${poly([[118, -10], [160, -10], [160, 130], [122, 130]])}" fill="${R.sh}" opacity="0.8"/>${Array.from({ length: 14 }, (_, i) => `<path d="M${60 + i * 6} 0 L${60 + i * 6} 120" stroke="${R.deep}" stroke-width="0.8" opacity="0.4"/>`).join('')}</g>`); P.stroke(hole, R.line, 2); };
 ART.hat.camp5 = capOf({ def: '#4E5A3F', bill: (p, m) => dk(m, 0.15), flat: true, extra: (P, c, crown) => { P.stroke(curve([[100, 8], [100, 44]]), dk(crown, 0.25), 1, 0.8); P.shape(poly([[90, 26], [110, 26], [110, 34], [90, 34]]), '#E9E2D0', { line: INK, w: 0.8 }); } });

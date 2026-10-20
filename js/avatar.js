@@ -147,14 +147,14 @@ export const ITEMS = [
 
   // ---- More blanks
   I('pockettee', 'top', 'Pocket tee', 'blank', 50), I('thermal', 'top', 'Waffle thermal', 'blank', 120), I('plainhood', 'top', 'Plain hoodie', 'blank', 200),
-  I('zipblank', 'outer', 'Zip-up hoodie', 'blank', 250), I('sweatpants', 'bottom', 'Sweatpants', 'blank', 120), I('chinos', 'bottom', 'Chinos', 'blank', 150),
+  I('zipblank', 'outer', 'Zip-up hoodie', 'blank', 250, { zip: true }), I('sweatpants', 'bottom', 'Sweatpants', 'blank', 120), I('chinos', 'bottom', 'Chinos', 'blank', 150),
   I('meshshorts', 'bottom', 'Mesh shorts', 'blank', 80), I('cargoshorts', 'bottom', 'Cargo shorts', 'blank', 100), I('plainbeanie', 'hat', 'Plain beanie', 'blank', 60),
 
   // ---- Trend pieces
   I('balloon', 'outer', 'Balloon bomber', 'street', 2400), I('shearling', 'outer', 'Shearling jacket', 'street', 3200), I('anorak', 'outer', 'Quilted anorak', 'street', 1800),
   I('fleece', 'outer', 'Pile fleece', 'street', 1200), I('linervest', 'outer', 'Quilted liner vest', 'street', 700), I('boucle', 'outer', 'Cropped bouclé jacket', 'street', 1600),
   I('gorp', 'outer', 'Trail shell', 'street', 2000), I('suedeblue', 'outer', 'Blue suede trucker', 'street', 2600), I('leathercrop', 'outer', 'Cropped leather jacket', 'street', 2800),
-  I('fauxfur', 'outer', 'Faux fur coat', 'street', 3000), I('workjacket', 'outer', 'Hooded work jacket', 'street', 1500),
+  I('fauxfur', 'outer', 'Faux fur coat', 'street', 3000), I('workjacket', 'outer', 'Hooded work jacket', 'street', 1500, { zip: true }),
   I('heavyhood', 'top', 'Heavyweight boxy hoodie', 'street', 600), I('mohair', 'top', 'Fuzzy mohair knit', 'street', 900),
   I('balaclava', 'hat', 'Knit balaclava', 'street', 500), I('camp5', 'hat', 'Five-panel camp cap', 'street', 400),
   I('clogs', 'shoes', 'Clogs', 'street', 700), I('trail', 'shoes', 'Trail runners', 'street', 900),
@@ -249,7 +249,7 @@ const COLS = {
   suedeblue: [['Blue suede', '#3E6FB5'], ['Tan suede', '#B07A4A'], ['Black suede', '#2A2B30']],
   leathercrop: [['Chocolate', '#3B2418'], ['Tobacco', '#6B4226'], ['Caramel', '#A0662E'], ['Black', '#17171F']],
   fauxfur: [['Brown', '#8A6A4A'], ['Cream', '#E6DCC8'], ['Black', '#1E1E22']],
-  workjacket: [['Brown duck', '#7A5A3A'], ['Black', BK], ['Moss', '#5B6440']],
+  workjacket: [['Brown duck', '#7A5A3A'], ['Black', BK], ['Moss', '#5B6440'], ['Faded tan', '#A88A5E'], ['Navy', '#2B3550'], ['Burgundy', '#6B2A33']],
   heavyhood: [['Charcoal', '#4A4E55'], ['Black', BK], ['Cream', CR], ['Brown', '#6B4E3A'], ['Sage', '#9AA58C']],
   mohair: [['Pink', '#B23F7F'], ['Cream', CR], ['Black', BK], ['Green', '#2F8A57'], ['Blue', '#2C57A8']],
   balaclava: [['Charcoal', '#2A2D33'], ['Cream', CR], ['Black', BK], ['Brown', '#6B4E3A']],
@@ -279,7 +279,7 @@ export function shadeHex(hex, amt) {
 export const sideOf = (av, id) => (av.side && av.side[id]) || 'both';
 export function setSide(id, v) {
   const it = itemById(id);
-  if (!it || !it.sided || !['left', 'right', 'both'].includes(v) || !getState().avatar.owned.includes(id)) return false;
+  if (!it || !(it.sided || it.zip) || !(it.zip ? ['open', 'closed'] : ['left', 'right', 'both']).includes(v) || !getState().avatar.owned.includes(id)) return false;
   setAvatar((av) => { av.side = av.side || {}; av.side[id] = v; av.eq[it.slot] = id; });
   return true;
 }
