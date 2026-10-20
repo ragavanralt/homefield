@@ -616,6 +616,39 @@ const kinds = (db, who) => db.rows(`select kind, amount from payouts where user_
   });
 }
 
+/* =============================== crew wall =============================== */
+{
+  const db = fresh(); const u = crew(db);
+  const post = (who, body) => db.rpc('hf_wall_post', { p_token: u[who].token, p_body: body });
+  const get = (who) => db.rpc('hf_wall_get', { p_token: u[who].token }).posts;
+  t('posting, reading, cheering and deleting on the wall', () => {
+    const p = post('bro', '  who has the Knicks?  ');
+    assert.ok(p.id);
+    assert.equal(get('ragavan')[0].body, 'who has the Knicks?'); assert.equal(get('ragavan')[0].handle, 'bro'); assert.equal(get('bro')[0].mine, true); assert.equal(get('ragavan')[0].mine, false);
+    assert.deepEqual(db.rpc('hf_wall_cheer', { p_token: u.ragavan.token, p_id: p.id }), { cheered: true, count: 1 });
+    assert.deepEqual(db.rpc('hf_wall_cheer', { p_token: u.cuz.token, p_id: p.id }), { cheered: true, count: 2 });
+    assert.deepEqual(db.rpc('hf_wall_cheer', { p_token: u.cuz.token, p_id: p.id }), { cheered: false, count: 1 });
+    assert.equal(get('ragavan')[0].cheered, true);
+    assert.equal(err(db.rpc('hf_wall_del', { p_token: u.cuz.token, p_id: p.id })), 'not_yours');
+    assert.deepEqual(db.rpc('hf_wall_del', { p_token: u.ragavan.token, p_id: p.id }), { ok: true }); // the owner can clear anything
+    assert.equal(get('bro').length, 0);
+    const q = post('cuz', 'mine'); assert.deepEqual(db.rpc('hf_wall_del', { p_token: u.cuz.token, p_id: q.id }), { ok: true });
+  });
+  t('empty or long posts, flooding and signed-out calls are refused', () => {
+    assert.equal(err(post('bro', '   ')), 'bad_post'); assert.equal(err(post('bro', 'x'.repeat(281))), 'bad_post');
+    for (let i = 0; i < 7; i++) assert.ok(post('cuz', 'm' + i).id);
+    assert.equal(err(post('cuz', 'one more')), 'slow_down');
+    assert.match(db.rpc('hf_wall_get', { p_token: null }).error, /not_signed_in/);
+  });
+  t('a stranger in another crew cannot see or touch the wall', () => {
+    const p = post('bro', 'private chat');
+    db.sql(`update profiles set crew_id = (select id from crews order by id limit 1) where false`);
+    assert.equal(get('bro').length >= 1, true);
+    assert.equal(err(db.rpc('hf_wall_cheer', { p_token: u.ragavan.token, p_id: 999999 })), 'no_such_post');
+    assert.ok(p.id);
+  });
+}
+
 /* =============================== survivor =============================== */
 {
   const db = fresh();

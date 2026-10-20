@@ -94,6 +94,15 @@ await t('mergeFan unions teams, bets and owned items; settled bets beat pending 
   assert.deepEqual(m.avatar.owned.sort(), ['a', 'b']); assert.equal(m.bank.coins, 99, 'more xp wins the bank');
 });
 
+await t('a deleted saved fit stays deleted when the other copy still has it', () => {
+  const f = (id) => ({ id, name: id, eq: {} });
+  const a = { teams: [{ league: 'nba', id: '1' }], bets: {}, bank: { xp: 5, coins: 10 }, avatar: { owned: [], fits: [f('keep')], gone: ['old'] } };
+  const b = { teams: [{ league: 'nba', id: '1' }], bets: {}, bank: { xp: 5, coins: 10 }, avatar: { owned: [], fits: [f('keep'), f('old')] } };
+  const m = soc.mergeFan(a, b);
+  assert.deepEqual(m.avatar.fits.map((x) => x.id), ['keep']); assert.deepEqual(m.avatar.gone, ['old']);
+  const m2 = soc.mergeFan(b, a); assert.deepEqual(m2.avatar.fits.map((x) => x.id), ['keep'], 'same either way');
+});
+
 /* ---- duels and the coin ledger ---- */
 const g = { league: 'nba', game_id: '9001', start_at: '2026-10-20T19:00:00-04:00', home: { id: 'h1', name: 'Home', abbr: 'HOM' }, away: { id: 'a1', name: 'Away', abbr: 'AWY' }, fav_team: 'h1', fav_prob: 0.6, ou: 220.5, home_spread: -4.5 };
 const base = { league: 'nba', game_id: '9001' };

@@ -454,6 +454,70 @@ begin
   return jsonb_build_object('liked', liked, 'count', n);
 end $$;
 
+/* --------------------------------------------------------- crew wall */
+create table if not exists wall_posts (
+  id bigserial primary key,
+  crew_id uuid not null references crews(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists wall_posts_crew_idx on wall_posts (crew_id, id desc);
+create table if not exists wall_cheers (
+  post_id bigint not null references wall_posts(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  primary key (post_id, user_id)
+);
+
+create or replace function hf_wall_get(p_token text) returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
+declare u uuid := x_uid(p_token); c uuid;
+begin
+  select crew_id into c from profiles where id = u;
+  return jsonb_build_object('posts', coalesce((
+    select jsonb_agg(jsonb_build_object('id', q.id, 'handle', q.handle, 'body', q.body, 'at', q.created_at, 'mine', q.user_id = u,
+      'cheers', q.n, 'cheered', q.mine) order by q.id desc)
+    from (select w.id, w.user_id, w.body, w.created_at, p.handle,
+                 (select count(*) from wall_cheers k where k.post_id = w.id) n,
+                 exists (select 1 from wall_cheers k where k.post_id = w.id and k.user_id = u) mine
+          from wall_posts w join profiles p on p.id = w.user_id where w.crew_id = c order by w.id desc limit 40) q), '[]'::jsonb));
+end $$;
+
+create or replace function hf_wall_post(p_token text, p_body text) returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
+declare u uuid := x_uid(p_token); c uuid; b text := btrim(regexp_replace(coalesce(p_body, ''), '[[:cntrl:]]+', ' ', 'g')); nid bigint;
+begin
+  if length(b) < 1 or length(b) > 280 then return x_fail('bad_post'); end if;
+  if x_throttle_over('wall:' || u::text, 8, 600) then return x_fail('slow_down'); end if;
+  select crew_id into c from profiles where id = u and active;
+  if c is null then return x_fail('not_signed_in'); end if;
+  perform x_throttle_hit('wall:' || u::text);
+  insert into wall_posts (crew_id, user_id, body) values (c, u, b) returning id into nid;
+  delete from wall_posts where crew_id = c and id not in (select id from wall_posts where crew_id = c order by id desc limit 200);
+  return jsonb_build_object('id', nid);
+end $$;
+
+create or replace function hf_wall_del(p_token text, p_id bigint) returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
+declare u uuid := x_uid(p_token); me profiles; w wall_posts;
+begin
+  select * into me from profiles where id = u;
+  select * into w from wall_posts where id = p_id and crew_id = me.crew_id;
+  if not found then return x_fail('no_such_post'); end if;
+  if w.user_id <> u and not me.is_owner then return x_fail('not_yours'); end if;
+  delete from wall_posts where id = p_id;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function hf_wall_cheer(p_token text, p_id bigint) returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
+declare u uuid := x_uid(p_token); me profiles; cheered boolean; n int;
+begin
+  select * into me from profiles where id = u;
+  if not exists (select 1 from wall_posts where id = p_id and crew_id = me.crew_id) then return x_fail('no_such_post'); end if;
+  delete from wall_cheers where post_id = p_id and user_id = u;
+  cheered := not found;
+  if cheered then insert into wall_cheers (post_id, user_id) values (p_id, u); end if;
+  select count(*) into n from wall_cheers where post_id = p_id;
+  return jsonb_build_object('cheered', cheered, 'count', n);
+end $$;
+
 create or replace function hf_crew(p_token text) returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
 declare u uuid := x_uid(p_token); c uuid;
 begin

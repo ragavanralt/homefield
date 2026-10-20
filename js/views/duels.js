@@ -13,18 +13,18 @@ export async function render(root, params = {}) {
   const host = h('div', { class: 'duels' });
   root.append(host);
   if (params.id) return detail(host, params.id);
-  return list(host);
+  return list(host, params.vs);
 }
 
 /* ---------------------------------------------------------------- the list */
-function list(host) {
-  let mode = 'list';
+function list(host, vs) {
+  let mode = vs ? 'new' : 'list';
   let stopPoll = () => {};
   const top = h('div');
   host.append(top);
   const paint = () => {
     clear(top);
-    if (mode === 'new') return top.append(form(() => { mode = 'list'; paint(); }));
+    if (mode === 'new') return top.append(form(() => { mode = 'list'; paint(); }, vs));
     top.append(claimBar(() => load(false)), h('div', { class: 'duel-main' }));
     load(true);
   };
@@ -58,8 +58,8 @@ function row(d) {
 }
 
 /* ------------------------------------------------------------ new duel form */
-function form(done) {
-  const st = { length: 'game', stake: 50, opponent: '', game: '', day: '' };
+function form(done, vs) {
+  const st = { length: 'game', stake: 50, opponent: vs || '', game: '', day: '' };
   const box = h('section', { class: 'card duel-form' });
   let crewList = [], slate = null;
   const paint = () => {

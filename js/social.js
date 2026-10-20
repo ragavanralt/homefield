@@ -29,6 +29,7 @@ const WORDS = {
   bad_invite: 'That invite code does not work (used up, expired or mistyped).', bad_handle: 'Handles are 3 to 16 letters, numbers or underscores.',
   handle_taken: 'Someone already has that handle.', bad_login: 'Handle or recovery code is wrong.', locked: 'Too many tries. Wait 15 minutes.',
   slow_down: 'Too many tries. Wait a bit.', bad_stake: 'That stake is not allowed (10 to 500 coins).', too_many: 'You have too many open duels.',
+  bad_post: 'Posts are 1 to 280 characters.', no_such_post: 'That post is gone.',
   no_such_player: 'No one in your crew has that handle.', no_such_game: 'That game is not available.', bad_day: 'Pick today or tomorrow.',
   not_enough_cards: 'Not enough cards for that yet. Try later, after the next slate.', no_such_duel: 'That duel is gone.', not_yours: 'That one is not yours.',
   expired: 'That challenge expired.', taken: 'Someone already took that challenge.', not_open: 'That duel is not open anymore.', not_active: 'That duel is not active.',
@@ -92,6 +93,10 @@ export async function refreshMe() { const r = await call('hf_whoami'); S.me = r.
 export const newCode = () => call('hf_new_code');
 export const setDisplay = async (name) => { await call('hf_set_display', { p_display: name }); await refreshMe(); };
 export const crew = () => call('hf_crew');
+export const wallGet = () => call('hf_wall_get');
+export const wallPost = (body) => call('hf_wall_post', { p_body: body });
+export const wallDel = (id) => call('hf_wall_del', { p_id: id });
+export const wallCheer = (id) => call('hf_wall_cheer', { p_id: id });
 export const makeInvite = (uses = 1, days = 14) => call('hf_invite_make', { p_uses: uses, p_days: days });
 export const invites = () => call('hf_invites');
 export const revokeInvite = (code) => call('hf_invite_revoke', { p_code: code });
@@ -175,8 +180,9 @@ export function mergeFan(local, remote) {
   out.bank.rescued = [lb.rescued || '', rb.rescued || ''].sort().pop();
   out.claims = mergeClaimSets(local.claims, remote.claims);
   const la = local.avatar || {}, ra = remote.avatar || {};
-  out.avatar = { ...(useLocal ? ra : la), ...(useLocal ? la : ra), owned: [...new Set([...(la.owned || []), ...(ra.owned || [])])], fits: mergeFits(la.fits, ra.fits) };
-  if (!out.avatar.fits || !out.avatar.fits.length) delete out.avatar.fits;
+  out.avatar = { ...(useLocal ? ra : la), ...(useLocal ? la : ra), owned: [...new Set([...(la.owned || []), ...(ra.owned || [])])], gone: mergeGone(la.gone, ra.gone) };
+  out.avatar.fits = mergeFits(la.fits, ra.fits).filter((f) => !out.avatar.gone.includes(f.id));
+  if (!out.avatar.gone.length) delete out.avatar.gone;
   return out;
 }
 function mergeClaimSets(a, b) {
@@ -184,6 +190,8 @@ function mergeClaimSets(a, b) {
   const pick = (x, y, key) => (x[key] === y[key] ? [...new Set([...(x[key + 's'] || []), ...(y[key + 's'] || [])])] : (x[key] > y[key] ? x : y)[key + 's'] || []);
   return { day: a.day > b.day ? a.day : b.day, week: a.week > b.week ? a.week : b.week, days: pick(a, b, 'day'), weeks: pick(a, b, 'week') };
 }
+/** ids of saved fits that were deleted on either copy; they stay deleted */
+const mergeGone = (a = [], b = []) => [...new Set([...a, ...b])].slice(-60);
 function mergeFits(a = [], b = []) { const m = new Map(); for (const f of [...b, ...a]) m.set(f.id, f); return [...m.values()]; }
 
 const fanOf = (s) => {
@@ -192,11 +200,24 @@ const fanOf = (s) => {
   const watched = Object.fromEntries(Object.entries(s.watched || {}).sort((x, y) => (y[1].ts || 0) - (x[1].ts || 0)).slice(0, 300));
   return { teams: s.teams, avatar: s.avatar, bank: s.bank, bets, watched, claims: { day: q.day || '', week: q.week || '', days: (q.daily && q.daily.claimed) || [], weeks: (q.weekly && q.weekly.claimed) || [] } };
 };
+/** the last few bets, trimmed for the crew to see (and mirror) */
+function recentOf(bets, n = 6) {
+  return Object.values(bets || {}).sort((x, y) => (y.ts || y.placedAt || 0) - (x.ts || x.placedAt || 0)).slice(0, n)
+    .map((b) => ({ id: b.id, ts: b.ts || b.placedAt || 0, mode: b.mode, stake: b.stake, dec: b.dec, status: b.status, payout: b.payout || 0, legs: (b.legs || []).map((l) => ({ ...l })) }));
+}
 function publicOf(s) {
   const st = betStats(s.bets || {}, s.bank);
   const t = s.teams.find((x) => `${x.league}:${x.id}` === s.avatar.team) || s.teams[0] || null;
-  return { avatar: s.avatar, team: t ? { league: t.league, id: t.id, abbr: t.abbr, name: t.name, color: t.color, alt: t.alt } : null,
-    stats: { won: st.won, lost: st.lost, accuracy: st.accuracy, total: st.total, streak: st.streak, bestStreak: st.bestStreak, coins: s.bank.coins } };
+  const out = { avatar: s.avatar, team: t ? { league: t.league, id: t.id, abbr: t.abbr, name: t.name, color: t.color, alt: t.alt } : null,
+    stats: { won: st.won, lost: st.lost, accuracy: st.accuracy, total: st.total, streak: st.streak, bestStreak: st.bestStreak, coins: s.bank.coins,
+      profit: Math.round(st.profit), parlays: st.parlayWins, bigParlay: st.biggestParlay, longshot: st.longshot ? st.longshot.dec : 0,
+      biggest: st.biggest ? Math.round(st.biggest.payout - st.biggest.stake) : 0, watched: Object.keys(s.watched || {}).length } };
+  // recent bets ride along unless the player turned sharing off; trim them if the whole thing gets too big for the server
+  if (s.shareBets !== false) {
+    for (let n = 6; n >= 0; n -= 2) { out.stats.recent = recentOf(s.bets, n); if (JSON.stringify(out).length < 26000) break; }
+    if (!out.stats.recent.length) delete out.stats.recent;
+  }
+  return out;
 }
 let syncing = null, applying = false, delay = 1500;
 export const _setDelay = (ms) => { delay = ms; };

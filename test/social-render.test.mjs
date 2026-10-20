@@ -137,7 +137,7 @@ store.update((s) => { s.avatar.eq.top = 'tee'; s.avatar.eq.hair = 'short'; s.ava
 text = await visit('#/crew', 400);
 const rc = $('.fit-card[data-handle="ragavan"]');
 assert.ok(rc, 'ragavan card'); assert.ok(rc.querySelector('.avatar.full svg'), 'full body look'); assert.ok(!/bust/.test(rc.querySelector('.avatar').className)); ok('gallery shows the full-body look');
-assert.ok(rc.querySelectorAll('.fit-pick .chip').length === 2, 'Now + one saved fit'); ok('saved fits are one tap away');
+assert.equal(rc.querySelectorAll('.fit-pick .chip').length, 0, 'only the current fit'); ok('the gallery shows just the current fit');
 rc.querySelector('.btn.like').click(); await sleep(500);
 assert.match($('.fit-card[data-handle="ragavan"] .btn.like').textContent, /♥ 1/); ok('liking a fit counts it');
 $('.fit-card[data-handle="ragavan"] .btn.copy').click(); await sleep(200);
@@ -146,6 +146,32 @@ assert.equal(store.getState().avatar.eq.hair, 'short'); ok('copy skips what you 
 store.update((s) => { s.avatar.owned.push('tank'); });
 $('.fit-card[data-handle="ragavan"] .btn.copy').click(); await sleep(200);
 assert.equal(store.getState().avatar.eq.top, 'tank'); ok('copy wears the pieces you do own');
+
+// recent bets: ragavan shares a parlay with one live leg and one started leg; bro mirrors it
+await soc.logout(); await soc.login('ragavan', ownerCode);
+const soon = new Date(Date.now() + 36e5).toISOString(), gone = new Date(Date.now() - 36e5).toISOString();
+const L = (key, date, label) => ({ key, kind: 'ml', gameKey: key, league: 'nba', date, home: { id: 'h', abbr: 'HOM', name: 'Home' }, away: { id: 'a', abbr: 'AWY', name: 'Away' }, side: 'home', dec: 1.8, label, result: 'pending' });
+store.update((s) => { s.bank.streak = 3; s.bets.mir1 = { id: 'mir1', ts: Date.now(), mode: 'parlay', stake: 50, dec: 3.2, legs: [L('g1|ml|home', soon, 'HOM to win'), L('g2|ml|home', gone, 'BOS to win')], status: 'pending', payout: 0 }; });
+await soc.syncNow();
+await soc.logout(); await soc.login('bro', bro.code);
+store.clearSlip();
+text = await visit('#/crew', 500);
+assert.ok($('.bet-card[data-bet="mir1"]'), 'ragavan\'s bet shows in the crew feed'); assert.match($('.bet-card[data-bet="mir1"]').textContent, /HOM to win/); ok('crew bets feed shows what a member just bet');
+$('.bet-card[data-bet="mir1"] .mirror').click(); await sleep(200);
+assert.equal(store.getState().slip.legs.length, 1, 'only the leg that has not started is copied'); assert.equal(store.getState().slip.legs[0].key, 'g1|ml|home'); assert.equal(store.getState().slip.legs[0].result, 'pending'); ok('mirror copies the open legs onto your slip');
+store.clearSlip();
+store.update((s) => { s.shareBets = false; });
+await soc.syncNow(); await sleep(100);
+// the wall
+text = await visit('#/crew', 500);
+$('.wall-in').value = 'who has the Knicks tonight'; $('.crew-wall .wall-form .btn.main').click(); await sleep(600);
+assert.match($('.wall-list').textContent, /Knicks tonight/); ok('posting on the wall shows the post');
+$('.wall-post .btn.like').click(); await sleep(400);
+assert.match($('.wall-post .btn.like').textContent, /1/); ok('cheering a post counts it');
+$('.wall-post .btn.danger').click(); await sleep(400);
+assert.ok(!$('.wall-post'), 'deleted'); ok('you can delete your own post');
+assert.match($('.crew-awards').textContent, /Hottest streak/); ok('awards card shows the streak leader');
+const th = $('.crew-table th [data-sort="streak"]'); th.click(); assert.ok($('.crew-table th [data-sort="streak"].on'), 'sorted'); ok('tapping a column re-ranks the table');
 
 text = await visit('#/crew', 300);
 assert.ok($('.crew-table tr.me')); assert.ok(!byText('button', /Make an invite link/), 'only the owner sees owner tools'); ok('a non-owner sees the table but no owner tools');

@@ -22,6 +22,7 @@ const ROUTES = [
   { re: /^\/crew$/, view: () => import('./views/crew.js'), nav: 'crew', params: () => ({}) },
   { re: /^\/join\/([^/]+)$/, view: () => import('./views/crew.js'), nav: 'crew', params: (m) => ({ code: decodeURIComponent(m[1]) }) },
   { re: /^\/duels$/, view: () => import('./views/duels.js'), nav: 'duels', params: () => ({}) },
+  { re: /^\/duels\/vs\/([^/]+)$/, view: () => import('./views/duels.js'), nav: 'duels', params: (m) => ({ vs: decodeURIComponent(m[1]) }) },
   { re: /^\/duels\/([^/]+)$/, view: () => import('./views/duels.js'), nav: 'duels', params: (m) => ({ id: decodeURIComponent(m[1]) }) },
   { re: /^\/survivor$/, view: () => import('./views/survivor.js'), nav: 'survivor', params: () => ({}) },
   { re: /^\/cap$/, view: () => import('./views/capnight.js'), nav: 'cap', params: () => ({}) },

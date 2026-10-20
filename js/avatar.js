@@ -403,7 +403,7 @@ export function wearFit(id) {
   track('outfit_changed');
   return true;
 }
-export function deleteFit(id) { setAvatar((a) => { a.fits = (a.fits || []).filter((f) => f.id !== id); }); }
+export function deleteFit(id) { setAvatar((a) => { a.fits = (a.fits || []).filter((f) => f.id !== id); a.gone = [...new Set([...(a.gone || []), id])].slice(-60); }); } // the id is remembered so the other copy cannot bring it back
 
 /** The team the character wears: the one chosen, else your first followed team, else a neutral blue. */
 export function avatarTeam(a = getState().avatar) {

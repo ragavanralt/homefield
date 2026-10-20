@@ -4,8 +4,11 @@ import { pageHead } from '../components.js';
 import * as soc from '../social.js';
 import { renderAvatar, copyLook } from '../avatar.js';
 import { bubble, claimBar, fmt, loader, actionBtn, errText, add } from '../social-ui.js';
+import { toggleLeg, setSlip, slipHas, getState, update } from '../store.js';
 
 const pct = (a) => (a == null ? '–' : Math.round(a * 100) + '%');
+const ago = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'just now' : m < 60 ? `${m}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : `${Math.round(m / 1440)}d ago`; };
+const signed = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
 const link = (code) => `${location.origin}${location.pathname}#/join/${code}`;
 
 async function copy(text, msg = 'Copied') {
@@ -20,6 +23,7 @@ export async function render(root, params = {}) {
     return;
   }
   const off = soc.onAuthChange(() => draw());
+  let timer = null;
   let shownCode = null; // a fresh recovery code, shown once
 
   function draw() {
@@ -82,47 +86,177 @@ export async function render(root, params = {}) {
         name,
         actionBtn('Rename', async () => { await soc.setDisplay(name.value); toast('Saved'); draw(); }, 'btn small'),
         actionBtn('New recovery code', async () => { if (!confirm('Make a new recovery code? The old one stops working.')) return; shownCode = (await soc.newCode()).code; draw(); }, 'btn small'),
-        actionBtn('Sign out', async () => { await soc.logout(); draw(); }, 'btn small danger')));
+        actionBtn('Sign out', async () => { await soc.logout(); draw(); }, 'btn small danger')),
+      h('label', { class: 'share-row' },
+        h('input', { type: 'checkbox', id: 'share-bets', checked: getState().shareBets !== false ? '' : null, onchange: (e) => { update((st) => { st.shareBets = e.target.checked; }); toast(e.target.checked ? 'The crew can see your recent bets' : 'Your bets are hidden from the crew'); } }),
+        h('span', null, 'Show my recent bets to the crew (they can mirror them)')));
   }
 
   function body(el) {
     const run = loader(el, () => soc.crew(), (d) => {
       const ms = d.members.slice();
-      const rank = (m) => { const s = m.stats || {}; const dec = (s.won || 0) + (s.lost || 0); return [dec ? (s.won || 0) / dec : -1, s.won || 0]; };
-      ms.sort((a, b) => { const x = rank(a), y = rank(b); return y[0] - x[0] || y[1] - x[1] || a.handle.localeCompare(b.handle); });
       add(el,
+        awards(ms),
         h('section', { class: 'card' },
-          h('h2', { class: 'card-h' }, 'The table', h('small', null, "ranked by pick'em record")),
-          h('div', { class: 'tbl-scroll' }, h('table', { class: 'tbl crew-table' },
-            h('thead', null, h('tr', null, ['#', 'Player', "Pick'em", 'Hit rate', 'Streak', 'Duels', 'Daily 5'].map((t) => h('th', null, t)))),
-            h('tbody', null, ms.map((m, i) => { const s = m.stats || {}; return h('tr', { class: m.me ? 'me' : '', 'data-handle': m.handle },
-              h('td', null, i + 1),
-              h('td', null, h('span', { class: 'who' }, bubble(m, 'bust sm'), h('span', null, m.display, m.owner ? h('small', null, ' owner') : null))),
-              h('td', null, `${s.won || 0}–${s.lost || 0}`), h('td', null, pct(s.accuracy)), h('td', null, s.streak ? `${s.streak}` : '–'),
-              h('td', null, `${m.duel_w}–${m.duel_l}${m.duel_t ? `–${m.duel_t}` : ''}`), h('td', null, m.solo_streak ? `${m.solo_streak} d` : '–')); })))),
-          h('p', { class: 'muted' }, 'Pick\'em record comes from each person\'s own app, so it is for fun.')),
+          h('h2', { class: 'card-h' }, 'The table', h('small', null, 'tap a column to re-rank')),
+          tableBox(ms),
+          h('p', { class: 'muted' }, 'Records come from each person\'s own app, so it is for fun.')),
+        feed(ms),
+        wall(ms),
         h('section', { class: 'card' },
-          h('h2', { class: 'card-h' }, 'Fit gallery', h('small', null, 'like a fit, or copy it onto your fan')),
+          h('h2', { class: 'card-h' }, 'Fit gallery', h('small', null, "what everyone's wearing right now")),
           h('div', { class: 'fit-gallery crew-fits' }, ms.map(fitCard))),
         soc.me().owner ? owner(d.members) : null);
     });
     run();
   }
 
-  /* a person's full look, with their saved fits one tap away; like it, or copy what you own of it */
+  /* ----- the table, ranked by whatever you tap ----- */
+  function tableBox(ms) {
+    const dec = (s) => (s.won || 0) + (s.lost || 0);
+    const COLS = [
+      ['pick', "Pick'em", (m) => { const s = m.stats || {}; return [dec(s) ? (s.won || 0) / dec(s) : -1, s.won || 0]; }, (m) => `${(m.stats || {}).won || 0}–${(m.stats || {}).lost || 0}`],
+      ['rate', 'Hit rate', (m) => [(m.stats || {}).accuracy == null ? -1 : m.stats.accuracy, dec(m.stats || {})], (m) => pct((m.stats || {}).accuracy)],
+      ['profit', 'Profit', (m) => [(m.stats || {}).profit || 0, 0], (m) => ((m.stats || {}).profit == null ? '–' : signed(m.stats.profit))],
+      ['streak', 'Streak', (m) => [(m.stats || {}).streak || 0, (m.stats || {}).bestStreak || 0], (m) => ((m.stats || {}).streak ? `${m.stats.streak}` : '–')],
+      ['parlay', 'Parlays', (m) => [(m.stats || {}).parlays || 0, (m.stats || {}).bigParlay || 0], (m) => ((m.stats || {}).parlays ? `${m.stats.parlays}` : '–')],
+      ['duels', 'Duels', (m) => [m.duel_w - m.duel_l, m.duel_w], (m) => `${m.duel_w}–${m.duel_l}${m.duel_t ? `–${m.duel_t}` : ''}`],
+      ['daily', 'Daily 5', (m) => [m.solo_streak || 0, m.solo_best || 0], (m) => (m.solo_streak ? `${m.solo_streak} d` : '–')],
+    ];
+    let key = 'pick';
+    const box = h('div', { class: 'tbl-scroll' });
+    const paint = () => {
+      const col = COLS.find((c) => c[0] === key);
+      const rows = ms.slice().sort((a, b) => { const x = col[2](a), y = col[2](b); return y[0] - x[0] || y[1] - x[1] || a.handle.localeCompare(b.handle); });
+      add(clear(box), h('table', { class: 'tbl crew-table' },
+        h('thead', null, h('tr', null, h('th', null, '#'), h('th', null, 'Player'), COLS.map((c) => h('th', null, h('button', { type: 'button', class: 'th-b' + (c[0] === key ? ' on' : ''), 'data-sort': c[0], onclick: () => { key = c[0]; paint(); } }, c[1], c[0] === key ? ' ↓' : ''))))),
+        h('tbody', null, rows.map((m, i) => h('tr', { class: m.me ? 'me' : '', 'data-handle': m.handle },
+          h('td', null, i + 1),
+          h('td', null, h('span', { class: 'who' }, bubble(m, 'bust sm'), h('span', null, m.display, m.owner ? h('small', null, ' owner') : null))),
+          COLS.map((c) => h('td', { class: c[0] === key ? 'hot' : '' }, c[3](m))))))));
+    };
+    paint();
+    return box;
+  }
+
+  /* ----- awards: who is the best at what, this week's bragging rights ----- */
+  function awards(ms) {
+    const best = (f, min = 1) => ms.reduce((top, m) => { const v = f(m.stats || {}); return v >= min && (!top || v > top.v) ? { m, v } : top; }, null);
+    const list = [
+      ['💰', 'Top earner', best((s) => s.profit || 0), (v) => `${signed(v)} coins`],
+      ['🔥', 'Hottest streak', best((s) => s.streak || 0), (v) => `${v} in a row`],
+      ['🎯', 'Sharpest', ms.reduce((top, m) => { const s = m.stats || {}; const n = (s.won || 0) + (s.lost || 0); return n >= 5 && s.accuracy != null && (!top || s.accuracy > top.v) ? { m, v: s.accuracy } : top; }, null), (v) => `${pct(v)} hit rate`],
+      ['🧾', 'Parlay king', best((s) => s.parlays || 0), (v) => `${v} hit`],
+      ['🚀', 'Longshot', best((s) => s.longshot || 0, 2), (v) => `${v.toFixed(1)}x winner`],
+      ['⚔️', 'Duel boss', ms.reduce((top, m) => (m.duel_w >= 1 && (!top || m.duel_w > top.v) ? { m, v: m.duel_w } : top), null), (v) => `${v} duel win${v === 1 ? '' : 's'}`],
+      ['📺', 'Most watched', best((s) => s.watched || 0), (v) => `${v} games`],
+      ['🗓️', 'Daily 5 streak', ms.reduce((top, m) => (m.solo_streak >= 1 && (!top || m.solo_streak > top.v) ? { m, v: m.solo_streak } : top), null), (v) => `${v} days`],
+    ].filter((a) => a[2]);
+    if (!list.length) return null;
+    return h('section', { class: 'card crew-awards' },
+      h('h2', { class: 'card-h' }, 'Crew awards', h('small', null, 'who is winning at what')),
+      h('div', { class: 'award-grid' }, list.map(([icon, name, w, fmtV]) => h('div', { class: 'award' + (w.m.me ? ' me' : ''), 'data-award': name },
+        h('span', { class: 'award-i', 'aria-hidden': 'true' }, icon), bubble(w.m, 'bust sm'),
+        h('div', null, h('small', null, name), h('b', null, w.m.me ? 'You' : w.m.display), h('small', null, fmtV(w.v)))))));
+  }
+
+  /* ----- live feed: what everyone just bet, with a Mirror button to put it on your own slip ----- */
+  function feed(ms) {
+    let mode = 'all';
+    const items = [];
+    ms.forEach((m) => ((m.stats && m.stats.recent) || []).forEach((b) => items.push({ m, b })));
+    items.sort((x, y) => (y.b.ts || 0) - (x.b.ts || 0));
+    const box = h('section', { class: 'card crew-feed' });
+    const paint = () => {
+      const shown = items.filter(({ b }) => mode === 'all' || (mode === 'parlay' && b.mode === 'parlay') || (mode === 'open' && b.status === 'pending') || (mode === 'hit' && b.status === 'won')).slice(0, 20);
+      const chip = (id, label) => h('button', { type: 'button', class: 'chip' + (mode === id ? ' on' : ''), 'aria-pressed': mode === id ? 'true' : 'false', 'data-feed': id, onclick: () => { mode = id; paint(); } }, label);
+      add(clear(box),
+        h('h2', { class: 'card-h' }, 'Crew bets', h('small', null, 'mirror one to copy it onto your slip')),
+        h('div', { class: 'chip-row' }, chip('all', 'All'), chip('open', 'Open'), chip('parlay', 'Parlays'), chip('hit', 'Hits')),
+        shown.length ? h('div', { class: 'feed-list' }, shown.map(({ m, b }) => betRow(m, b)))
+          : h('p', { class: 'muted' }, items.length ? 'Nothing like that yet.' : 'No bets to show yet. When someone in the crew places a bet it lands here.'));
+    };
+    paint();
+    return box;
+  }
+  function betRow(m, b) {
+    const now = Date.now();
+    const open = b.status === 'pending';
+    const live = (b.legs || []).filter((l) => new Date(l.date).getTime() > now);
+    const net = b.status === 'won' ? (b.payout || 0) - b.stake : b.status === 'lost' ? -b.stake : 0;
+    const mark = (l) => (l.result === 'won' ? '✓' : l.result === 'lost' ? '✗' : l.result === 'push' || l.result === 'void' ? '–' : '•');
+    const row = h('article', { class: 'bet-card ' + b.status, 'data-bet': b.id },
+      h('div', { class: 'bet-h' }, bubble(m, 'bust sm'),
+        h('div', { class: 'bet-who' }, h('b', null, m.me ? 'You' : m.display), h('small', null, `${b.mode === 'parlay' ? `${(b.legs || []).length}-leg parlay` : 'Single'} · ${ago(b.ts)}`)),
+        h('div', { class: 'bet-res' }, h('span', { class: 'pill ' + b.status }, open ? 'Open' : b.status === 'won' ? 'Hit' : b.status === 'lost' ? 'Missed' : 'Refunded'),
+          h('small', null, open ? `${fmt(b.stake)} → ${fmt(Math.round(b.stake * (b.dec || 1)))}` : b.status === 'void' ? `${fmt(b.stake)} back` : `${signed(net)} coins`))),
+      h('ul', { class: 'bet-legs' }, (b.legs || []).map((l) => h('li', { class: l.result || 'pending' }, h('span', { class: 'lm', 'aria-hidden': 'true' }, mark(l)),
+        h('span', null, l.label || 'Pick', l.away && l.home ? h('small', null, ` ${l.away.abbr} @ ${l.home.abbr}`) : null),
+        l.dec ? h('em', null, `${Number(l.dec).toFixed(2)}x`) : null))),
+      m.me ? null : h('div', { class: 'row wrap bet-act' },
+        live.length ? h('button', { type: 'button', class: 'btn small main mirror', onclick: () => {
+          const r = mirrorBet(b);
+          toast(r.added ? `Added ${r.added} pick${r.added === 1 ? '' : 's'} to your slip${r.started ? ` (${r.started} already started)` : ''}` : r.dupes ? 'Those picks are already on your slip' : 'Those games already started');
+        } }, '⇄ Mirror this bet') : h('small', { class: 'muted' }, 'Games already started'),
+        h('a', { class: 'btn small', href: `#/duels/vs/${encodeURIComponent(m.handle)}` }, 'Challenge')));
+    return row;
+  }
+  /* put the not-yet-started legs of someone else's bet on your own slip, results cleared */
+  function mirrorBet(b) {
+    const now = Date.now();
+    const legs = (b.legs || []).filter((l) => new Date(l.date).getTime() > now);
+    let added = 0, dupes = 0;
+    legs.forEach((l) => { if (slipHas(l.key)) dupes++; else { toggleLeg({ ...l, result: 'pending' }); added++; } });
+    if (added) setSlip({ mode: b.mode === 'parlay' && (legs.length > 1 || getState().slip.legs.length > 1) ? 'parlay' : 'single' });
+    return { added, dupes, started: (b.legs || []).length - legs.length };
+  }
+
+  /* ----- the wall ----- */
+  function wall(ms) {
+    const byHandle = new Map(ms.map((m) => [m.handle.toLowerCase(), m]));
+    const box = h('section', { class: 'card crew-wall' }, h('h2', { class: 'card-h' }, 'The wall', h('small', null, 'talk your talk')));
+    const input = h('textarea', { class: 'inp wall-in', maxlength: '280', rows: '2', placeholder: 'Say something to the crew…', 'aria-label': 'Write on the wall' });
+    const list = h('div', { class: 'wall-list' });
+    const load = async () => {
+      try {
+        const r = await soc.wallGet();
+        clear(list);
+        if (!r.posts.length) return list.append(h('p', { class: 'muted' }, 'Nobody has posted yet. Be first.'));
+        r.posts.forEach((p) => {
+          const m = byHandle.get(String(p.handle).toLowerCase()) || { handle: p.handle, display: p.handle };
+          let cheers = p.cheers, cheered = p.cheered;
+          const post = h('article', { class: 'wall-post', 'data-post': p.id });
+          const paint = () => add(clear(post), bubble(m, 'bust sm'),
+            h('div', { class: 'wall-b' }, h('div', { class: 'wall-h' }, h('b', null, m.me ? 'You' : m.display), h('small', null, ago(new Date(p.at).getTime()))), h('p', null, p.body),
+              h('div', { class: 'row wall-act' },
+                h('button', { type: 'button', class: 'btn small like' + (cheered ? ' on' : ''), onclick: async () => { try { const c = await soc.wallCheer(p.id); cheers = c.count; cheered = c.cheered; paint(); } catch (e) { toast(errText(e)); } } }, `🔥 ${cheers}`),
+                (p.mine || soc.me().owner) ? h('button', { type: 'button', class: 'btn small danger', onclick: async () => { try { await soc.wallDel(p.id); post.remove(); } catch (e) { toast(errText(e)); } } }, 'Delete') : null)));
+          paint(); list.append(post);
+        });
+      } catch (e) { clear(list); list.append(h('p', { class: 'muted' }, errText(e))); }
+    };
+    add(box, h('div', { class: 'wall-form' }, input, actionBtn('Post', async () => {
+      const v = input.value.trim();
+      if (!v) return;
+      await soc.wallPost(v); input.value = ''; await load();
+    }, 'btn main')), list);
+    load();
+    clearInterval(timer);
+    timer = setInterval(() => { if (document.hidden || !document.body.contains(box)) return; load(); }, 30000);
+    return box;
+  }
+
+  /* one person's look right now: like it, copy it onto your fan, or challenge them */
   function fitCard(m) {
-    const fits = (m.avatar && m.avatar.fits) || [];
-    let sel = 'current', note = null;
+    const sel = 'current';
+    let note = null;
     const likes = { ...(m.likes || {}) }, liked = new Set(m.liked || []);
     const card = h('article', { class: 'fit-card', 'data-handle': m.handle });
-    const look = () => (sel === 'current' || !fits.find((f) => f.id === sel) ? m.avatar : { ...m.avatar, ...fits.find((f) => f.id === sel) });
     const paint = () => {
-      const av = look();
-      const chip = (label, id) => h('button', { type: 'button', class: 'chip' + (sel === id ? ' on' : ''), 'aria-pressed': sel === id ? 'true' : 'false', 'data-fit': id, onclick: () => { sel = id; note = null; paint(); } }, label);
+      const av = m.avatar;
       add(clear(card),
         h('div', { class: 'fit-stage' }, av && av.eq ? renderAvatar(av, m.team || null, 'full') : bubble(m)),
         h('b', { class: 'it-n' }, m.display, m.me ? h('small', null, ' you') : null),
-        fits.length ? h('div', { class: 'chip-row fit-pick' }, chip('Now', 'current'), fits.map((f) => chip(f.name, f.id))) : null,
         h('div', { class: 'row wrap fit-act' },
           m.me ? h('span', { class: 'fit-hearts', 'aria-label': 'likes' }, `♥ ${likes[sel] || 0}`)
             : actionBtn(`${liked.has(sel) ? '♥' : '♡'} ${likes[sel] || 0}`, async () => {
@@ -134,7 +268,8 @@ export async function render(root, params = {}) {
             note = r;
             toast(r.missing.length ? `Copied ${r.worn.length} piece${r.worn.length === 1 ? '' : 's'}. ${r.missing.length} you do not own yet.` : 'Copied. You are wearing it.');
             paint();
-          } }, 'Copy fit')),
+          } }, 'Copy fit'),
+          m.me ? null : h('a', { class: 'btn small', href: `#/duels/vs/${encodeURIComponent(m.handle)}` }, 'Challenge')),
         note ? h('div', { class: 'fit-note', role: 'status' },
           h('small', null, note.missing.length ? 'Missing from your closet:' : 'You own every piece.'),
           note.missing.length ? h('ul', null, note.missing.map((x) => h('li', null, `${x.name}${x.earned ? ' (earned)' : x.price != null ? ` · ${fmt(x.price)} coins` : ''}`))) : null,
@@ -170,5 +305,5 @@ export async function render(root, params = {}) {
   }
 
   draw();
-  return () => off();
+  return () => { off(); clearInterval(timer); };
 }
