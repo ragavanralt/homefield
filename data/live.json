@@ -1,33 +1,33 @@
 {
   "v": 1,
-  "updated": "2026-10-19",
+  "updated": "2026-10-20",
   "daily": {
-    "date": "2026-10-19",
+    "date": "2026-10-20",
     "quests": [
       {
-        "id": "d2026-10-19-1",
-        "metric": "outfit_changed",
+        "id": "d2026-10-20-1",
+        "metric": "daily_claimed",
         "target": 1,
-        "coins": 40,
-        "title": "Change something in your fit"
+        "coins": 50,
+        "title": "Claim your daily bonus"
       },
       {
-        "id": "d2026-10-19-2",
-        "metric": "parlays_placed",
+        "id": "d2026-10-20-2",
+        "metric": "games_marked",
         "target": 1,
-        "coins": 120,
-        "title": "Build a parlay"
+        "coins": 60,
+        "title": "Mark a game as watched"
       },
       {
-        "id": "d2026-10-19-3",
-        "metric": "games_opened",
-        "target": 6,
-        "coins": 120,
-        "title": "Open 6 different games"
+        "id": "d2026-10-20-3",
+        "metric": "bets_won",
+        "target": 2,
+        "coins": 300,
+        "title": "Win 2 bets"
       }
     ],
     "deal": {
-      "itemId": "snapback",
+      "itemId": "workjacket",
       "pct": 30
     }
   },
