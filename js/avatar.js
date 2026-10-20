@@ -417,8 +417,10 @@ export function cityOf(team) {
   const name = String(team.name || ''), short = String(team.short || '');
   const city = short && name.endsWith(short) ? name.slice(0, -short.length).trim() : '';
   let out = (city || short || name || team.abbr || 'HOME').toUpperCase();
-  // long club names do not fit across a chest: use the first word (Paris Saint-Germain -> PARIS), or the abbreviation
-  if (out.length > 11) { const first = out.split(/[\s-]+/)[0]; out = first.length >= 4 && first.length <= 11 ? first : String(team.abbr || first).toUpperCase().slice(0, 11); }
+  // One standard for every club and franchise: a name that fits the chest is used as is; anything longer
+  // becomes the team's own abbreviation (PSG, GS, DOR), which always fits and always looks like a real kit.
+  if (out.length > 8 && team.abbr) out = String(team.abbr).toUpperCase().slice(0, 4);
+  else if (out.length > 11) out = out.split(/[\s-]+/)[0].slice(0, 11);
   return out;
 }
 export function palette(team) {
