@@ -771,6 +771,8 @@ end $$;
 create or replace function x_daily(p_day date) returns void language plpgsql security definer set search_path = public, pg_temp as $$
 declare have int; pos0 int;
 begin
+  -- a card that was voided before it played should not hold a slot; free it so the five refills
+  delete from daily_five f using cards c where f.day = p_day and c.id = f.card_id and c.status = 'void' and c.start_at > x_now();
   select count(*), coalesce(max(pos), 0) into have, pos0 from daily_five where day = p_day;
   if have >= 5 then return; end if;
   -- spread the five across sports: take turns between leagues, so no sport hogs it (3 at most when two or more sports are on)
