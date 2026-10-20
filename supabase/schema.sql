@@ -1175,8 +1175,7 @@ begin
     insert into cards (day, league, game_id, kind, subject, title, a_label, b_label, line, start_at, meta)
     select gm.day, gm.league, gm.game_id, c ->> 'kind', c ->> 'subject', c ->> 'title', c ->> 'a', c ->> 'b', (c ->> 'line')::numeric, gm.start_at, coalesce(c -> 'meta', '{}')
       from games gm where gm.league = c ->> 'league' and gm.game_id = c ->> 'game_id' and gm.status = 'pre' and gm.start_at > x_now()
-    on conflict (league, game_id, kind, subject) do update set line = excluded.line, title = excluded.title
-      where cards.status = 'open' and cards.kind = 'team_total' and cards.line < 0; -- repairs the bad team lines an earlier version wrote
+    on conflict (league, game_id, kind, subject) do nothing;
     get diagnostics k = row_count;
     n_cards := n_cards + k;
   end loop;
@@ -1257,6 +1256,20 @@ insert into crews (name) select 'Crew' where not exists (select 1 from crews);
 insert into invites (code, crew_id, owner, max_uses)
 select 'HF' || substr(x_norm(encode(extensions.gen_random_bytes(8), 'base64')), 1, 6), (select id from crews order by created_at limit 1), true, 1
 where not exists (select 1 from invites where owner) and not exists (select 1 from profiles where is_owner);
+
+/* ------------------------------------------------------- repair: an early version wrote negative team lines for hockey and baseball */
+create or replace function x_repair_bad_lines() returns int language plpgsql security definer set search_path = public, pg_temp as $$
+declare n int; d date;
+begin
+  update cards set status = 'void', settled_at = x_now() where status = 'open' and kind = 'team_total' and line < 0;
+  get diagnostics n = row_count;
+  delete from daily_five f using cards c where c.id = f.card_id and c.status = 'void' and c.kind = 'team_total' and c.start_at > x_now();
+  for d in select distinct day from daily_five where day >= x_et(x_now()) loop perform x_daily(d); end loop;
+  perform x_daily(x_et(x_now()));
+  return n;
+end $$;
+revoke all on function x_repair_bad_lines() from public, anon, authenticated;
+do $$ begin perform x_repair_bad_lines(); end $$;
 
 -- The last result shown is your first invite code. Open the app, tap Crew, and paste it to make your account.
 select coalesce((select code from invites where owner and uses = 0 and not revoked order by created_at limit 1),

@@ -576,6 +576,22 @@ const kinds = (db, who) => db.rows(`select kind, amount from payouts where user_
   });
 }
 
+/* repair of the bad hockey team lines */
+{
+  const db = fresh();
+  crew(db, ['ragavan']);
+  const g = game(20, '22:00', { league: 'nhl' }), g2 = game(20, '23:00');
+  svc(db, 'bot_publish', { p_games: [g, g2], p_cards: [...cardsFor(g, 0), { league: 'nhl', game_id: g.game_id, kind: 'team_total', subject: 'bad', title: 'SJ team points', a: 'Over', b: 'Under', line: -98.5 }, ...cardsFor(g2, 2)], p_cap: [] });
+  t('repair: a negative team line is voided and leaves the daily five', () => {
+    db.sql("select x_daily('2026-10-20'::date)");
+    db.sql("update daily_five set card_id = (select id from cards where subject = 'bad') where pos = 1 and day = '2026-10-20'");
+    assert.equal(Number(db.rows("select x_repair_bad_lines() n")[0].n), 1);
+    assert.equal(db.rows("select status from cards where subject = 'bad'")[0].status, 'void');
+    assert.equal(Number(db.rows("select count(*) n from daily_five f join cards c on c.id = f.card_id where c.subject = 'bad'")[0].n), 0);
+    assert.equal(Number(db.rows("select count(*) n from daily_five where day = '2026-10-20'")[0].n), 5);
+  });
+}
+
 /* =============================== fit gallery likes =============================== */
 {
   const db = fresh(); const u = crew(db);
