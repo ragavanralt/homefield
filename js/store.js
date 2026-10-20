@@ -204,6 +204,15 @@ export function track(metric, n = 1, key = null, now = new Date()) {
   }
   save();
 }
+/** Fold in quest claims made on another device, so a quest or the daily bonus pays out once. */
+export function mergeClaims(c) {
+  if (!c) return;
+  update((s) => {
+    const q = rollQuests(s);
+    if (c.day === q.day) q.daily.claimed = [...new Set([...q.daily.claimed, ...(c.days || [])])];
+    if (c.week === q.week) q.weekly.claimed = [...new Set([...q.weekly.claimed, ...(c.weeks || [])])];
+  });
+}
 /** This period's counters, without changing anything. which is 'daily' or 'weekly'. */
 export function questPeriod(which, now = new Date()) {
   const q = state.quests || {};

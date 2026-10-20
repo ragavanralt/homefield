@@ -1,7 +1,7 @@
 // Crew server client: sign-in, calls, coin receipts and device sync. No framework, no build.
 // The server is Supabase Postgres, reached only through functions (see supabase/schema.sql).
 import { SOCIAL } from './social-config.js';
-import { getState, update, spendCoins, addCoins, onSaved } from './store.js';
+import { getState, update, spendCoins, addCoins, onSaved, mergeClaims } from './store.js';
 import { betStats } from './bets.js';
 
 export const VERSION = 1;
@@ -154,17 +154,32 @@ export function mergeFan(local, remote) {
   for (const [k, b] of Object.entries(local.bets || {})) if (!out.bets[k] || betScore(b) >= betScore(out.bets[k])) out.bets[k] = b;
   const lb = local.bank || {}, rb = remote.bank || {};
   const useLocal = (lb.xp || 0) > (rb.xp || 0) || ((lb.xp || 0) === (rb.xp || 0) && (lb.coins || 0) >= (rb.coins || 0) && S.synced);
-  out.bank = useLocal ? lb : rb;
+  out.bank = { ...(useLocal ? lb : rb) };
+  // Once-a-day things are claimed once across all your devices: the later claim day wins, and so do quest claims.
+  const chosen = useLocal ? lb : rb, later = (rb.lastDaily || '') > (lb.lastDaily || '') ? rb : lb;
+  if ((later.lastDaily || '') > (chosen.lastDaily || '')) {
+    out.bank.coins = (out.bank.coins || 0) + 150 + 50 * Math.min(later.dailyStreak || 1, 7); // their bonus was real, don't lose it
+    out.bank.peak = Math.max(out.bank.peak || 0, out.bank.coins);
+  }
+  if (later.lastDaily) { out.bank.lastDaily = later.lastDaily; out.bank.dailyStreak = later.dailyStreak || 0; }
+  out.bank.rescued = [lb.rescued || '', rb.rescued || ''].sort().pop();
+  out.claims = mergeClaimSets(local.claims, remote.claims);
   const la = local.avatar || {}, ra = remote.avatar || {};
   out.avatar = { ...(useLocal ? ra : la), ...(useLocal ? la : ra), owned: [...new Set([...(la.owned || []), ...(ra.owned || [])])], fits: mergeFits(la.fits, ra.fits) };
   if (!out.avatar.fits || !out.avatar.fits.length) delete out.avatar.fits;
   return out;
 }
+function mergeClaimSets(a, b) {
+  if (!a || !b) return a || b || null;
+  const pick = (x, y, key) => (x[key] === y[key] ? [...new Set([...(x[key + 's'] || []), ...(y[key + 's'] || [])])] : (x[key] > y[key] ? x : y)[key + 's'] || []);
+  return { day: a.day > b.day ? a.day : b.day, week: a.week > b.week ? a.week : b.week, days: pick(a, b, 'day'), weeks: pick(a, b, 'week') };
+}
 function mergeFits(a = [], b = []) { const m = new Map(); for (const f of [...b, ...a]) m.set(f.id, f); return [...m.values()]; }
 
 const fanOf = (s) => {
   const bets = Object.fromEntries(Object.entries(s.bets || {}).sort((x, y) => (y[1].placedAt || 0) - (x[1].placedAt || 0)).slice(0, 400));
-  return { teams: s.teams, avatar: s.avatar, bank: s.bank, bets };
+  const q = s.quests || {};
+  return { teams: s.teams, avatar: s.avatar, bank: s.bank, bets, claims: { day: q.day || '', week: q.week || '', days: (q.daily && q.daily.claimed) || [], weeks: (q.weekly && q.weekly.claimed) || [] } };
 };
 function publicOf(s) {
   const st = betStats(s.bets || {}, s.bank);
@@ -183,7 +198,9 @@ export function syncNow() {
     if (remote.data && remote.data.teams) {
       const merged = mergeFan(fanOf(st), remote.data);
       applying = true;
-      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; }); } finally { applying = false; }
+      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; });
+        mergeClaims(merged.claims);
+      } finally { applying = false; }
     }
     S.ver = remote.ver || 0; S.synced = true; save();
     await push();
