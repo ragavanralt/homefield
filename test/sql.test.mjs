@@ -584,6 +584,7 @@ const kinds = (db, who) => db.rows(`select kind, amount from payouts where user_
   svc(db, 'bot_publish', { p_games: [g, g2], p_cards: [...cardsFor(g, 0), { league: 'nhl', game_id: g.game_id, kind: 'team_total', subject: 'bad', title: 'SJ team points', a: 'Over', b: 'Under', line: -98.5 }, ...cardsFor(g2, 2)], p_cap: [] });
   t('repair: a negative team line is voided and leaves the daily five', () => {
     db.sql("select x_daily('2026-10-20'::date)");
+    db.sql("delete from daily_five where card_id = (select id from cards where subject = 'bad')");
     db.sql("update daily_five set card_id = (select id from cards where subject = 'bad') where pos = 1 and day = '2026-10-20'");
     assert.equal(Number(db.rows("select x_repair_bad_lines() n")[0].n), 1);
     assert.equal(db.rows("select status from cards where subject = 'bad'")[0].status, 'void');

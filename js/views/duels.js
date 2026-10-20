@@ -138,10 +138,12 @@ function cardRow(c, d, oppName, onNew) {
   const ok = c.outcome === 'a' || c.outcome === 'b' ? (mineSide ? (mineSide === c.outcome ? 'good' : 'bad') : '') : '';
   const lab = (s) => (c.line != null && c.kind !== 'winner' ? `${s === 'a' ? c.a : c.b} ${c.line}` : s === 'a' ? c.a : c.b);
   return h('article', { class: `dcard ${ok}${c.status === 'void' ? ' void' : ''}`, 'data-card': c.id },
-    h('div', { class: 'dc-t' }, h('b', null, c.title), h('small', null, c.status === 'final' ? (c.outcome === 'push' ? 'Push' : c.outcome === 'a' || c.outcome === 'b' ? `Result: ${lab(c.outcome)}${c.actual != null ? ` (${c.actual})` : ''}` : 'No result') : c.status === 'void' ? 'Void' : c.locked ? 'Locked' : `Locks ${dayTime(c.start_at)}`)),
+    h('div', { class: 'dc-t' }, h('b', null, lgTag(c), c.title), h('small', null, c.status === 'final' ? (c.outcome === 'push' ? 'Push' : c.outcome === 'a' || c.outcome === 'b' ? `Result: ${lab(c.outcome)}${c.actual != null ? ` (${c.actual})` : ''}` : 'No result') : c.status === 'void' ? 'Void' : c.locked ? 'Locked' : `Locks ${dayTime(c.start_at)}`)),
     h('div', { class: 'dc-s' }, sideBtn(lab('a'), mineSide === 'a', !canPick, () => pick('a')), sideBtn(lab('b'), mineSide === 'b', !canPick, () => pick('b'))),
     d.opponent && d.status !== 'open' ? h('small', { class: 'dc-o' }, theirs ? `${oppName} took ${lab(theirs)}` : c.their_made ? `${oppName} has picked` : `${oppName} has not picked`) : null);
 }
+
+const lgTag = (c) => (c.league ? h('span', { class: 'lg-tag' }, String(c.league).toUpperCase()) : null);
 
 /* -------------------------------------------------------------- daily five */
 function daily(f, reload) {
@@ -152,7 +154,7 @@ function daily(f, reload) {
       const lab = (s) => (c.line != null && c.kind !== 'winner' ? `${s === 'a' ? c.a : c.b} ${c.line}` : s === 'a' ? c.a : c.b);
       const pick = async (side) => { try { await soc.dailyPick(c.id, side); reload(); } catch (e) { toast(errText(e)); } };
       return h('article', { class: `dcard ${c.result === 'win' ? 'good' : c.result === 'loss' ? 'bad' : ''}`, 'data-card': c.id },
-        h('div', { class: 'dc-t' }, h('b', null, c.title), h('small', null, c.result ? (c.result === 'win' ? 'Right' : c.result === 'loss' ? 'Wrong' : 'No result') : c.locked ? 'Locked' : `Locks ${dayTime(c.start_at)}`)),
+        h('div', { class: 'dc-t' }, h('b', null, lgTag(c), c.title), h('small', null, c.result ? (c.result === 'win' ? 'Right' : c.result === 'loss' ? 'Wrong' : 'No result') : c.locked ? 'Locked' : `Locks ${dayTime(c.start_at)}`)),
         h('div', { class: 'dc-s' }, sideBtn(lab('a'), c.mine === 'a', c.locked, () => pick('a')), sideBtn(lab('b'), c.mine === 'b', c.locked, () => pick('b'))));
     })) : h('p', { class: 'muted' }, 'Today\'s five arrive with the next slate.'),
     right ? h('p', { class: 'muted' }, `${right} right so far today.`) : null);
