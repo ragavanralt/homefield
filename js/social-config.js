@@ -2,5 +2,5 @@
 // and it can only call the functions in supabase/schema.sql. Never put the secret key here.
 export const SOCIAL = {
   url: 'https://qhekfoxcbpbtpzukzxxg.supabase.co',
-  key: '',   // paste the anon / publishable key from Supabase -> Project Settings -> API Keys
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoZWtmb3hjYnBidHB6dWt6eHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0NTI0MjYsImV4cCI6MjEwODAyODQyNn0.DvttZSPuHe-R28OWYW4QtQAse6UJBlr1rArxsgAbmVU',  // public anon key (safe in the page)
 };
