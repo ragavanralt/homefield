@@ -171,5 +171,25 @@ await t('after the game: winner collects pot minus 5% exactly once', async () =>
   assert.equal(d.status, 'settled'); assert.equal(d.winner, 'ragavan');
 });
 
+await t('changing your avatar or saving a fit backs it up on its own, and a second device then gets it', async () => {
+  globalThis.document = { addEventListener() {}, visibilityState: 'visible' };
+  soc._setDelay(60); soc.startSocial();
+  await new Promise((r) => setTimeout(r, 500));
+  store.update((s) => { s.avatar.fits = [{ id: 'f1', name: 'Game day', eq: { top: 'tee' } }]; s.avatar.owned.push('crownitem'); });
+  await new Promise((r) => setTimeout(r, 900));
+  const remote = db.rpc('hf_sync_get', { p_token: soc._state().token });
+  assert.equal(remote.data.avatar.fits[0].name, 'Game day'); assert.ok(remote.data.avatar.owned.includes('crownitem'));
+  const ver = remote.ver;
+  await new Promise((r) => setTimeout(r, 600));
+  assert.equal(db.rpc('hf_sync_get', { p_token: soc._state().token }).ver, ver, 'no endless sync loop');
+  // another device: wipe locally, sign in, and it comes back
+  store.update((s) => { s.avatar.fits = []; s.avatar.owned = ['short']; });
+  await new Promise((r) => setTimeout(r, 300));
+  await soc.logout(); soc._reset();
+  const r = db.rpc('hf_login', { p_handle: 'ragavan', p_code: ownerCode }); assert.ok(r.token);
+  await soc.login('ragavan', ownerCode);
+  assert.equal(store.getState().avatar.fits.length, 1); assert.ok(store.getState().avatar.owned.includes('crownitem'));
+});
+
 console.log(`${passed} client checks passed`);
 db.drop();

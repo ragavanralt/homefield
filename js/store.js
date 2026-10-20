@@ -49,7 +49,10 @@ function load() {
 function save() { try { storage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage full */ } }
 
 export const getState = () => state;
-export function update(fn) { fn(state); save(); return state; }
+let saveHook = null;
+/** Called after every change is saved. The crew sync uses it to back changes up in the background. */
+export const onSaved = (fn) => { saveHook = fn; };
+export function update(fn) { fn(state); save(); if (saveHook) { try { saveHook(); } catch (e) { /* never block a save */ } } return state; }
 
 export const myTeams = () => state.teams;
 export const isFollowing = (league, id) => state.teams.some((t) => t.league === league && t.id === String(id));

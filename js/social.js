@@ -1,7 +1,7 @@
 // Crew server client: sign-in, calls, coin receipts and device sync. No framework, no build.
 // The server is Supabase Postgres, reached only through functions (see supabase/schema.sql).
 import { SOCIAL } from './social-config.js';
-import { getState, update, spendCoins, addCoins } from './store.js';
+import { getState, update, spendCoins, addCoins, onSaved } from './store.js';
 import { betStats } from './bets.js';
 
 export const VERSION = 1;
@@ -171,7 +171,8 @@ function publicOf(s) {
   return { avatar: s.avatar, team: t ? { league: t.league, id: t.id, abbr: t.abbr, name: t.name, color: t.color, alt: t.alt } : null,
     stats: { won: st.won, lost: st.lost, accuracy: st.accuracy, total: st.total, streak: st.streak, bestStreak: st.bestStreak, coins: s.bank.coins } };
 }
-let syncing = null;
+let syncing = null, applying = false, delay = 4000;
+export const _setDelay = (ms) => { delay = ms; };
 export function syncNow() {
   if (!enabled() || !signedIn()) return Promise.resolve(false);
   if (syncing) return syncing;
@@ -180,7 +181,8 @@ export function syncNow() {
     const st = getState();
     if (remote.data && remote.data.teams) {
       const merged = mergeFan(fanOf(st), remote.data);
-      update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; });
+      applying = true;
+      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; }); } finally { applying = false; }
     }
     S.ver = remote.ver || 0; S.synced = true; save();
     await push();
@@ -188,10 +190,11 @@ export function syncNow() {
   })().finally(() => { syncing = null; });
   return syncing;
 }
+const hashOf = (str) => { let a = 5381, b = 52711; for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); a = ((a << 5) + a) ^ c; b = ((b << 5) + b) ^ c; } return `${str.length}:${a >>> 0}:${b >>> 0}`; };
 async function push() {
   const st = getState();
   const data = fanOf(st);
-  const hash = JSON.stringify(data).length + ':' + JSON.stringify(data.bank) + JSON.stringify(data.teams.map((t) => t.id)) + Object.keys(data.bets).length;
+  const hash = hashOf(JSON.stringify(data));
   if (hash === S.hash) return;
   let r = await call('hf_sync_put', { p_base: S.ver, p_data: data, p_public: publicOf(st) });
   if (r.conflict) { S.ver = r.ver; save(); r = await call('hf_sync_put', { p_base: S.ver, p_data: fanOf(getState()), p_public: publicOf(getState()) }); }
@@ -200,17 +203,18 @@ async function push() {
 let pushTimer = null;
 /** Call after the fan changes. Saves a few seconds later, in the background. */
 export function queueSync() {
-  if (!enabled() || !signedIn()) return;
+  if (!enabled() || !signedIn() || applying) return;
   clearTimeout(pushTimer);
-  pushTimer = setTimeout(() => { syncNow().catch(() => {}); }, 4000);
+  pushTimer = setTimeout(() => { syncNow().catch(() => {}); }, delay);
 }
 
 /** Run once when the app opens, and again when it comes back to the foreground. */
 export function startSocial() {
   if (!enabled()) return;
   const tick = () => { if (signedIn()) { reconcile().catch(() => {}); syncNow().catch(() => {}); } };
+  onSaved(queueSync);
   tick();
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); else if (signedIn()) { clearTimeout(pushTimer); syncNow().catch(() => {}); } });
 }
 
 /* ---------- crew games ---------- */
