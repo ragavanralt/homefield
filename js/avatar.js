@@ -483,6 +483,9 @@ export function renderAvatar(av = getState().avatar, team = avatarTeam(av), cls 
 export function previewSvg(item, av = getState().avatar, team = avatarTeam(av), ci) {
   const col = ci == null ? av.col : { ...(av.col || {}), [item.id]: ci };
   const eq = { ...av.eq, [item.slot]: item.id };
+  // a jacket or hat you are wearing must not hide the thing being previewed
+  if (['top', 'bottom', 'legwear', 'armwear', 'wrist', 'hand', 'chain'].includes(item.slot)) delete eq.outer;
+  if (item.slot === 'hair') delete eq.hat;
   // sleeves only show on bare arms and legs, so the preview puts on a tank or shorts
   if (item.slot === 'armwear') eq.top = 'tank';
   if (item.slot === 'legwear' && !itemById(eq.bottom || 'jeans')?.short) eq.bottom = 'shorts';
