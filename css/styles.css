@@ -707,3 +707,12 @@ main { max-width: 1320px; padding: 16px 20px calc(48px + env(safe-area-inset-bot
 .fit-pick { max-width: 100%; justify-content: center; flex-wrap: wrap; overflow: visible; } .fit-pick .chip { padding: 4px 10px; font-size: 13px; }
 .fit-act { justify-content: center; } .btn.like.on { border-color: var(--hot); color: var(--hot); } .fit-hearts { font-weight: 700; color: var(--muted); }
 .fit-note { text-align: left; width: 100%; font-size: 13px; } .fit-note ul { margin: 4px 0; padding-left: 18px; } .fit-note small { color: var(--muted); }
+
+/* ===== alignment: header, sub-tabs and page share one content column on wide screens ===== */
+@media (min-width: 1000px) {
+  .top, .subnav { padding-inline: max(20px, calc((100% - 1320px) / 2 + 20px)); }
+}
+html { scrollbar-gutter: stable; overflow-anchor: none; }
+.profile { min-width: 0; }
+.pf-me { align-self: start; }
+.fit-gallery { align-items: start; }

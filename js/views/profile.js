@@ -25,7 +25,16 @@ export async function render(root, params = {}) {
   root.append(shop ? pageHead('Shop', 'Spend the coins you win on clothes and gear. Looks only. Nothing here changes your odds.') : pageHead('Your fan', 'Your character and everything you own. Changing your look is free.'), host);
   host.classList.toggle('is-shop', shop);
 
+  // Rebuilding the page must not move it: pin the height and scroll across the rebuild.
   function draw() {
+    const y = window.scrollY, hgt = host.offsetHeight;
+    if (hgt) host.style.minHeight = hgt + 'px';
+    paint();
+    window.scrollTo(0, y);
+    requestAnimationFrame(() => { window.scrollTo(0, y); host.style.minHeight = ''; });
+  }
+
+  function paint() {
     const state = getState(), av = state.avatar, bank = getBank();
     const team = avatarTeam(av);
     const lvl = levelFor(bank.xp);
