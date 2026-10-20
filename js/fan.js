@@ -392,9 +392,9 @@ export function drawFan(ctx) {
   if (B.be) P.stroke(curve([[CX - B.wa, 186], [CX, 194], [CX + B.wa, 186]]), sk.sh, 1.6, 0.9);
   const nk = B.nk, neckD = blob([[CX - nk + 1, 92], [CX + nk - 1, 92], [CX + nk + 0.5, 112], [CX + nk + 6, 118], [CX - nk - 6, 118], [CX - nk - 0.5, 112]]);
   P.fill(neckD, sk.base);
-  P.clip(neckD, `<path d="${poly([[CX + nk * 0.35, 90], [CX + nk + 8, 90], [CX + nk + 8, 120], [CX + nk * 0.45, 120]])}" fill="${sk.sh}"/><path d="${blob([[CX - nk - 2, 96], [CX + nk + 2, 96], [CX + nk + 2, 106], [CX, 112], [CX - nk - 2, 106]])}" fill="${sk.deep}"/>`);
-  P.stroke(curve([[CX - nk + 1, 96], [CX - nk - 0.5, 110], [CX - nk - 6, 117.5]]), sk.line, OW);
-  P.stroke(curve([[CX + nk - 1, 96], [CX + nk + 0.5, 110], [CX + nk + 6, 117.5]]), sk.line, OW);
+  P.clip(neckD, `<path d="${poly([[CX + nk * 0.35, 90], [CX + nk + 8, 90], [CX + nk + 8, 120], [CX + nk * 0.45, 120]])}" fill="${sk.sh}"/><path d="${blob([[CX - nk - 2, 96], [CX + nk + 2, 96], [CX + nk + 2, 102], [CX, 109.5], [CX - nk - 2, 102]])}" fill="${sk.sh}" opacity="0.5"/>`);
+  P.stroke(curve([[CX - nk + 1.2, 103], [CX - nk - 0.3, 110], [CX - nk - 6, 117.5]]), sk.line, OW);
+  P.stroke(curve([[CX + nk - 1.2, 103], [CX + nk + 0.3, 110], [CX + nk + 6, 117.5]]), sk.line, OW);
   if (B.def > 0.5) { P.stroke(curve([[CX - 4, 121], [CX - 12, 119], [CX - 22, 121]]), sk.sh, 1.3, 0.8); P.stroke(curve([[CX + 4, 121], [CX + 12, 119], [CX + 22, 121]]), sk.sh, 1.3, 0.8); }
   // arms, over the torso edge so the shoulders read
   for (const side of [-1, 1]) {

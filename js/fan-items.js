@@ -30,7 +30,7 @@ function neckline(P, c, type, R, o = {}) {
     ? poly([[CX - nk - 1.5, 106], [CX + nk + 1.5, 106], [CX + nk + 3.5, 113], [CX, depth], [CX - nk - 3.5, 113]])
     : blob([[CX - nk - 1, 105], [CX + nk + 1, 105], [CX + nk + 4, 113], [CX + nk * 0.4, depth - 0.5], [CX - nk * 0.4, depth - 0.5], [CX - nk - 4, 113]]);
   P.fill(open, sk.base);
-  P.clip(open, `<path d="${poly([[CX + nk * 0.3, 100], [CX + 40, 100], [CX + 40, 160], [CX + nk * 0.3, 160]])}" fill="${sk.sh}"/><path d="${blob([[CX - nk - 4, 100], [CX + nk + 4, 100], [CX + nk + 3, 110], [CX, 113.5], [CX - nk - 3, 110]])}" fill="${sk.deep}" opacity="0.9"/>`);
+  P.clip(open, `<path d="${poly([[CX + nk * 0.3, 100], [CX + 40, 100], [CX + 40, 160], [CX + nk * 0.3, 160]])}" fill="${sk.sh}"/><path d="${blob([[CX - nk - 4, 100], [CX + nk + 4, 100], [CX + nk + 3, 106], [CX, 111.5], [CX - nk - 3, 106]])}" fill="${sk.sh}" opacity="0.5"/>`);
   const edge = type === 'v' || type === 'deepv' ? [[CX - nk - 3.5, 112.5], [CX - nk * 0.4, 124], [CX, depth], [CX + nk * 0.4, 124], [CX + nk + 3.5, 112.5]] : [[CX - nk - 4, 112.5], [CX - nk * 0.5, depth - 1], [CX + nk * 0.5, depth - 1], [CX + nk + 4, 112.5]];
   if (o.rib !== false) { P.stroke(curve(edge), R.line, 5.2); P.stroke(curve(edge), o.ribCol || R.sh, 3); }
   else P.stroke(curve(edge), R.line, OW);
