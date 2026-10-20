@@ -428,6 +428,32 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- Likes on fits in the gallery. fit is 'current' (what someone is wearing now) or the id of one of their saved fits.
+create table if not exists fit_likes (
+  user_id uuid not null references profiles(id) on delete cascade,
+  owner_id uuid not null references profiles(id) on delete cascade,
+  fit text not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, owner_id, fit)
+);
+
+create or replace function hf_fit_like(p_token text, p_handle text, p_fit text default 'current') returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
+declare u uuid := x_uid(p_token); me profiles; o profiles; n int; liked boolean;
+begin
+  p_fit := coalesce(nullif(trim(p_fit), ''), 'current');
+  if length(p_fit) > 24 then raise exception 'hf:bad_request'; end if;
+  select * into me from profiles where id = u;
+  select * into o from profiles where lower(handle) = lower(trim(coalesce(p_handle, ''))) and crew_id = me.crew_id and active;
+  if not found then return x_fail('no_such_player'); end if;
+  if o.id = u then return x_fail('own_fit'); end if;
+  if p_fit <> 'current' and not exists (select 1 from jsonb_array_elements(coalesce(o.avatar -> 'fits', '[]'::jsonb)) f where f ->> 'id' = p_fit) then return x_fail('no_such_fit'); end if;
+  delete from fit_likes where user_id = u and owner_id = o.id and fit = p_fit;
+  liked := not found;
+  if liked then insert into fit_likes (user_id, owner_id, fit) values (u, o.id, p_fit); end if;
+  select count(*) into n from fit_likes where owner_id = o.id and fit = p_fit;
+  return jsonb_build_object('liked', liked, 'count', n);
+end $$;
+
 create or replace function hf_crew(p_token text) returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
 declare u uuid := x_uid(p_token); c uuid;
 begin
@@ -438,7 +464,9 @@ begin
       'avatar', p.avatar, 'team', p.team, 'stats', p.stats, 'solo_streak', p.solo_streak, 'solo_best', p.solo_best, 'last_seen', p.last_seen,
       'duel_w', (select count(*) from duels d where d.status = 'settled' and d.winner = p.id),
       'duel_l', (select count(*) from duels d where d.status = 'settled' and d.winner is not null and d.winner <> p.id and p.id in (d.creator, d.opponent)),
-      'duel_t', (select count(*) from duels d where d.status = 'settled' and d.winner is null and p.id in (d.creator, d.opponent))
+      'duel_t', (select count(*) from duels d where d.status = 'settled' and d.winner is null and p.id in (d.creator, d.opponent)),
+      'likes', coalesce((select jsonb_object_agg(q.fit, q.n) from (select fit, count(*) n from fit_likes where owner_id = p.id group by fit) q), '{}'::jsonb),
+      'liked', coalesce((select jsonb_agg(l.fit) from fit_likes l where l.owner_id = p.id and l.user_id = u), '[]'::jsonb)
     ) order by p.handle) from profiles p where p.crew_id = c and p.active), '[]'::jsonb));
 end $$;
 

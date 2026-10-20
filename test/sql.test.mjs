@@ -563,6 +563,29 @@ const kinds = (db, who) => db.rows(`select kind, amount from payouts where user_
   });
 }
 
+/* =============================== fit gallery likes =============================== */
+{
+  const db = fresh(); const u = crew(db);
+  const put = (who, av) => db.rpc('hf_sync_put', { p_token: u[who].token, p_base: 0, p_data: { teams: [] }, p_public: { avatar: av, team: null, stats: {} } });
+  put('bro', { eq: { top: 'tee' }, fits: [{ id: 'f1', name: 'Game day', eq: { top: 'tank' } }] });
+  const like = (who, handle, fit) => db.rpc('hf_fit_like', { p_token: u[who].token, p_handle: handle, p_fit: fit });
+  t('liking a fit toggles, counts, and shows up for you in the crew list', () => {
+    assert.deepEqual(like('ragavan', 'bro', 'current'), { liked: true, count: 1 });
+    assert.deepEqual(like('cuz', 'bro', 'current'), { liked: true, count: 2 });
+    assert.deepEqual(like('ragavan', 'bro', 'f1'), { liked: true, count: 1 });
+    const bro = db.rpc('hf_crew', { p_token: u.ragavan.token }).members.find((m) => m.handle === 'bro');
+    assert.deepEqual(bro.likes, { current: 2, f1: 1 }); assert.deepEqual(bro.liked.sort(), ['current', 'f1']);
+    assert.deepEqual(db.rpc('hf_crew', { p_token: u.cuz.token }).members.find((m) => m.handle === 'bro').liked, ['current']);
+    assert.deepEqual(like('ragavan', 'bro', 'current'), { liked: false, count: 1 }, 'second tap unlikes');
+  });
+  t('you cannot like your own fit, a missing fit, or someone outside the crew; signed-out is refused', () => {
+    assert.equal(err(like('bro', 'bro', 'current')), 'own_fit');
+    assert.equal(err(like('ragavan', 'bro', 'nope')), 'no_such_fit');
+    assert.equal(err(like('ragavan', 'ghost', 'current')), 'no_such_player');
+    assert.match(db.rpc('hf_fit_like', { p_token: null, p_handle: 'bro' }).error, /not_signed_in/);
+  });
+}
+
 /* =============================== survivor =============================== */
 {
   const db = fresh();

@@ -2,6 +2,7 @@
 import { h, clear, toast } from '../ui.js';
 import { pageHead } from '../components.js';
 import * as soc from '../social.js';
+import { renderAvatar, copyLook } from '../avatar.js';
 import { bubble, claimBar, fmt, loader, actionBtn, errText } from '../social-ui.js';
 
 const pct = (a) => (a == null ? '–' : Math.round(a * 100) + '%');
@@ -101,11 +102,46 @@ export async function render(root, params = {}) {
               h('td', null, `${m.duel_w}–${m.duel_l}${m.duel_t ? `–${m.duel_t}` : ''}`), h('td', null, m.solo_streak ? `${m.solo_streak} d` : '–')); })))),
           h('p', { class: 'muted' }, 'Pick\'em record comes from each person\'s own app, so it is for fun.')),
         h('section', { class: 'card' },
-          h('h2', { class: 'card-h' }, 'Fit gallery', h('small', null, `${ms.length} in the crew`)),
-          h('div', { class: 'fit-grid crew-fits' }, ms.map((m) => h('article', { class: 'fit', 'data-handle': m.handle }, bubble(m, 'bust'), h('div', { class: 'it-n' }, m.display))))),
+          h('h2', { class: 'card-h' }, 'Fit gallery', h('small', null, 'like a fit, or copy it onto your fan')),
+          h('div', { class: 'fit-gallery crew-fits' }, ms.map(fitCard))),
         soc.me().owner ? owner(d.members) : null);
     });
     run();
+  }
+
+  /* a person's full look, with their saved fits one tap away; like it, or copy what you own of it */
+  function fitCard(m) {
+    const fits = (m.avatar && m.avatar.fits) || [];
+    let sel = 'current', note = null;
+    const likes = { ...(m.likes || {}) }, liked = new Set(m.liked || []);
+    const card = h('article', { class: 'fit-card', 'data-handle': m.handle });
+    const look = () => (sel === 'current' || !fits.find((f) => f.id === sel) ? m.avatar : { ...m.avatar, ...fits.find((f) => f.id === sel) });
+    const paint = () => {
+      const av = look();
+      const chip = (label, id) => h('button', { type: 'button', class: 'chip' + (sel === id ? ' on' : ''), 'aria-pressed': sel === id ? 'true' : 'false', 'data-fit': id, onclick: () => { sel = id; note = null; paint(); } }, label);
+      clear(card).append(
+        h('div', { class: 'fit-stage' }, av && av.eq ? renderAvatar(av, m.team || null, 'full') : bubble(m)),
+        h('b', { class: 'it-n' }, m.display, m.me ? h('small', null, ' you') : null),
+        fits.length ? h('div', { class: 'chip-row fit-pick' }, chip('Now', 'current'), fits.map((f) => chip(f.name, f.id))) : null,
+        h('div', { class: 'row wrap fit-act' },
+          m.me ? h('span', { class: 'fit-hearts', 'aria-label': 'likes' }, `♥ ${likes[sel] || 0}`)
+            : actionBtn(`${liked.has(sel) ? '♥' : '♡'} ${likes[sel] || 0}`, async () => {
+              const r = await soc.fitLike(m.handle, sel);
+              likes[sel] = r.count; if (r.liked) liked.add(sel); else liked.delete(sel); paint();
+            }, 'btn small like' + (liked.has(sel) ? ' on' : '')),
+          m.me || !av || !av.eq ? null : h('button', { type: 'button', class: 'btn small copy', onclick: () => {
+            const r = copyLook(av);
+            note = r;
+            toast(r.missing.length ? `Copied ${r.worn.length} piece${r.worn.length === 1 ? '' : 's'}. ${r.missing.length} you do not own yet.` : 'Copied. You are wearing it.');
+            paint();
+          } }, 'Copy fit')),
+        note ? h('div', { class: 'fit-note', role: 'status' },
+          h('small', null, note.missing.length ? 'Missing from your closet:' : 'You own every piece.'),
+          note.missing.length ? h('ul', null, note.missing.map((x) => h('li', null, `${x.name}${x.earned ? ' (earned)' : x.price != null ? ` · ${fmt(x.price)} coins` : ''}`))) : null,
+          note.missing.length ? h('a', { href: '#/shop' }, 'Open the Shop') : null) : null);
+    };
+    paint();
+    return card;
   }
 
   function owner(members) {

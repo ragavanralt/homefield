@@ -368,6 +368,28 @@ export function saveFit(name) {
   setAvatar((a) => { a.fits = [...(a.fits || []), fit]; });
   return { ok: true, fit };
 }
+/** Copy what someone else is wearing, as far as you own it. Returns what was worn and what you are missing (with prices). */
+export function copyLook(their) {
+  const res = { worn: [], missing: [] };
+  if (!their || !their.eq) return res;
+  setAvatar((a) => {
+    const eq = { ...a.eq };
+    for (const slot of new Set([...Object.keys(a.eq), ...Object.keys(their.eq)])) {
+      const id = their.eq[slot];
+      if (id && a.owned.includes(id)) {
+        eq[slot] = id; res.worn.push(id);
+        if (their.col && their.col[id] != null) a.col = { ...a.col, [id]: their.col[id] };
+        if (their.side && their.side[id]) a.side = { ...(a.side || {}), [id]: their.side[id] };
+      } else {
+        if (id) { const it = itemById(id); res.missing.push({ id, name: it ? it.name : id, price: it ? priceOf(it) : null, earned: !!(it && it.ach) }); }
+        if (!ALWAYS_ON.includes(slot)) delete eq[slot]; // keep your own hair, top, trousers and shoes if you lack theirs
+      }
+    }
+    a.eq = eq;
+  });
+  track('outfit_changed');
+  return res;
+}
 export function wearFit(id) {
   const fit = fitsList().find((f) => f.id === id);
   if (!fit) return false;

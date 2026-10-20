@@ -70,7 +70,7 @@ byText('button', /Join the crew/).click(); await sleep(400);
 assert.match($('#recovery-code').textContent, /^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/); ok('joining shows the recovery code once');
 const ownerCode = $('#recovery-code').textContent;
 $('#code-saved').click(); await sleep(400);
-assert.ok($('.crew-table tr[data-handle="ragavan"]'), 'table row'); assert.ok($('.crew-fits .fit[data-handle="ragavan"]'), 'fit card'); ok('crew table and fit gallery show you');
+assert.ok($('.crew-table tr[data-handle="ragavan"]'), 'table row'); assert.ok($('.crew-fits .fit-card[data-handle="ragavan"]'), 'fit card'); ok('crew table and fit gallery show you');
 assert.ok(byText('button', /Make an invite link/), 'owner tools'); ok('owner sees invite tools');
 
 /* a second person, made through the client, so there is someone to challenge */
@@ -126,6 +126,25 @@ text = app().textContent; assert.match(text, /\/ 40 cap/);
 $('#cap-save').click(); await sleep(500);
 assert.match(app().textContent, /Saved/); ok('cap night: pick players and save the lineup');
 assert.ok(db.one(`select array_length(players,1) from cap_lineups limit 1`) === '3'); ok('the lineup is on the server');
+
+// the gallery: bro (signed in now) looks at ragavan's saved look, likes it, copies it
+await soc.logout(); await soc.login('ragavan', ownerCode);
+store.update((s) => { s.avatar.owned.push('curly', 'tank'); s.avatar.eq.top = 'tank'; s.avatar.eq.hair = 'curly'; s.avatar.fits = [{ id: 'fx', name: 'Gym', skin: 2, hairColor: 0, body: 1, team: '', col: {}, side: {}, eq: { top: 'tee', hair: 'short', bottom: 'jeans', shoes: 'sneakers' } }]; });
+await soc.syncNow();
+await soc.logout(); await soc.login('bro', bro.code);
+store.update((s) => { s.avatar.eq.top = 'tee'; s.avatar.eq.hair = 'short'; s.avatar.owned = s.avatar.owned.filter((x) => !['curly', 'tank'].includes(x)); });
+text = await visit('#/crew', 400);
+const rc = $('.fit-card[data-handle="ragavan"]');
+assert.ok(rc, 'ragavan card'); assert.ok(rc.querySelector('.avatar.full svg'), 'full body look'); assert.ok(!/bust/.test(rc.querySelector('.avatar').className)); ok('gallery shows the full-body look');
+assert.ok(rc.querySelectorAll('.fit-pick .chip').length === 2, 'Now + one saved fit'); ok('saved fits are one tap away');
+rc.querySelector('.btn.like').click(); await sleep(500);
+assert.match($('.fit-card[data-handle="ragavan"] .btn.like').textContent, /♥ 1/); ok('liking a fit counts it');
+$('.fit-card[data-handle="ragavan"] .btn.copy').click(); await sleep(200);
+assert.match($('.fit-card[data-handle="ragavan"] .fit-note').textContent, /Tank top/); assert.equal(store.getState().avatar.eq.top, 'tee', 'unowned top is not worn');
+assert.equal(store.getState().avatar.eq.hair, 'short'); ok('copy skips what you do not own and lists it with a link to the shop');
+store.update((s) => { s.avatar.owned.push('tank'); });
+$('.fit-card[data-handle="ragavan"] .btn.copy').click(); await sleep(200);
+assert.equal(store.getState().avatar.eq.top, 'tank'); ok('copy wears the pieces you do own');
 
 text = await visit('#/crew', 300);
 assert.ok($('.crew-table tr.me')); assert.ok(!byText('button', /Make an invite link/), 'only the owner sees owner tools'); ok('a non-owner sees the table but no owner tools');

@@ -34,7 +34,7 @@ const WORDS = {
   no_such_card: 'That card is not in this duel.', no_such_pool: 'That pool does not exist.', closed: 'It is too late for that one.', already_in: 'You are already in.',
   not_in: 'You are not in this pool.', team_used: 'You already used that team.', no_such_team: 'That team is not in that game.', over_cap: 'Over the salary cap.',
   team_limit: 'No more than 2 players from one team.', too_many_players: 'Five players max.', unknown_player: 'That player is not on tonight\'s list.',
-  owner_only: 'Only the crew owner can do that.', duplicate: 'You picked the same player twice.', too_big: 'Too much data to sync.', offline: 'Could not reach the server. Check your connection.',
+  own_fit: 'You cannot like your own fit.', no_such_fit: 'That fit is gone.', owner_only: 'Only the crew owner can do that.', duplicate: 'You picked the same player twice.', too_big: 'Too much data to sync.', offline: 'Could not reach the server. Check your connection.',
 };
 export class SocialError extends Error {
   constructor(code, msg) { super(msg || WORDS[code] || code); this.code = code; }
@@ -94,6 +94,7 @@ export const crew = () => call('hf_crew');
 export const makeInvite = (uses = 1, days = 14) => call('hf_invite_make', { p_uses: uses, p_days: days });
 export const invites = () => call('hf_invites');
 export const revokeInvite = (code) => call('hf_invite_revoke', { p_code: code });
+export const fitLike = (handle, fit = 'current') => call('hf_fit_like', { p_handle: handle, p_fit: fit });
 export const removeMember = (handle) => call('hf_member_remove', { p_handle: handle });
 
 /* ---------- coin receipts ----------
