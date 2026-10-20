@@ -170,7 +170,7 @@ export class Pen {
 export const BUILDS = [
   { id: 'lean', sh: 43, ch: 28, wa: 24, hp: 26, be: 0, arm: 0.8, leg: 0.84, nk: 11.5, jaw: 0, def: 0.6 },
   { id: 'athletic', sh: 49, ch: 33, wa: 27, hp: 28.5, be: 0, arm: 1, leg: 1, nk: 13, jaw: 0, def: 1 },
-  { id: 'built', sh: 55, ch: 38.5, wa: 31.5, hp: 32, be: 0, arm: 1.2, leg: 1.22, nk: 15.5, jaw: 1.5, def: 1.25 },
+  { id: 'built', sh: 52.5, ch: 35.5, wa: 28, hp: 29.5, be: 0, arm: 1.12, leg: 1.12, nk: 14.5, jaw: 1.2, def: 1.25, tall: 1.045 },
   { id: 'heavy', sh: 52, ch: 37, wa: 33.5, hp: 33, be: 3.5, arm: 1.14, leg: 1.15, nk: 15, jaw: 2.5, def: 0.3 },
 ];
 
@@ -222,14 +222,17 @@ export function halfD(B, side, grow, hem, top, gapAt) {
 export function hand(P, side, wj, sk, scale = 1) {
   const [x, y] = wj, k = scale * (side < 0 ? 1 : -1), m = scale;
   const X = (dx) => x + dx * k, Y = (dy) => y + dy * m;
-  const d = blob([[X(-6.5), Y(-1)], [X(5.5), Y(-1.5)], [X(7.5), Y(8)], [X(6.5), Y(17)], [X(2), Y(22.5)], [X(-3.5), Y(21)], [X(-7), Y(13)], [X(-8), Y(5)]]);
+  // palm and four fingers as one tapering shape, with the thumb as its own piece so it reads as a hand, not a mitt
+  const d = blob([[X(-4.6), Y(-1)], [X(4.4), Y(-1.5)], [X(5.4), Y(7)], [X(5), Y(15)], [X(3.4), Y(21.5)], [X(0.4), Y(23.5)], [X(-2.4), Y(21)], [X(-4.2), Y(14)], [X(-5), Y(6)]]);
+  const th = blob([[X(-4), Y(1)], [X(-7.6), Y(4.5)], [X(-9.2), Y(10.5)], [X(-8), Y(14)], [X(-5.8), Y(11.5)], [X(-4.6), Y(7)]]);
   P.fill(d, sk.base);
-  P.clip(d, `<path d="${blob([[X(1.5), Y(-4)], [X(10), Y(-2)], [X(10), Y(26)], [X(0.5), Y(26)], [X(3), Y(12)]])}" fill="${sk.sh}"/>`);
+  P.clip(d, `<path d="${blob([[X(1.2), Y(-4)], [X(10), Y(-2)], [X(10), Y(26)], [X(0.5), Y(26)], [X(2.2), Y(12)]])}" fill="${sk.sh}"/>`);
   P.stroke(d, sk.line, OW);
-  // thumb along the front edge, finger creases
-  P.stroke(curve([[X(-6), Y(4)], [X(-7.6), Y(10)], [X(-5.2), Y(15)]]), sk.line, 1.3);
-  P.stroke(curve([[X(-2), Y(12)], [X(0.5), Y(18)]]), sk.deep, 1.1, 0.9);
-  P.stroke(curve([[X(2.6), Y(11)], [X(4.5), Y(17)]]), sk.deep, 1.1, 0.9);
+  P.fill(th, sk.base); P.stroke(th, sk.line, OW * 0.85);
+  // finger gaps
+  P.stroke(curve([[X(-1.6), Y(12)], [X(-1.4), Y(21)]]), sk.line, 1.2, 0.7);
+  P.stroke(curve([[X(1.4), Y(11)], [X(1.8), Y(22)]]), sk.line, 1.2, 0.7);
+  P.stroke(curve([[X(3.8), Y(11)], [X(3.8), Y(20)]]), sk.line, 1.1, 0.6);
 }
 
 /* ------------------------------------------------------------------ head and face */
@@ -341,7 +344,7 @@ export function drawHead(P, sk, hairCol, opts = {}) {
 /* ------------------------------------------------------------------ registry of item recipes */
 // the head (and everything worn on it) is drawn in its own space and scaled down about the chin for a better head-to-body ratio
 export const HEAD_SCALE = 0.87;
-const HEADG = `<g transform="translate(100 107) scale(${HEAD_SCALE}) translate(-100 -107)">`;
+const HEADG = `<g transform="translate(100 109) scale(${HEAD_SCALE}) translate(-100 -107)">`; // sits 2 lower, so the neck is short and never floats
 export const ART = { expr: {}, hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, outer: {}, scarf: {}, chain: {}, wrist: {}, bottom: {}, shoes: {}, back: {}, hand: {}, bg: {}, armwear: {}, legwear: {} };
 
 /** Draw the whole fan. ctx: { skin, hair, eq, colourOf(id), pal, build } -> svg inner markup */
@@ -349,6 +352,7 @@ export function drawFan(ctx) {
   const B = BUILDS.find((b) => b.id === ctx.build) || BUILDS[1];
   const g = geometry(B);
   const P = new Pen();
+  if (B.tall) P.add(`<g transform="translate(100 320) scale(${B.tall}) translate(-100 -320)">`);
   const sk = ramp(ctx.skin, { hs: 0.25 });
   sk.line = adj(ctx.skin, -0.5, -8, -0.08);
   const c = { skin: ctx.skin, sk, hair: ctx.hair, pal: ctx.pal, B, g };
@@ -421,7 +425,7 @@ export function drawFan(ctx) {
   for (const side of [-1, 1]) {
     const [wx, wy] = g.wrist(side), turn = g.handTurn(side);
     if (turn) P.add(`<g transform="rotate(${turn} ${wx} ${wy})">`);
-    hand(P, side, g.wrist(side), sk, (B.arm * 0.6 + 0.4) * 1.18);
+    hand(P, side, g.wrist(side), sk, (B.arm * 0.6 + 0.4) * 1.12);
     if (turn) P.add('</g>');
   }
   run('top', 'cuffs'); run('outer', 'cuffs');
@@ -433,5 +437,6 @@ export function drawFan(ctx) {
   run('hair', 'front');
   run('hat', 'head');
   P.add('</g>');
+  if (B.tall) P.add('</g>');
   return P.toString();
 }
