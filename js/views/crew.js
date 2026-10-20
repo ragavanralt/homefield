@@ -219,7 +219,7 @@ export async function render(root, params = {}) {
     const list = h('div', { class: 'wall-list' });
     const load = async () => {
       try {
-        const r = await soc.wallGet();
+        const r = await soc.wallGet(); r.posts = r.posts || [];
         clear(list);
         if (!r.posts.length) return list.append(h('p', { class: 'muted' }, 'Nobody has posted yet. Be first.'));
         r.posts.forEach((p) => {
