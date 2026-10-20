@@ -220,19 +220,16 @@ export function halfD(B, side, grow, hem, top, gapAt) {
 /* ------------------------------------------------------------------ hands */
 // A relaxed hand, palm toward the leg, fingers loosely curled, thumb toward the front.
 export function hand(P, side, wj, sk, scale = 1) {
-  const [x, y] = wj, k = scale * (side < 0 ? 1 : -1), m = scale;
+  const [x, y] = wj, k = scale * (side < 0 ? 1 : -1) * 0.76, m = scale; // the same relaxed hand as before, just slimmer
   const X = (dx) => x + dx * k, Y = (dy) => y + dy * m;
-  // palm and four fingers as one tapering shape, with the thumb as its own piece so it reads as a hand, not a mitt
-  const d = blob([[X(-4.6), Y(-1)], [X(4.4), Y(-1.5)], [X(5.4), Y(7)], [X(5), Y(15)], [X(3.4), Y(21.5)], [X(0.4), Y(23.5)], [X(-2.4), Y(21)], [X(-4.2), Y(14)], [X(-5), Y(6)]]);
-  const th = blob([[X(-4), Y(1)], [X(-7.6), Y(4.5)], [X(-9.2), Y(10.5)], [X(-8), Y(14)], [X(-5.8), Y(11.5)], [X(-4.6), Y(7)]]);
+  const d = blob([[X(-6.5), Y(-1)], [X(5.5), Y(-1.5)], [X(7.5), Y(8)], [X(6.5), Y(17)], [X(2), Y(22.5)], [X(-3.5), Y(21)], [X(-7), Y(13)], [X(-8), Y(5)]]);
   P.fill(d, sk.base);
-  P.clip(d, `<path d="${blob([[X(1.2), Y(-4)], [X(10), Y(-2)], [X(10), Y(26)], [X(0.5), Y(26)], [X(2.2), Y(12)]])}" fill="${sk.sh}"/>`);
+  P.clip(d, `<path d="${blob([[X(1.5), Y(-4)], [X(10), Y(-2)], [X(10), Y(26)], [X(0.5), Y(26)], [X(3), Y(12)]])}" fill="${sk.sh}"/>`);
   P.stroke(d, sk.line, OW);
-  P.fill(th, sk.base); P.stroke(th, sk.line, OW * 0.85);
-  // finger gaps
-  P.stroke(curve([[X(-1.6), Y(12)], [X(-1.4), Y(21)]]), sk.line, 1.2, 0.7);
-  P.stroke(curve([[X(1.4), Y(11)], [X(1.8), Y(22)]]), sk.line, 1.2, 0.7);
-  P.stroke(curve([[X(3.8), Y(11)], [X(3.8), Y(20)]]), sk.line, 1.1, 0.6);
+  // thumb along the front edge, finger creases
+  P.stroke(curve([[X(-6), Y(4)], [X(-7.6), Y(10)], [X(-5.2), Y(15)]]), sk.line, 1.3);
+  P.stroke(curve([[X(-2), Y(12)], [X(0.5), Y(18)]]), sk.deep, 1.1, 0.9);
+  P.stroke(curve([[X(2.6), Y(11)], [X(4.5), Y(17)]]), sk.deep, 1.1, 0.9);
 }
 
 /* ------------------------------------------------------------------ head and face */

@@ -154,7 +154,8 @@ export function mergeFan(local, remote) {
   out.bets = { ...(remote.bets || {}) };
   for (const [k, b] of Object.entries(local.bets || {})) if (!out.bets[k] || betScore(b) >= betScore(out.bets[k])) out.bets[k] = b;
   const lb = local.bank || {}, rb = remote.bank || {};
-  const useLocal = (lb.xp || 0) > (rb.xp || 0) || ((lb.xp || 0) === (rb.xp || 0) && (lb.coins || 0) >= (rb.coins || 0) && S.synced);
+  // same xp on both sides means nothing was earned in between, so the lower balance is the one that already paid for something
+  const useLocal = (lb.xp || 0) > (rb.xp || 0) || ((lb.xp || 0) === (rb.xp || 0) && (lb.coins || 0) <= (rb.coins || 0));
   out.bank = { ...(useLocal ? lb : rb) };
   // Once-a-day things are claimed once across all your devices: the later claim day wins, and so do quest claims.
   const chosen = useLocal ? lb : rb, later = (rb.lastDaily || '') > (lb.lastDaily || '') ? rb : lb;
@@ -193,7 +194,7 @@ function publicOf(s) {
   return { avatar: s.avatar, team: t ? { league: t.league, id: t.id, abbr: t.abbr, name: t.name, color: t.color, alt: t.alt } : null,
     stats: { won: st.won, lost: st.lost, accuracy: st.accuracy, total: st.total, streak: st.streak, bestStreak: st.bestStreak, coins: s.bank.coins } };
 }
-let syncing = null, applying = false, delay = 4000;
+let syncing = null, applying = false, delay = 1500;
 export const _setDelay = (ms) => { delay = ms; };
 export function syncNow() {
   if (!enabled() || !signedIn()) return Promise.resolve(false);
@@ -238,6 +239,7 @@ export function startSocial() {
   const tick = () => { if (signedIn()) { reconcile().catch(() => {}); syncNow().catch(() => {}); } };
   onSaved(queueSync);
   tick();
+  if (typeof window !== 'undefined') window.addEventListener('pagehide', () => { if (signedIn()) { clearTimeout(pushTimer); syncNow().catch(() => {}); } });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); else if (signedIn()) { clearTimeout(pushTimer); syncNow().catch(() => {}); } });
 }
 
