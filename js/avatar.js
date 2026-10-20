@@ -416,7 +416,10 @@ export function cityOf(team) {
   if (!team) return 'HOMEFIELD';
   const name = String(team.name || ''), short = String(team.short || '');
   const city = short && name.endsWith(short) ? name.slice(0, -short.length).trim() : '';
-  return (city || short || name || team.abbr || 'HOME').toUpperCase();
+  let out = (city || short || name || team.abbr || 'HOME').toUpperCase();
+  // long club names do not fit across a chest: use the first word (Paris Saint-Germain -> PARIS), or the abbreviation
+  if (out.length > 11) { const first = out.split(/[\s-]+/)[0]; out = first.length >= 4 && first.length <= 11 ? first : String(team.abbr || first).toUpperCase().slice(0, 11); }
+  return out;
 }
 export function palette(team) {
   if (!team) return NEUTRAL;

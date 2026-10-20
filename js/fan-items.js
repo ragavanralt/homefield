@@ -638,9 +638,26 @@ ART.hair.bob = hairOf((P, hc) => hairShape(P, blob([[60, 50], [62, 28], [80, 12]
 ART.hair.long = hairOf((P, hc) => hairShape(P, blob([[60, 50], [62, 28], [80, 12], [100, 8], [120, 12], [138, 28], [140, 50], [144, 110], [146, 150], [126, 156], [122, 110], [78, 110], [74, 156], [54, 150], [56, 110]]), hc, { noHi: true }), (P, hc) => hairShape(P, blob([[63, 120], [61, 62], [64, 36], [76, 18], [96, 10.5], [104, 14], [116, 12], [132, 22], [138, 38], [139, 64], [138, 120], [130, 118], [130, 66], [127, 48], [112, 40], [104, 26], [96, 40], [80, 46], [72, 64], [71, 118]]), hc, { strands: [[[96, 18], [86, 32], [76, 50]], [[106, 20], [118, 32], [126, 48]], [[66, 80], [67, 110]], [[134, 80], [133, 110]]], lights: [[[82, 22], [94, 14]]] }));
 ART.hair.ponytail = hairOf((P, hc) => hairShape(P, blob([[124, 30], [146, 40], [154, 70], [150, 108], [140, 118], [138, 86], [134, 54]]), hc, { noHi: true, shX: 140, shX2: 144 }), (P, hc) => { hairShape(P, blob([[66, 56], [63.5, 42], [67, 27], [80, 15], [98, 10], [116, 11.5], [130, 20], [136.5, 36], [136.5, 56], [133, 55], [132, 42], [124, 32.5], [110, 31], [96, 31.5], [82, 33], [72, 40], [68, 56]]), hc, { strands: [[[80, 30], [96, 18], [116, 18]], [[90, 32], [108, 24], [126, 28]]], lights: [[[78, 26], [94, 16]]], noHi: true }); P.shape(blob([[130, 24], [136, 22], [138, 30], [132, 32]]), '#C8432E', { line: '#5A1A10', w: 1.3 }); });
 ART.hair.bun = hairOf(null, (P, hc) => { hairShape(P, blob([[90, 12], [92, -2], [100, -6], [108, -2], [110, 12]]), hc, { noHi: true }); hairShape(P, blob([[66, 56], [63.5, 42], [67, 27], [80, 15], [98, 10], [116, 11.5], [130, 20], [136.5, 36], [136.5, 56], [133, 55], [132, 42], [124, 32.5], [110, 31], [96, 31.5], [82, 33], [72, 40], [68, 56]]), hc, { strands: [[[80, 30], [96, 16]], [[104, 16], [122, 28]]], lights: [[[78, 26], [92, 16]]], noHi: true }); });
-ART.hair.braids = hairOf((P, hc) => both((s) => { const X = (x) => CX + x * s; for (let k = 0; k < 2; k++) { const x0 = 33 + k * 5; const pts = [[X(x0), 60], [X(x0 + 1), 90], [X(x0 + 2), 120], [X(x0 + 1.5), 150]]; P.stroke(curve(pts), adj(hc, -0.25), 7.4); P.stroke(curve(pts), hc, 5); for (let y = 66; y < 150; y += 7) P.stroke(curve([[X(x0 - 2), y], [X(x0 + 2), y + 3]]), adj(hc, -0.2), 1.1); } }), (P, hc) => {
-  const R = hairShape(P, blob([[66, 56], [63.5, 42], [66, 30], [76, 18], [90, 11.5], [106, 10.5], [121, 14], [131, 23], [136.5, 37], [136.5, 56], [133, 55], [131, 44], [124, 37], [100, 35], [76, 37], [69, 44], [68, 56]]), hc, { noHi: true });
-  [76, 88, 100, 112, 124].forEach((x) => P.stroke(curve([[x + (x - 100) * 0.1, 36], [x + (x - 100) * 0.05, 24], [x, 12]]), R.deep, 1.4));
+// Braids: cornrows running from the hairline back over the crown, with two thick plaits hanging behind each ear.
+ART.hair.braids = hairOf((P, hc) => both((s) => {
+  const X = (x) => CX + x * s;
+  [[37.5, 0], [44, 5]].forEach(([x0, dx]) => {
+    for (let y = 62; y < 152; y += 6.5) {
+      const sway = Math.sin((y - 62) / 18) * 0.9, w = 4.1 - (y > 130 ? (y - 130) * 0.07 : 0), x = x0 + (y - 62) * 0.045 + sway;
+      P.shape(blob([[X(x - w), y], [X(x), y - 2.4], [X(x + w), y], [X(x), y + 6]]), (y / 6.5) % 2 < 1 ? hc : adj(hc, -0.12), { line: adj(hc, -0.4), w: 1 });
+    }
+    const ex = x0 + 4.2;
+    P.dot(X(ex), 156, 3.2, '#E8B93A'); P.stroke(curve([[X(ex - 1.6), 154.6], [X(ex + 1.6), 157.4]]), '#A87A1A', 1);
+  });
+}), (P, hc) => {
+  const R = hairShape(P, blob([[66, 58], [63, 44], [65, 30], [76, 17], [90, 10.5], [106, 9.5], [122, 13], [133, 23], [137.5, 37], [137, 58], [133.4, 57], [132, 46], [126, 37], [112, 31.5], [100, 30], [88, 31.5], [74, 37], [68.4, 46], [68, 58]]), hc, { noHi: true });
+  // cornrows: curved rows from the hairline over the crown, each with a light edge and a row of tiny plaits
+  [-27, -14, 0, 14, 27].forEach((x) => {
+    const top = [[100 + x * 0.98, 33], [100 + x * 0.86, 25], [100 + x * 0.55, 18], [100 + x * 0.3, 11]];
+    P.stroke(curve(top), R.deep, 2.6, 0.9);
+    P.stroke(curve(top), adj(hc, 0.22), 1.1, 0.75);
+    for (let k = 0; k < 4; k++) { const [px, py] = top[k]; P.stroke(curve([[px - 1.3, py + 1.6], [px + 1.3, py - 0.2]]), R.deep, 0.9, 0.8); }
+  });
 });
 ART.hair.twists = hairOf(null, (P, hc) => {
   const R = ramp(hc), line = rgbL(hc) < 0.2 ? '#06050A' : adj(hc, -0.22);
