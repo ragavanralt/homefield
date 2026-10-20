@@ -1,0 +1,47 @@
+# The crew bots. They keep the Duels / Survivor / Cap Night server up to date.
+#   slate:  publishes today's and tomorrow's games, cards and Cap Night players (morning, plus an afternoon top-up)
+#   settle: scores finished games and pays out (every 15 minutes through the evening, hourly otherwise)
+# Needs two repository secrets: SUPABASE_URL and SUPABASE_SERVICE_KEY (Settings > Secrets and variables > Actions).
+name: Crew bots
+
+on:
+  schedule:
+    - cron: '35 12 * * *'            # slate, 8:35am Eastern (7:35am in winter)
+    - cron: '35 20 * * *'            # slate top-up, 4:35pm Eastern
+    - cron: '*/15 16-23,0-6 * * *'   # settle, every 15 min from noon to 2am Eastern
+    - cron: '10 7-15 * * *'          # settle, hourly overnight and in the morning
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Which job to run
+        type: choice
+        options: [settle, slate]
+        default: settle
+
+concurrency:
+  group: crew-bots
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pick the job
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then echo "job=${{ github.event.inputs.job }}" >> "$GITHUB_OUTPUT";
+          elif [ "${{ github.event.schedule }}" = "35 12 * * *" ] || [ "${{ github.event.schedule }}" = "35 20 * * *" ]; then echo "job=slate" >> "$GITHUB_OUTPUT";
+          else echo "job=settle" >> "$GITHUB_OUTPUT"; fi
+      - name: Run it
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node scripts/social.mjs ${{ steps.pick.outputs.job }}

@@ -1,0 +1,140 @@
+// Opens the real Crew, Duels, Survivor and Cap Night screens in jsdom, backed by the real server code on Postgres,
+// and uses them the way a person would: join, challenge, pick, lock in a lineup.
+import { JSDOM } from 'jsdom';
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import * as PG from './pg.mjs';
+
+if (!PG.available()) { console.log('Social render tests skipped (no Postgres found; set HF_PG to run them)'); process.exit(0); }
+
+const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8').replace(/<script type="module">[\s\S]*?<\/script>/, '').replace(/<link[^>]+>/g, '');
+const dom = new JSDOM(html, { url: 'http://localhost/', pretendToBeVisual: true });
+const w = dom.window;
+for (const k of ['document', 'location', 'history', 'navigator', 'localStorage', 'Node', 'HTMLElement', 'Blob', 'URL', 'Event', 'CustomEvent', 'requestAnimationFrame', 'MutationObserver', 'getComputedStyle']) {
+  try { Object.defineProperty(globalThis, k, { value: w[k], configurable: true, writable: true }); } catch (e) { /* node has its own */ }
+}
+globalThis.window = w; w.scrollTo = () => {}; w.confirm = () => true;
+globalThis.confirm = () => true;
+w.HTMLCanvasElement.prototype.getContext = () => null;
+const errors = [];
+w.addEventListener('error', (e) => errors.push(e.error || e.message));
+process.on('unhandledRejection', (e) => errors.push(e));
+
+const NOW = '2030-10-22 10:00-04'; // a Tuesday, far enough ahead that the real clock never says "started"
+const db = PG.createDb(); db.applySchema(); db.at(NOW);
+db.sql(`update app_config set value = '["nba"]' where key = 'survivor_leagues'`);
+const invite = db.one('select code from invites where owner limit 1');
+const gm = (id, hm) => ({ league: 'nba', game_id: id, start_at: `2030-10-22T${hm}:00-04:00`, home: { id: 'h' + id, name: 'Home ' + id, abbr: 'H' + id }, away: { id: 'a' + id, name: 'Away ' + id, abbr: 'A' + id }, fav_team: 'h' + id, fav_prob: 0.6, ou: 220.5, home_spread: -4.5 });
+const games = [gm('7001', '19:00'), gm('7002', '21:00')];
+const cards = games.flatMap((g) => {
+  const b = { league: 'nba', game_id: g.game_id };
+  return [{ ...b, kind: 'winner', subject: 'game', title: `${g.away.abbr} at ${g.home.abbr}`, a: g.home.abbr, b: g.away.abbr, line: null },
+    { ...b, kind: 'total', subject: 'game', title: 'Total points', a: 'Over', b: 'Under', line: 220.5 },
+    { ...b, kind: 'team_total', subject: 'home', title: 'Home points', a: 'Over', b: 'Under', line: 112.5 },
+    { ...b, kind: 'team_total', subject: 'away', title: 'Away points', a: 'Over', b: 'Under', line: 108.5 }];
+});
+const players = [];
+games.forEach((g) => { for (let i = 1; i <= 4; i++) players.push({ day: '2030-10-22', league: 'nba', game_id: g.game_id, player_id: `${g.game_id}-${i}`, name: `Player ${g.game_id}-${i}`, team_id: i % 2 ? g.home.id : g.away.id, team_abbr: i % 2 ? g.home.abbr : g.away.abbr, pos: 'G', price: 12 - i, avg: 30 - i }); });
+db.rpc('bot_publish', { p_games: games, p_cards: cards, p_cap: players }, 'service_role');
+
+globalThis.fetch = async (url, init) => {
+  const fn = String(url).split('/rpc/')[1];
+  const r = db.rpc(fn, JSON.parse(init.body), fn.startsWith('bot_') ? 'service_role' : 'anon');
+  if (r && r.raised) return { ok: false, status: 400, json: async () => ({ message: r.error }) };
+  return { ok: true, status: 200, json: async () => r };
+};
+
+const { SOCIAL } = await import('../js/social-config.js');
+SOCIAL.url = 'https://example.supabase.co'; SOCIAL.key = 'sb_publishable_test';
+const { route } = await import('../js/main.js');
+const store = await import('../js/store.js');
+const soc = await import('../js/social.js');
+store.setOnboarded(true);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const app = () => w.document.getElementById('app');
+const $ = (sel) => app().querySelector(sel);
+const $$ = (sel) => [...app().querySelectorAll(sel)];
+const byText = (sel, re) => $$(sel).find((e) => re.test(e.textContent));
+async function visit(hash, wait = 150) { w.location.hash = hash; await route(); await sleep(wait); return app().textContent; }
+const type = (el, v) => { el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); el.dispatchEvent(new w.Event('change', { bubbles: true })); };
+let n = 0; const ok = (m) => { n++; console.log('  ok  ' + m); };
+
+let text = await visit('#/duels');
+assert.match(text, /Join the crew first/); ok('duels asks you to join the crew first');
+assert.equal(w.document.querySelector('#subnav a[href="#/duels"]') != null, true); ok("Pick'em sub-tabs include Duels when the server is configured");
+
+text = await visit(`#/join/${invite}`);
+assert.equal($('#f-invite').value, invite); ok('invite link fills in the code');
+type($('#f-handle'), 'ragavan'); type($('#f-display'), 'Rag');
+byText('button', /Join the crew/).click(); await sleep(400);
+assert.match($('#recovery-code').textContent, /^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/); ok('joining shows the recovery code once');
+const ownerCode = $('#recovery-code').textContent;
+$('#code-saved').click(); await sleep(400);
+assert.ok($('.crew-table tr[data-handle="ragavan"]'), 'table row'); assert.ok($('.crew-fits .fit[data-handle="ragavan"]'), 'fit card'); ok('crew table and fit gallery show you');
+assert.ok(byText('button', /Make an invite link/), 'owner tools'); ok('owner sees invite tools');
+
+/* a second person, made through the client, so there is someone to challenge */
+const inv2 = (await soc.makeInvite()).code;
+await soc.logout();
+const bro = await soc.signup(inv2, 'bro', 'Bro');
+await soc.logout(); await soc.login('ragavan', ownerCode);
+
+store.update((s) => { s.bank.coins = 1000; });
+text = await visit('#/duels', 250);
+assert.ok($('#duel-new')); assert.match(text, /Daily Five/); assert.ok($$('.daily .dcard').length === 5, 'five daily cards'); ok('duels page lists Daily Five');
+$$('.daily .dcard')[0].querySelector('.side').click(); await sleep(250);
+assert.ok($('.daily .side.on'), 'daily pick sticks'); ok('a Daily Five pick is saved');
+
+$('#duel-new').click(); await sleep(300);
+assert.ok($('#d-game'), 'game picker'); assert.ok($('#d-opp')); ok('new duel form loads the slate and the crew');
+type($('#d-opp'), 'bro');
+type($('#d-stake'), '60');
+byText('button', /Send challenge/).click(); await sleep(500);
+assert.match(w.location.hash, /^#\/duels\/[0-9a-f-]{36}$/, 'went to the duel'); ok('sending a challenge opens the duel');
+assert.equal(store.getBank().coins, 940); ok('the stake left your coins');
+const duelHash = w.location.hash;
+text = await visit(duelHash, 300);
+assert.equal($$('.dcard').length, 3); assert.match(text, /Waiting for someone to accept/);
+$$('.dcard').forEach((c) => c.querySelector('.side').click());
+await sleep(600);
+assert.equal($$('.dcard .side.on').length, 3); ok('picks stick on an open duel');
+
+await soc.logout(); await soc.login('bro', bro.code);
+store.update((s) => { s.bank.coins = 500; });
+text = await visit('#/duels', 300);
+assert.match(text, /Challenges for you/); ok('the friend sees the challenge');
+$('.duel-row').click?.();
+text = await visit(duelHash, 300);
+byText('button', /^Accept/).click(); await sleep(500);
+assert.equal(store.getBank().coins, 440); assert.match(app().textContent, /In play/); ok('accepting takes the stake and starts the duel');
+assert.ok($$('.dcard .dc-o').every((e) => /has picked/.test(e.textContent)), 'opponent picks are hidden'); ok('you can see that they picked, not what');
+
+text = await visit('#/survivor', 300);
+assert.ok($('.pool[data-league="nba"]'), 'nba pool'); assert.match(text, /Join for 50 coins/);
+byText('button', /Join for 50/).click(); await sleep(500);
+assert.equal(store.getBank().coins, 390); assert.ok($$('.sv-games .dcard').length === 2, 'two games to choose from');
+$('.sv-games .dcard .side').click(); await sleep(500);
+assert.ok($('.sv-games .side.on'), 'pick marked'); ok('survivor: join, then pick a team');
+const fav = $$('.sv-games .side').find((b) => /fav/.test(b.textContent)); assert.ok(fav); ok('favourite is labelled');
+
+text = await visit('#/cap', 400);
+assert.equal($$('.cap-pool .cap-p').length, 8); ok('cap night lists the pool');
+const rows = $$('.cap-pool .cap-p');
+rows[0].click(); rows[1].click(); rows[2].click();
+assert.equal($$('.cap-me .cap-p').length, 3, 'three picked');
+text = app().textContent; assert.match(text, /\/ 40 cap/);
+$('#cap-save').click(); await sleep(500);
+assert.match(app().textContent, /Saved/); ok('cap night: pick players and save the lineup');
+assert.ok(db.one(`select array_length(players,1) from cap_lineups limit 1`) === '3'); ok('the lineup is on the server');
+
+text = await visit('#/crew', 300);
+assert.ok($('.crew-table tr.me')); assert.ok(!byText('button', /Make an invite link/), 'only the owner sees owner tools'); ok('a non-owner sees the table but no owner tools');
+
+await soc.logout();
+text = await visit('#/crew', 200);
+assert.ok($('#f-handle2') || byText('button', /Sign in/)); ok('signed out: sign-in form');
+
+assert.deepEqual(errors, [], 'no script errors: ' + errors.map((e) => (e && e.stack) || e).join('\n'));
+console.log(`${n} social screen checks passed`);
+db.drop();
+process.exit(process.exitCode || 0);

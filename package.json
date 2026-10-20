@@ -6,7 +6,8 @@
   "description": "Homefield: a free, no-sign-in sports app. Static site, no build step.",
   "scripts": {
     "start": "python3 -m http.server 8080",
-    "test": "node test/logic.test.js && node test/render.test.js"
+    "test": "node test/logic.test.js && node test/render.test.js && node test/social.test.mjs && node test/sql.test.mjs && node test/client.test.mjs && node test/social-render.test.mjs",
+    "test:sql": "node test/sql.test.mjs && node test/client.test.mjs && node test/social-render.test.mjs"
   },
   "devDependencies": {
     "jsdom": "^24.0.0"

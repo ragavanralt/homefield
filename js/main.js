@@ -7,6 +7,7 @@ import { TABS } from './leagues.js';
 import { settleAll } from './settle.js';
 import { applyTheme, watchSystem, bindSettings } from './themes.js';
 import { startBrand, setContextTeam, teamForRoute } from './brand.js';
+import { enabled as socialOn, startSocial, queueSync } from './social.js';
 
 const ROUTES = [
   { re: /^\/?$/, view: () => import('./views/home.js'), nav: 'home', params: () => ({}) },
@@ -18,6 +19,12 @@ const ROUTES = [
   { re: /^\/profile$/, view: () => import('./views/profile.js'), nav: 'profile', params: () => ({ mode: 'fan' }) },
   { re: /^\/shop$/, view: () => import('./views/profile.js'), nav: 'shop', params: () => ({ mode: 'shop' }) },
   { re: /^\/quests$/, view: () => import('./views/quests.js'), nav: 'quests', params: () => ({}) },
+  { re: /^\/crew$/, view: () => import('./views/crew.js'), nav: 'crew', params: () => ({}) },
+  { re: /^\/join\/([^/]+)$/, view: () => import('./views/crew.js'), nav: 'crew', params: (m) => ({ code: decodeURIComponent(m[1]) }) },
+  { re: /^\/duels$/, view: () => import('./views/duels.js'), nav: 'duels', params: () => ({}) },
+  { re: /^\/duels\/([^/]+)$/, view: () => import('./views/duels.js'), nav: 'duels', params: (m) => ({ id: decodeURIComponent(m[1]) }) },
+  { re: /^\/survivor$/, view: () => import('./views/survivor.js'), nav: 'survivor', params: () => ({}) },
+  { re: /^\/cap$/, view: () => import('./views/capnight.js'), nav: 'cap', params: () => ({}) },
   { re: /^\/onboarding$/, view: () => import('./views/onboarding.js'), nav: 'none', params: () => ({}) },
   { re: /^\/settings$/, view: () => import('./views/settings.js'), nav: 'settings', params: () => ({}) },
   { re: /^\/check$/, view: () => import('./views/check.js'), nav: 'settings', params: () => ({}) },
@@ -37,11 +44,11 @@ const lastLeague = () => { try { const v = localStorage.getItem(LAST_KEY); if (T
 const SECTIONS = [
   { id: 'home', label: 'Home', href: () => '#/', subs: [] },
   { id: 'sports', label: 'Sports', href: () => `#/league/${lastLeague()}`, subs: TABS.map((t) => ({ id: t.id, label: t.label, href: `#/league/${t.id}` })) },
-  { id: 'picks', label: "Pick'em", href: () => '#/picks', subs: [] },
+  { id: 'picks', label: "Pick'em", href: () => '#/picks', get subs() { return socialOn() ? [{ id: 'picks', label: "Pick'em", href: '#/picks' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] : []; } },
   { id: 'quests', label: 'Quests', href: () => '#/quests', subs: [{ id: 'quests', label: 'Quests', href: '#/quests' }, { id: 'season', label: 'Season', href: '#/season' }] },
-  { id: 'fan', label: 'Fan', href: () => '#/profile', subs: [{ id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }] },
+  { id: 'fan', label: 'Fan', href: () => '#/profile', get subs() { return [{ id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }, ...(socialOn() ? [{ id: 'crew', label: 'Crew', href: '#/crew' }] : [])]; } },
 ];
-const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : navId === 'season' ? 'quests' : navId === 'profile' || navId === 'shop' ? 'fan' : navId);
+const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : navId === 'season' ? 'quests' : navId === 'profile' || navId === 'shop' || navId === 'crew' ? 'fan' : navId === 'duels' || navId === 'survivor' || navId === 'cap' ? 'picks' : navId);
 
 let cleanup = null;
 let token = 0;
@@ -57,7 +64,7 @@ export async function route() {
   const nav = document.getElementById('nav');
   let path = currentPath();
 
-  if (!getState().onboarded && path !== '/onboarding' && path !== '/check' && path !== '/settings') {
+  if (!getState().onboarded && path !== '/onboarding' && path !== '/check' && path !== '/settings' && !path.startsWith('/join/')) {
     location.hash = '#/onboarding';
     return;
   }
@@ -143,8 +150,10 @@ export function start() {
         else if (n.status === 'lost') toast(`Lost: ${n.title}`);
         else toast(`Refunded: ${n.title}`);
       }
+      queueSync();
     }).catch(() => {});
   } catch (e) { /* ignore */ }
+  try { startSocial(); } catch (e) { /* the crew games are optional */ }
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }

@@ -272,3 +272,19 @@ export function resetBets() {
 }
 export function resetTeams() { update((s) => { s.teams = []; }); }
 export function resetAll() { state = fresh(); save(); ping(); }
+
+/* ---------- coins moved by the crew games (duels, survivor, cap night) ---------- */
+/** Take coins out of the bankroll. Returns false (and changes nothing) if there are not enough. */
+export function spendCoins(n) {
+  n = Math.floor(n);
+  if (!(n > 0) || state.bank.coins < n) return false;
+  update((s) => { s.bank.coins -= n; });
+  ping();
+  return true;
+}
+export function addCoins(n) {
+  n = Math.floor(n);
+  if (!(n > 0)) return;
+  update((s) => { s.bank.coins += n; s.bank.peak = Math.max(s.bank.peak, s.bank.coins); });
+  ping();
+}
