@@ -106,7 +106,7 @@ export function cutF(J, f0, f1, grow = 0) {
   for (let i = 1; i < J.length; i++) L.push(L[i - 1] + Math.hypot(J[i][0] - J[i - 1][0], J[i][1] - J[i - 1][1]));
   const tot = L[L.length - 1], at = (d) => { let i = 1; while (i < J.length - 1 && L[i] < d) i++; const t = Math.max(0, Math.min(1, (d - L[i - 1]) / (L[i] - L[i - 1] || 1))); const a = J[i - 1], b = J[i]; return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t + grow]; };
   const d0 = tot * f0, d1 = tot * Math.min(1, f1), out = [at(d0)];
-  for (let i = 1; i < J.length - 1; i++) if (L[i] > d0 + 0.5 && L[i] < d1 - 0.5) out.push([J[i][0], J[i][1], J[i][2] + grow]);
+  for (let i = 1; i < J.length - 1; i++) if (L[i] > d0 + 0.5 && L[i] < d1 - 0.5) out.push([J[i][0], J[i][1], J[i][2] + (i === 1 && f0 < 0.01 ? grow * 0.25 : i === 2 && f0 < 0.01 ? grow * 0.8 : grow)]); // ease the sleeve out from the shoulder instead of ballooning at the top
   out.push(at(d1));
   return out;
 }
@@ -181,7 +181,7 @@ export function geometry(B, pose = 'relaxed') {
   // arms: hanging a little away from the body (open, relaxed), slight bend at the elbow
   const a = B.arm, ax = CX - B.sh + 12;
   // arms hang close to the body with a soft bend at the elbow; the forearm drifts back toward the thigh
-  g.armJ = (side) => [[ax + 3, 127, 25 * a], [ax - 1.5, 141, 25 * a], [ax - 5, 158, 21 * a], [ax - 7.5, 175, 16 * a], [ax - 6.8, 187, 18.5 * a], [ax - 3.6, 206, 12 * a]].map(([x, y, w]) => [s(x, side), y, w]);
+  g.armJ = (side) => [[ax + 3, 131, 24 * a], [ax - 1.5, 141, 25 * a], [ax - 5, 158, 21 * a], [ax - 7.5, 175, 16 * a], [ax - 6.8, 187, 18.5 * a], [ax - 3.6, 206, 12 * a]].map(([x, y, w]) => [s(x, side), y, w]);
   g.wrist = (side) => { const j = g.armJ(side); return j[j.length - 1]; };
   // where a watch sits: a little up the forearm from the wrist
   g.watch = (side) => { const j = g.armJ(side), p = j[4], q = j[5], t = 0.5; return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t]; };
