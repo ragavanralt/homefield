@@ -146,6 +146,9 @@ function normPlay(p, i) {
   const participants = [];
   for (const x of p.participants || []) { const n = x.athlete?.displayName || x.athlete?.fullName; if (n) participants.push(n); }
   for (const x of p.athletesInvolved || []) { const n = x.displayName || x.fullName; if (n) participants.push(n); }
+  // who the play is about, so the viewer can show their face
+  const a0 = (p.participants || []).map((x) => x.athlete).find(Boolean) || (p.athletesInvolved || [])[0] || null;
+  const who = a0 && (a0.id != null) ? { id: String(a0.id), name: a0.displayName || a0.fullName || '', face: (a0.headshot && a0.headshot.href) || '' } : null;
   const label = p.period?.displayValue || p.periodText || '';
   return {
     id: String(p.id ?? i),
@@ -160,7 +163,7 @@ function normPlay(p, i) {
     awayScore: num(p.awayScore),
     scoring: !!p.scoringPlay,
     teamId: p.team?.id != null ? String(p.team.id) : null,
-    participants,
+    participants, who,
     yellow: !!p.yellowCard, red: !!p.redCard,
   };
 }

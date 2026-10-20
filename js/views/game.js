@@ -189,9 +189,18 @@ export async function render(root, { league, id }) {
     return card('Latest plays', h('ul', { class: 'plays' }, last.map(playRow)));
   }
 
+  // Shorter wording for the feed: drop the assist bracket on ordinary plays, tighten common phrases.
+  function shortText(p) {
+    let t = String(p.text || '').trim();
+    if (!p.scoring) t = t.replace(/\s*\([^)]*\)\s*$/, '');
+    return t.replace(/(\d+)-foot/gi, '$1ft').replace(/three point/gi, '3PT').replace(/\bjump shot\b/gi, 'jumper').replace(/\bdefensive rebound\b/gi, 'D rebound').replace(/\boffensive rebound\b/gi, 'O rebound').replace(/\s{2,}/g, ' ');
+  }
   function playRow(p) {
-    const sc = p.homeScore != null && p.awayScore != null ? `${game.away.abbr} ${p.awayScore} · ${game.home.abbr} ${p.homeScore}` : '';
-    return h('li', { class: 'play' + (p.scoring ? ' sc' : '') }, h('span', { class: 'pw' }, whenLabel(p, league) || '·'), h('span', { class: 'pt' }, p.text), sc ? h('span', { class: 'ps' }, sc) : null);
+    const sc = p.scoring && p.homeScore != null && p.awayScore != null ? `${game.away.abbr} ${p.awayScore}–${p.homeScore} ${game.home.abbr}` : '';
+    const side = p.teamId === game.home.id ? 'home' : p.teamId === game.away.id ? 'away' : null;
+    const pic = p.who && !isSoccer(league) ? face({ id: p.who.id, name: p.who.name, face: p.who.face }, league, 30) : side ? crest(game[side], 24) : h('span', { class: 'pface-empty' });
+    return h('li', { class: 'play' + (p.scoring ? ' scoring' : '') }, h('span', { class: 'pw' }, whenLabel(p, league) || '·'), h('span', { class: 'pface' }, pic),
+      h('span', { class: 'pt' }, shortText(p), sc ? h('span', { class: 'ps' }, sc) : null));
   }
 
   /* ----- replay slider + win chance ----- */
