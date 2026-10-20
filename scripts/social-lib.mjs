@@ -38,7 +38,7 @@ const unitOf = (lg) => UNIT[lg] || 'points';
 
 /* ---------- games and cards ---------- */
 export function gameRow(g) {
-  if (!g || !CARD_LEAGUES.includes(g.league) || g.state !== 'pre' || g.void || !g.date || g.seriesDone) return null; // a game left over from a series that is already decided is not a real game
+  if (!g || !CARD_LEAGUES.includes(g.league) || g.state !== 'pre' || g.void || !g.date || g.seriesDone || /wins? (the )?series|advances|if necessary/i.test(`${g.series || ''} ${g.note || ''}`)) return null; // a game left over from a series that is already decided is not a real game
   const p = preGameProbs(g);
   const homeFav = p.home >= p.away;
   const ou = Number(g.odds && g.odds.overUnder);
