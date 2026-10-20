@@ -162,6 +162,12 @@ export function resolveBet(id, results, decision) {
   if (decision && decision.status === 'won') track('bets_won');
   ping();
 }
+/** A bet that is already decided (say, lost on its first leg) still shows how its other legs went. This only fills in legs, it never changes the payout. */
+export function fillLegs(id, results) {
+  update((s) => { const b = s.bets[id]; if (!b || b.status === 'pending') return; b.legs.forEach((l, i) => { if (l.result === 'pending' && results[i] && results[i] !== 'pending') l.result = results[i]; }); });
+  ping();
+}
+export const decidedWithOpenLegs = (days = 4) => Object.values(state.bets).filter((b) => b.status !== 'pending' && b.legs.some((l) => l.result === 'pending' && new Date(l.date).getTime() < Date.now() && Date.now() - new Date(l.date).getTime() < days * 864e5));
 export function takeNotices() { const n = state.notices; if (n.length) update((s) => { s.notices = []; }); return n; }
 
 export function claimDaily() {

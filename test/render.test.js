@@ -147,6 +147,12 @@ app().querySelector('#daily').click(); await sleep(20); assert.ok(store.getState
   assert.equal(bb.t1.status, 'won'); assert.equal(bb.t2.status, 'lost');
   assert.equal(store.getState().bank.coins, before - 200 + bb.t1.payout);
   assert.ok(store.getState().bank.streak >= 0 && store.getState().bank.xp > 0); ok('bets settle from final scores and pay out');
+  // a parlay already lost on one leg still gets its other legs checked later, without touching the payout
+  const w2 = { ...mlLeg(g, 'home'), date: new Date(Date.now() - 36e5).toISOString(), key: 'late|ml|home' }, l2 = { ...lose, result: 'lost' };
+  store.update((st) => { st.bets.t3 = { id: 't3', ts: 3, mode: 'parlay', stake: 50, dec: 3, legs: [l2, w2], status: 'lost', payout: 0 }; });
+  const coins3 = store.getState().bank.coins;
+  await settleAll();
+  assert.equal(store.getState().bets.t3.legs[1].result, 'won'); assert.equal(store.getState().bets.t3.status, 'lost'); assert.equal(store.getState().bank.coins, coins3); ok('a lost parlay still shows how its other legs went');
 }
 text = await visit('#/season', { wait: 300 }); assert.ok(/Badges/.test(text) && /Bankroll/.test(text)); ok('season page');
 text = await visit('#/settings'); assert.ok(/Spoiler/.test(text)); ok('settings page');
