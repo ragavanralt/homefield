@@ -189,14 +189,17 @@ function shoes(o) {
 
 /* ============================================================ TOPS */
 const hood = (P, c, R) => {
-  const nk = c.B.nk, sk = c.sk;
-  // a draped cowl: a thick ring that reaches the shoulders, with the neck showing through the middle
-  P.shape(blob([[CX - nk - 20, 120], [CX - nk - 12, 106], [CX - nk - 3, 102], [CX + nk + 3, 102], [CX + nk + 12, 106], [CX + nk + 20, 120], [CX + nk + 10, 129], [CX, 133], [CX - nk - 10, 129]]), R.sh, { line: R.line });
-  const mouth = blob([[CX - nk - 1, 104], [CX + nk + 1, 104], [CX + nk * 0.8, 114], [CX, 119], [CX - nk * 0.8, 114]]);
+  const nk = c.B.nk, sk = c.sk, open = c.side === 'open';
+  // a draped cowl: a soft ring round the neck. When the jacket is open, it dips into the gap and stops at the zip edges.
+  const ring = open
+    ? [[CX - nk - 15, 117], [CX - nk - 9, 107], [CX - nk - 2, 102], [CX + nk + 2, 102], [CX + nk + 9, 107], [CX + nk + 15, 117], [CX + 16, 126], [CX, 131], [CX - 16, 126]]
+    : [[CX - nk - 17, 119], [CX - nk - 10, 108], [CX - nk - 3, 102], [CX + nk + 3, 102], [CX + nk + 10, 108], [CX + nk + 17, 119], [CX + nk + 8, 127], [CX, 131], [CX - nk - 8, 127]];
+  P.shape(blob(ring), R.sh, { line: R.line });
+  const mouth = blob([[CX - nk - 1, 104], [CX + nk + 1, 104], [CX + nk * 0.8, 113], [CX, 118], [CX - nk * 0.8, 113]]);
   P.fill(mouth, sk.base);
-  P.clip(mouth, `<path d="${blob([[CX - nk - 4, 100], [CX + nk + 4, 100], [CX + nk + 3, 108], [CX, 114], [CX - nk - 3, 108]])}" fill="${sk.sh}" opacity="0.5"/>`);
-  P.stroke(curve([[CX - nk - 1, 105], [CX - nk * 0.8, 114], [CX, 119], [CX + nk * 0.8, 114], [CX + nk + 1, 105]]), R.line, 1.6);
-  P.stroke(curve([[CX - nk - 14, 122], [CX - nk * 0.6, 128], [CX, 130], [CX + nk * 0.6, 128], [CX + nk + 14, 122]]), R.line, 1, 0.45);
+  P.clip(mouth, `<path d="${blob([[CX - nk - 4, 100], [CX + nk + 4, 100], [CX + nk + 3, 108], [CX, 113], [CX - nk - 3, 108]])}" fill="${sk.sh}" opacity="0.5"/>`);
+  P.stroke(curve([[CX - nk - 1, 105], [CX - nk * 0.8, 113], [CX, 118], [CX + nk * 0.8, 113], [CX + nk + 1, 105]]), R.line, 1.6);
+  P.stroke(curve([[CX - nk - 9, 121], [CX - nk * 0.5, 126], [CX, 127.5], [CX + nk * 0.5, 126], [CX + nk + 9, 121]]), R.line, 1, 0.4);
 };
 const strings = (P, R) => { P.stroke(curve([[CX - 5, 121], [CX - 5.5, 136], [CX - 4.5, 140]]), '#E8E6E0', 1.8); P.stroke(curve([[CX + 5, 121], [CX + 5.6, 134], [CX + 4.6, 138]]), '#E8E6E0', 1.8); };
 const pocket = (P, R, main) => { P.shape(blob([[CX - 18, 168], [CX + 18, 168], [CX + 22, 192], [CX - 22, 192]]), dk(main, 0.05), { line: R.line, w: 1.4 }); P.stroke(curve([[CX, 168.5], [CX, 191.5]]), R.line, 1.2, 0.7); };
