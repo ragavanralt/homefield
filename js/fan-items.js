@@ -813,6 +813,7 @@ const kit = (o) => top({
   collar: o.tank ? (P, c) => { const nk = c.B.nk; P.stroke(curve([[CX - nk - 2, 112], [CX - nk + 2, 122], [CX, 127], [CX + nk - 2, 122], [CX + nk + 2, 112]]), o.collar, 3.4); armholes(P, c, 6, o.cuff || o.collar, 3); } : undefined,
 });
 ART.top.rt_blau = kit({ main: '#1A3C8C', stripes: [['#1A3C8C', '#9B1B30'], 15, CX - 97], collar: '#F2C230', cuff: '#F2C230', badge: { shape: 'roundel', ring: '#F2C230', field: ['#1A3C8C', '#9B1B30'], n: 5, motif: 'ball' }, grow: 8, sgrow: 8 });
+ART.top.rt_wine = kit({ main: '#6E2433', stripes: [['#6E2433', '#1B2347'], 15, CX - 37], collar: '#1B2347', cuff: '#1B2347', badge: { shape: 'roundel', ring: '#D9B45A', field: ['#1B2347', '#6E2433'], n: 5, motif: 'ball' }, grow: 8, sgrow: 8.5 });
 ART.top.rt_bra02 = kit({ main: '#F9D616', collar: '#0A7A3C', cuff: '#0A7A3C', cuff2: '#1F4CA8', badge: { shape: 'shield', ring: '#1F4CA8', field: ['#0A7A3C'], motif: 'diamond', motifCol: '#F9D616', stars: 5, starCol: '#0A7A3C' }, neck: 'crew' });
 ART.top.rt_mil94 = kit({ main: '#16161A', stripes: [['#C8102E', '#16161A'], 10, CX - 95], collar: '#F4F1EA', cuff: '#F4F1EA', badge: { shape: 'oval', ring: '#16161A', field: ['#C8102E', '#16161A'], n: 6, symbol: 'star', symbolCol: '#F4F1EA' } });
 ART.top.rt_arg86 = kit({ main: '#F4F1EA', stripes: [['#74ACDF', '#F4F1EA'], 9, CX - 94.5], collar: '#1C2A55', cuff: '#1C2A55', badge: { shape: 'roundel', ring: '#1C2A55', field: ['#74ACDF', '#F4F1EA', '#74ACDF'], dir: 'h', n: 3, motif: 'sun', stars: 2 }, neck: 'crew' });

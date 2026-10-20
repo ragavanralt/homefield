@@ -112,7 +112,7 @@ export const ITEMS = [
   I('rt_chi96', 'top', "Chicago '96 red road jersey", 'retro', 6000), I('rt_tor00', 'top', "Toronto '00 purple jersey", 'retro', 5000),
   I('rt_cha93', 'top', "Charlotte '93 teal pinstripe jersey", 'retro', 4000), I('rt_sea96', 'top', "Seattle '96 green jersey", 'retro', 3500),
   I('rt_phx93', 'top', "Phoenix '93 purple jersey", 'retro', 3500), I('rt_whiteout', 'top', 'Buffalo white-out jersey', 'retro', 4000),
-  I('rt_blau', 'top', "Barcelona '99 baggy kit", 'retro', 5000), I('rt_bra02', 'top', "Brazil '02 yellow kit", 'retro', 4500),
+  I('rt_blau', 'top', "Barcelona '99 baggy kit", 'retro', 5000), I('rt_wine', 'top', 'Wine and navy retro kit', 'retro', 4500), I('rt_bra02', 'top', "Brazil '02 yellow kit", 'retro', 4500),
   I('rt_mil94', 'top', "Milan '94 red and black kit", 'retro', 4000), I('rt_arg86', 'top', "Argentina '86 stripes", 'retro', 5500),
   I('rt_ned88', 'top', "Holland '88 orange kit", 'retro', 4500), I('rt_tor67', 'top', "Toronto '67 hockey sweater", 'retro', 4000),
   I('rt_mtl', 'top', 'Montreal red hockey sweater', 'retro', 4000), I('rt_tor93', 'top', "Toronto '93 powder blue button-up", 'retro', 3500),
