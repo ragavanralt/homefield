@@ -153,6 +153,9 @@ export function mergeFan(local, remote) {
   out.teams = [...local.teams, ...(remote.teams || []).filter((t) => !seen.has(teamKey(t)))];
   out.bets = { ...(remote.bets || {}) };
   for (const [k, b] of Object.entries(local.bets || {})) if (!out.bets[k] || betScore(b) >= betScore(out.bets[k])) out.bets[k] = b;
+  // games watched: everything either device saw, keeping the later time
+  out.watched = { ...(remote.watched || {}) };
+  for (const [k, v] of Object.entries(local.watched || {})) if (!out.watched[k] || (v.ts || 0) >= (out.watched[k].ts || 0)) out.watched[k] = v;
   const lb = local.bank || {}, rb = remote.bank || {};
   // same xp on both sides means nothing was earned in between, so the lower balance is the one that already paid for something
   const useLocal = (lb.xp || 0) > (rb.xp || 0) || ((lb.xp || 0) === (rb.xp || 0) && (lb.coins || 0) <= (rb.coins || 0));
@@ -186,7 +189,8 @@ function mergeFits(a = [], b = []) { const m = new Map(); for (const f of [...b,
 const fanOf = (s) => {
   const bets = Object.fromEntries(Object.entries(s.bets || {}).sort((x, y) => (y[1].placedAt || 0) - (x[1].placedAt || 0)).slice(0, 400));
   const q = s.quests || {};
-  return { teams: s.teams, avatar: s.avatar, bank: s.bank, bets, claims: { day: q.day || '', week: q.week || '', days: (q.daily && q.daily.claimed) || [], weeks: (q.weekly && q.weekly.claimed) || [] } };
+  const watched = Object.fromEntries(Object.entries(s.watched || {}).sort((x, y) => (y[1].ts || 0) - (x[1].ts || 0)).slice(0, 300));
+  return { teams: s.teams, avatar: s.avatar, bank: s.bank, bets, watched, claims: { day: q.day || '', week: q.week || '', days: (q.daily && q.daily.claimed) || [], weeks: (q.weekly && q.weekly.claimed) || [] } };
 };
 function publicOf(s) {
   const st = betStats(s.bets || {}, s.bank);
@@ -205,11 +209,12 @@ export function syncNow() {
     if (remote.data && remote.data.teams) {
       const merged = mergeFan(fanOf(st), remote.data);
       applying = true;
-      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; });
+      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.watched = merged.watched || s.watched; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; });
         mergeClaims(merged.claims);
       } finally { applying = false; }
     }
     S.ver = remote.ver || 0; S.synced = true; save();
+    if (typeof window !== 'undefined' && remote.data && remote.data.teams) window.dispatchEvent(new Event('hf-synced')); // open pages redraw with what came down
     await push();
     return true;
   })().finally(() => { syncing = null; });

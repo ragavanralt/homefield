@@ -640,4 +640,10 @@ import * as S from '../js/specials.js';
   globalThis.fetch = realFetch;
 }
 
+t('parlays hit counts complete parlays only', () => {
+  const mk = (id, results) => ({ id, mode: 'parlay', status: 'won', stake: 100, payout: 300, dec: 3, legs: results.map((r) => ({ result: r, dec: 1.5 })) });
+  const st = B.betStats({ a: mk('a', ['won', 'won', 'won']), b: mk('b', ['won', 'push', 'won']), c: mk('c', ['won', 'void']) }, { streak: 0, bestStreak: 0 });
+  assert.equal(st.parlayWins, 1, 'only the clean parlay counts'); assert.equal(st.biggestParlay, 3);
+});
+
 console.log(`\n${passed} checks passed`);

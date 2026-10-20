@@ -204,6 +204,8 @@ export async function render(root, params = {}) {
   }
 
   draw();
+  const onSynced = () => draw();
+  window.addEventListener('hf-synced', onSynced);
   const stop = onSlipChange(() => {});
-  return () => stop && stop();
+  return () => { if (stop) stop(); window.removeEventListener('hf-synced', onSynced); };
 }

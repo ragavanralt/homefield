@@ -9,7 +9,7 @@ import { settleAll } from '../settle.js';
 import { fmtDay } from '../util.js';
 
 export async function render(root) {
-  root.append(pageHead('Your season', 'Everything you have bet and watched, saved on this device.'));
+  root.append(pageHead('Your season', 'Everything you have bet and watched. It follows you across devices once you are in the crew.'));
   const bank = bankStrip();
   const host = h('div', { class: 'stack' });
   root.append(bank.el, host);
@@ -52,6 +52,8 @@ export async function render(root) {
     if (!st.total && !watched.length) host.append(emptyState('Nothing here yet', 'Place a bet or mark a game as watched and your season starts filling in.', h('a', { class: 'btn main', href: '#/picks' }, "Go to Pick'em")));
   }
   draw();
+  const onSynced = () => draw();
+  window.addEventListener('hf-synced', onSynced);
   settleAll().then((n) => { if (n) draw(); }).catch(() => {});
-  return () => bank.stop();
+  return () => { bank.stop(); window.removeEventListener('hf-synced', onSynced); };
 }

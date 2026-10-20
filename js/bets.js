@@ -280,7 +280,8 @@ export function betStats(bets, bank) {
   const biggest = won.reduce((m, b) => (!m || b.payout - b.stake > m.payout - m.stake ? b : m), null);
   const longshot = won.reduce((m, b) => (!m || b.dec > m.dec ? b : m), null);
   const propWins = won.reduce((n, b) => n + b.legs.filter((l) => (l.kind === 'prop' || l.kind === 'special') && l.result === 'won').length, 0);
-  const parlayWins = won.filter((b) => b.mode === 'parlay');
+  // a parlay only counts as hit when every leg hit: a push or void leg is dropped from the payout, but it is not a clean hit
+  const parlayWins = won.filter((b) => b.mode === 'parlay' && b.legs.length > 1 && b.legs.every((l) => l.result === 'won'));
   return {
     total: all.length, pending: all.length - settled.length, won: won.length, lost: lost.length,
     accuracy: won.length + lost.length ? won.length / (won.length + lost.length) : null,
