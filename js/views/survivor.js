@@ -24,7 +24,7 @@ function pool(p, reload) {
   const teamName = (id) => { for (const g of p.games) { if (g.home.id === id) return g.home; if (g.away.id === id) return g.away; } return null; };
   const used = new Map(p.picks.map((x) => [x.team_id, x]));
   const myPick = p.picks.find((x) => x.period === p.period);
-  const status = p.status === 'open' ? (p.lock_at ? `Starts ${dayTime(p.lock_at)}` : 'Waiting for games') : `Live · ${p.period || ''}`;
+  const status = p.status === 'open' ? (p.lock_at ? `Starts ${dayTime(p.lock_at)}` : 'Waiting for games') : (p.period ? `Live · ${p.period}` : 'Live');
   const sec = h('section', { class: 'card pool', 'data-league': p.league },
     h('h2', { class: 'card-h' }, label(p.league), h('small', null, `pot ${fmt(p.pot)} · ${p.entries.filter((e) => e.alive).length} alive`)),
     h('p', { class: 'muted' }, `${status} · entry ${fmt(p.entry)} coins${p.round > 1 ? ` · round ${p.round}` : ''}`),

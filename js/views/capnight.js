@@ -2,7 +2,7 @@
 import { h, clear, toast, poll } from '../ui.js';
 import * as soc from '../social.js';
 import { face } from '../ui.js';
-import { gate, claimBar, fmt, dayTime, loader, errText } from '../social-ui.js';
+import { gate, claimBar, fmt, dayTime, loader, errText, add } from '../social-ui.js';
 
 export async function render(root) {
   if (!gate(root, 'Cap Night', 'NBA only. Five players, 2 per team at most, stay under the cap. Highest fantasy score wins.')) return;
@@ -37,7 +37,7 @@ export async function render(root) {
       dirty = true; draw(d);
     };
     const same = JSON.stringify([...picks].sort()) === JSON.stringify([...d.mine].sort());
-    clear(host).append(
+    add(clear(host),
       h('div', { class: 'seg cap-days' }, d.days.map((x) => h('button', { type: 'button', class: 'seg-b' + (x === d.day ? ' on' : ''), 'data-day': x, onclick: () => { day = x; dirty = false; picks = null; run(); } }, new Date(x + 'T12:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })))),
       h('section', { class: 'card cap-me' },
         h('h2', { class: 'card-h' }, 'Your lineup', h('small', null, `${fmt(cost)} / ${d.budget} cap · ${picks.length}/${d.slots}`)),
@@ -69,6 +69,6 @@ function playerRow(p, state, onclick) {
   const live = p.score != null;
   return h('button', { type: 'button', class: `cap-p ${state}`, 'data-id': p.id, onclick, 'aria-label': `${p.name}, ${p.price}`, 'aria-pressed': state === 'in' || state === 'drop' || state === 'locked' ? 'true' : 'false' },
     face({ name: p.name, face: p.face }, 'nba', 36),
-    h('span', { class: 'cap-n' }, h('b', null, p.name), h('small', null, `${p.team}${p.pos ? ' · ' + p.pos : ''} · ${dayTime(p.start_at)}`)),
+    h('span', { class: 'cap-n' }, h('b', null, p.name), h('small', null, [p.team, p.pos, dayTime(p.start_at)].filter(Boolean).join(' · '))),
     h('span', { class: 'cap-v' }, live ? h('b', null, p.dnp ? 'DNP' : Number(p.score).toFixed(1)) : h('b', null, `$${p.price}`), h('small', null, live ? `$${p.price}` : `avg ${Number(p.avg).toFixed(1)}`)));
 }

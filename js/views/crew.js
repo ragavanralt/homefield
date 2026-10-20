@@ -3,7 +3,7 @@ import { h, clear, toast } from '../ui.js';
 import { pageHead } from '../components.js';
 import * as soc from '../social.js';
 import { renderAvatar, copyLook } from '../avatar.js';
-import { bubble, claimBar, fmt, loader, actionBtn, errText } from '../social-ui.js';
+import { bubble, claimBar, fmt, loader, actionBtn, errText, add } from '../social-ui.js';
 
 const pct = (a) => (a == null ? '–' : Math.round(a * 100) + '%');
 const link = (code) => `${location.origin}${location.pathname}#/join/${code}`;
@@ -35,7 +35,7 @@ export async function render(root, params = {}) {
     let mode = 'join';
     const wrap = h('section', { class: 'card crew-entry' });
     const paint = () => {
-      clear(wrap).append(
+      add(clear(wrap),
         h('div', { class: 'seg', role: 'tablist' },
           h('button', { type: 'button', class: 'seg-b' + (mode === 'join' ? ' on' : ''), onclick: () => { mode = 'join'; paint(); } }, 'I have an invite'),
           h('button', { type: 'button', class: 'seg-b' + (mode === 'in' ? ' on' : ''), onclick: () => { mode = 'in'; paint(); } }, 'Sign in on this device')),
@@ -90,7 +90,7 @@ export async function render(root, params = {}) {
       const ms = d.members.slice();
       const rank = (m) => { const s = m.stats || {}; const dec = (s.won || 0) + (s.lost || 0); return [dec ? (s.won || 0) / dec : -1, s.won || 0]; };
       ms.sort((a, b) => { const x = rank(a), y = rank(b); return y[0] - x[0] || y[1] - x[1] || a.handle.localeCompare(b.handle); });
-      el.append(
+      add(el,
         h('section', { class: 'card' },
           h('h2', { class: 'card-h' }, 'The table', h('small', null, "ranked by pick'em record")),
           h('div', { class: 'tbl-scroll' }, h('table', { class: 'tbl crew-table' },
@@ -119,7 +119,7 @@ export async function render(root, params = {}) {
     const paint = () => {
       const av = look();
       const chip = (label, id) => h('button', { type: 'button', class: 'chip' + (sel === id ? ' on' : ''), 'aria-pressed': sel === id ? 'true' : 'false', 'data-fit': id, onclick: () => { sel = id; note = null; paint(); } }, label);
-      clear(card).append(
+      add(clear(card),
         h('div', { class: 'fit-stage' }, av && av.eq ? renderAvatar(av, m.team || null, 'full') : bubble(m)),
         h('b', { class: 'it-n' }, m.display, m.me ? h('small', null, ' you') : null),
         fits.length ? h('div', { class: 'chip-row fit-pick' }, chip('Now', 'current'), fits.map((f) => chip(f.name, f.id))) : null,
@@ -158,7 +158,7 @@ export async function render(root, params = {}) {
         if (!list.childNodes.length) list.append(h('p', { class: 'muted' }, 'No active invites.'));
       } catch (e) { list.append(h('p', { class: 'muted' }, errText(e))); }
     };
-    box.append(
+    add(box,
       h('div', { class: 'row wrap' }, actionBtn('Make an invite link', async () => { const r = await soc.makeInvite(1, 14); await copy(link(r.code), 'Invite link copied'); paintInv(); }, 'btn main'),
         h('small', { class: 'muted' }, 'One use, good for 14 days.')),
       list,

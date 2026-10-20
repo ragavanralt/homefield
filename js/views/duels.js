@@ -2,10 +2,11 @@
 import { h, clear, toast, poll } from '../ui.js';
 import * as soc from '../social.js';
 import { getBank } from '../store.js';
-import { gate, claimBar, fmt, dayTime, loader, actionBtn, errText, sideBtn, bubble } from '../social-ui.js';
+import { gate, claimBar, fmt, dayTime, loader, actionBtn, errText, sideBtn, bubble, add } from '../social-ui.js';
 
 const LEN = { game: ['One game', '3 cards from a single game'], day: ['One day', '5 cards from the day\'s slate'], week: ['One week', '10 cards over 7 days'] };
 const STAKES = [25, 50, 100, 250];
+const STATUS = { open: 'Open', active: 'In play', void: 'Void', cancelled: 'Cancelled', declined: 'Declined', expired: 'Expired', settled: 'Done' };
 
 export async function render(root, params = {}) {
   if (!gate(root, 'Duels', 'Pick against a friend. Winner takes the pot.')) return;
@@ -31,7 +32,7 @@ function list(host) {
     const el = top.querySelector('.duel-main');
     if (!el) return;
     return loader(el, async () => ({ d: await soc.duels(), f: await soc.daily().catch(() => null) }), ({ d, f }) => {
-      el.append(
+      add(el,
         h('div', { class: 'duel-head' },
           h('div', null, h('b', null, `${d.record.w}–${d.record.l}${d.record.t ? `–${d.record.t}` : ''}`), h('small', null, ' duel record')),
           h('button', { type: 'button', class: 'btn main', id: 'duel-new', onclick: () => { mode = 'new'; paint(); } }, 'New duel')),
@@ -53,7 +54,7 @@ function row(d) {
   return h('a', { class: 'duel-row', href: `#/duels/${d.id}`, 'data-id': d.id },
     bubble(other || d.creator, 'bust sm'),
     h('div', { class: 'dr-main' }, h('b', null, who), h('small', null, `${LEN[d.length][0]} · ${fmt(d.stake)} each`)),
-    h('span', { class: 'pill ' + (res === 'You won' ? 'won' : res === 'You lost' ? 'lost' : 'pending') }, res));
+    h('span', { class: 'pill ' + (res === 'You won' ? 'won' : res === 'You lost' ? 'lost' : 'pending') }, STATUS[res] || res));
 }
 
 /* ------------------------------------------------------------ new duel form */
@@ -67,7 +68,7 @@ function form(done) {
     if (st.length === 'game' && !st.game && games[0]) st.game = games[0].key;
     if (st.length === 'day' && !st.day && slate) st.day = slate.today;
     const days = slate ? [slate.today, new Date(new Date(slate.today + 'T12:00:00').getTime() + 864e5).toISOString().slice(0, 10)] : [];
-    box.append(
+    add(box,
       h('h2', { class: 'card-h' }, 'New duel', h('small', null, `${fmt(getBank().coins)} coins`)),
       h('div', { class: 'seg' }, Object.keys(LEN).map((k) => h('button', { type: 'button', class: 'seg-b' + (st.length === k ? ' on' : ''), 'data-len': k, onclick: () => { st.length = k; paint(); } }, LEN[k][0]))),
       h('p', { class: 'muted' }, LEN[st.length][1] + '. Picks lock when each card\'s game starts.'),
@@ -108,7 +109,7 @@ function detail(host, id) {
     const banner = d.status === 'open' ? (mine === 'creator' ? 'Waiting for someone to accept.' : 'Accept to lock in your stake.')
       : d.status === 'active' ? 'In play.' : d.status === 'settled' ? (d.winner ? (won ? `You won ${fmt(d.result.pot - d.result.cut)} coins.` : `${d.winner} won.`) : 'Tied. Stakes returned.')
         : d.status === 'void' ? 'Not enough finished cards. Stakes returned.' : `Duel ${d.status}.`;
-    wrap.append(
+    add(wrap,
       h('section', { class: 'card duel-top' },
         h('div', { class: 'vs' }, h('div', { class: 'vs-p' }, bubble(d.creator), h('b', null, d.creator.display)), h('span', { class: 'vs-x' }, 'vs'),
           h('div', { class: 'vs-p' }, d.opponent ? [bubble(d.opponent), h('b', null, d.opponent.display)] : [h('span', { class: 'who-init' }, '?'), h('b', null, 'Open')])),
@@ -137,7 +138,7 @@ function cardRow(c, d, oppName, onNew) {
   const ok = c.outcome === 'a' || c.outcome === 'b' ? (mineSide ? (mineSide === c.outcome ? 'good' : 'bad') : '') : '';
   const lab = (s) => (c.line != null && c.kind !== 'winner' ? `${s === 'a' ? c.a : c.b} ${c.line}` : s === 'a' ? c.a : c.b);
   return h('article', { class: `dcard ${ok}${c.status === 'void' ? ' void' : ''}`, 'data-card': c.id },
-    h('div', { class: 'dc-t' }, h('b', null, c.title), h('small', null, c.status === 'final' ? (c.outcome === 'push' ? 'Push' : `Result: ${lab(c.outcome)}${c.actual != null ? ` (${c.actual})` : ''}`) : c.status === 'void' ? 'Void' : c.locked ? 'Locked' : `Locks ${dayTime(c.start_at)}`)),
+    h('div', { class: 'dc-t' }, h('b', null, c.title), h('small', null, c.status === 'final' ? (c.outcome === 'push' ? 'Push' : c.outcome === 'a' || c.outcome === 'b' ? `Result: ${lab(c.outcome)}${c.actual != null ? ` (${c.actual})` : ''}` : 'No result') : c.status === 'void' ? 'Void' : c.locked ? 'Locked' : `Locks ${dayTime(c.start_at)}`)),
     h('div', { class: 'dc-s' }, sideBtn(lab('a'), mineSide === 'a', !canPick, () => pick('a')), sideBtn(lab('b'), mineSide === 'b', !canPick, () => pick('b'))),
     d.opponent && d.status !== 'open' ? h('small', { class: 'dc-o' }, theirs ? `${oppName} took ${lab(theirs)}` : c.their_made ? `${oppName} has picked` : `${oppName} has not picked`) : null);
 }
@@ -146,7 +147,7 @@ function cardRow(c, d, oppName, onNew) {
 function daily(f, reload) {
   const sec = h('section', { class: 'card daily' });
   const right = f.cards.filter((c) => c.result === 'win').length;
-  sec.append(h('h2', { class: 'card-h' }, 'Daily Five', h('small', null, `practice · ${f.coins_per_win} coins a win · streak ${f.streak}${f.best ? ` (best ${f.best})` : ''}`)),
+  add(sec, h('h2', { class: 'card-h' }, 'Daily Five', h('small', null, `practice · ${f.coins_per_win} coins a win · streak ${f.streak || 0}${f.best ? ` (best ${f.best})` : ''}`)),
     f.cards.length ? h('div', { class: 'stack' }, f.cards.map((c) => {
       const lab = (s) => (c.line != null && c.kind !== 'winner' ? `${s === 'a' ? c.a : c.b} ${c.line}` : s === 'a' ? c.a : c.b);
       const pick = async (side) => { try { await soc.dailyPick(c.id, side); reload(); } catch (e) { toast(errText(e)); } };

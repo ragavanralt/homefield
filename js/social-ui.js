@@ -5,6 +5,14 @@ import { renderAvatar } from './avatar.js';
 import { getBank } from './store.js';
 import * as soc from './social.js';
 
+/** Like el.append(...), but skips null / undefined / false (the DOM's own append would print the word "null"). */
+export function add(el, ...kids) {
+  for (const k of kids) {
+    if (k == null || k === false) continue;
+    if (Array.isArray(k)) add(el, ...k); else el.append(k instanceof Node ? k : String(k));
+  }
+  return el;
+}
 export const fmt = (n) => Math.round(Number(n) || 0).toLocaleString();
 export const ET = 'America/New_York';
 export const clock = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });

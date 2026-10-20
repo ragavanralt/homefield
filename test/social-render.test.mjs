@@ -55,7 +55,8 @@ const app = () => w.document.getElementById('app');
 const $ = (sel) => app().querySelector(sel);
 const $$ = (sel) => [...app().querySelectorAll(sel)];
 const byText = (sel, re) => $$(sel).find((e) => re.test(e.textContent));
-async function visit(hash, wait = 150) { w.location.hash = hash; await route(); await sleep(wait); return app().textContent; }
+const BAD = /null|undefined|NaN|Invalid Date|\[object/;
+async function visit(hash, wait = 150) { w.location.hash = hash; await route(); await sleep(wait); const t = app().textContent; assert.ok(!BAD.test(t), `stray placeholder text on ${hash}: ` + (t.match(new RegExp('.{0,40}(' + BAD.source + ').{0,40}')) || [''])[0]); return t; }
 const type = (el, v) => { el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); el.dispatchEvent(new w.Event('change', { bubbles: true })); };
 let n = 0; const ok = (m) => { n++; console.log('  ok  ' + m); };
 
