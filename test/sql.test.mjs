@@ -563,6 +563,19 @@ const kinds = (db, who) => db.rows(`select kind, amount from payouts where user_
   });
 }
 
+/* daily five: spread across sports, 3 at most from one */
+{
+  const db = fresh();
+  crew(db, ['ragavan']);
+  publish(db, [game(20, '19:00'), game(20, '20:00'), game(20, '21:00'), game(20, '22:00'), game(20, '22:30', { league: 'nhl' }), game(20, '23:00', { league: 'nhl' })]);
+  t('daily five: never more than 3 from one sport, and both sports show up', () => {
+    db.sql("select x_daily('2026-10-20'::date)");
+    const rows = db.rows("select c.league, count(*) n from daily_five f join cards c on c.id = f.card_id where f.day = '2026-10-20' group by c.league order by c.league");
+    const by = Object.fromEntries(rows.map((r) => [r.league, Number(r.n)]));
+    assert.ok(by.nba <= 3 && by.nhl >= 2 && by.nba + by.nhl === 5, JSON.stringify(by));
+  });
+}
+
 /* =============================== fit gallery likes =============================== */
 {
   const db = fresh(); const u = crew(db);

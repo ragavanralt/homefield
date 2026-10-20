@@ -773,13 +773,16 @@ declare have int; pos0 int;
 begin
   select count(*), coalesce(max(pos), 0) into have, pos0 from daily_five where day = p_day;
   if have >= 5 then return; end if;
+  -- spread the five across sports: take turns between leagues, so no sport hogs it (3 at most when two or more sports are on)
   insert into daily_five (day, card_id, pos)
   select p_day, t.id, pos0 + t.k from (
-    select id, row_number() over (order by rn, md5(p_day::text || id::text)) k from (
-      select c.id, row_number() over (partition by c.league, c.game_id order by md5(p_day::text || c.id::text)) rn
-      from cards c where c.day = p_day and c.status = 'open' and c.start_at > x_now() + interval '5 minutes'
-        and not exists (select 1 from daily_five f where f.day = p_day and f.card_id = c.id)) q
-    order by rn, md5(p_day::text || id::text) limit 5 - have) t;
+    select id, row_number() over (order by rl, md5(p_day::text || id::text)) k from (
+      select q.id, row_number() over (partition by q.league order by q.rn, md5(p_day::text || q.id::text)) + coalesce(h.n, 0) rl
+      from (select c.id, c.league, row_number() over (partition by c.league, c.game_id order by md5(p_day::text || c.id::text)) rn
+            from cards c where c.day = p_day and c.status = 'open' and c.start_at > x_now() + interval '5 minutes'
+              and not exists (select 1 from daily_five f where f.day = p_day and f.card_id = c.id)) q
+      left join (select c2.league, count(*) n from daily_five f2 join cards c2 on c2.id = f2.card_id where f2.day = p_day group by c2.league) h on h.league = q.league) r
+    order by rl, md5(p_day::text || id::text) limit 5 - have) t;
 end $$;
 
 create or replace function hf_daily(p_token text) returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$
@@ -1172,7 +1175,8 @@ begin
     insert into cards (day, league, game_id, kind, subject, title, a_label, b_label, line, start_at, meta)
     select gm.day, gm.league, gm.game_id, c ->> 'kind', c ->> 'subject', c ->> 'title', c ->> 'a', c ->> 'b', (c ->> 'line')::numeric, gm.start_at, coalesce(c -> 'meta', '{}')
       from games gm where gm.league = c ->> 'league' and gm.game_id = c ->> 'game_id' and gm.status = 'pre' and gm.start_at > x_now()
-    on conflict (league, game_id, kind, subject) do nothing;
+    on conflict (league, game_id, kind, subject) do update set line = excluded.line, title = excluded.title
+      where cards.status = 'open' and cards.kind = 'team_total' and cards.line < 0; -- repairs the bad team lines an earlier version wrote
     get diagnostics k = row_count;
     n_cards := n_cards + k;
   end loop;

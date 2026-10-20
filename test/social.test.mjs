@@ -224,3 +224,15 @@ if (PG.available()) {
 } else console.log('  (database checks skipped: no Postgres)');
 
 console.log(`\n${passed} bot checks passed`);
+
+// hockey and baseball list a moneyline in the odds text; it must never become a team total
+{
+  const g = { league: 'nhl', id: 'h1', home: { id: '1', abbr: 'WPG', name: 'Jets' }, away: { id: '2', abbr: 'SJ', name: 'Sharks' }, odds: { overUnder: 6.5, details: 'WPG -190' } };
+  const cs = L.cardsForGame(g, []);
+  assert.ok(!cs.some((c) => c.kind === 'team_total'), 'no team totals from a moneyline');
+  assert.ok(cs.find((c) => c.kind === 'total').title.endsWith('total goals'));
+  const g2 = { ...g, odds: { overUnder: 6.5, details: 'WPG -1.5' } };
+  const t2 = L.cardsForGame(g2, []).filter((c) => c.kind === 'team_total');
+  assert.ok(t2.length === 2 && t2.every((c) => c.line > 0 && c.line < 6) && t2[0].title.endsWith('goals'));
+  console.log('  ok  moneyline odds do not make team totals; hockey says goals');
+}

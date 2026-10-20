@@ -26,12 +26,15 @@ export function parseSpread(details, homeAbbr, awayAbbr) {
   const m = String(details || '').trim().match(/^([A-Za-z.]+)\s+([+-]?\d+(?:\.\d+)?)$/);
   if (!m) return null;
   const n = parseFloat(m[2]), ab = m[1].toUpperCase();
+  if (Math.abs(n) >= 50) return null; // a moneyline such as "WPG -150" (hockey, baseball), not a points spread
   if (ab === String(homeAbbr).toUpperCase()) return n;
   if (ab === String(awayAbbr).toUpperCase()) return -n;
   return null;
 }
 /** Each team's expected points from the game total and the spread. */
 export const teamTotals = (ou, homeSpread) => ({ home: (ou - homeSpread) / 2, away: (ou + homeSpread) / 2 });
+const UNIT = { nhl: 'goals', mlb: 'runs' };
+const unitOf = (lg) => UNIT[lg] || 'points';
 
 /* ---------- games and cards ---------- */
 export function gameRow(g) {
@@ -67,12 +70,12 @@ export function cardsForGame(g, markets = [], maxPlayers = 4) {
   const out = [{ ...base, kind: 'winner', subject: 'game', title: `${away} at ${home}`, a: home, b: away, line: null, meta: {} }];
   const ou = Number(g.odds && g.odds.overUnder);
   if (Number.isFinite(ou) && ou > 0) {
-    out.push({ ...base, kind: 'total', subject: 'game', title: `${away} at ${home}: total points`, a: 'Over', b: 'Under', line: halfLine(ou), meta: {} });
+    out.push({ ...base, kind: 'total', subject: 'game', title: `${away} at ${home}: total ${unitOf(g.league)}`, a: 'Over', b: 'Under', line: halfLine(ou), meta: {} });
     const sp = parseSpread(g.odds.details, home, away);
-    if (sp != null) {
-      const tt = teamTotals(ou, sp);
-      out.push({ ...base, kind: 'team_total', subject: 'home', title: `${home} team points`, a: 'Over', b: 'Under', line: halfLine(tt.home), meta: { team: home } });
-      out.push({ ...base, kind: 'team_total', subject: 'away', title: `${away} team points`, a: 'Over', b: 'Under', line: halfLine(tt.away), meta: { team: away } });
+    const tt = sp != null ? teamTotals(ou, sp) : null;
+    if (tt && tt.home > 0 && tt.away > 0) {
+      out.push({ ...base, kind: 'team_total', subject: 'home', title: `${home} team ${unitOf(g.league)}`, a: 'Over', b: 'Under', line: halfLine(tt.home), meta: { team: home } });
+      out.push({ ...base, kind: 'team_total', subject: 'away', title: `${away} team ${unitOf(g.league)}`, a: 'Over', b: 'Under', line: halfLine(tt.away), meta: { team: away } });
     }
   }
   for (const m of pickPlayerMarkets(markets, g, maxPlayers)) {
