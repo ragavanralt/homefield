@@ -211,6 +211,7 @@ function normBox(j) {
         face: a.athlete?.headshot?.href || '',
         starter: !!a.starter,
         dnp: !!a.didNotPlay,
+        batOrder: num(a.batOrder),
         stats: a.stats || [],
       }));
       groups.push({ name: s.name || s.type || '', labels, rows, totals: s.totals || [] });
@@ -240,14 +241,31 @@ function normBox(j) {
   return { teams, players };
 }
 
+// A roster entry's own count of a stat, by its name or abbreviation.
+const statOf = (x, names) => { for (const st of x.stats || []) if (names.includes(st.name) || names.includes(String(st.abbreviation || '').toUpperCase())) return num(st.value ?? st.displayValue) || 0; return 0; };
+
 function mapRoster(x) {
+  const plays = Array.isArray(x.plays) ? x.plays : [];
+  const count = (f) => plays.filter(f).length;
+  const sub = plays.find((p) => p.substitution);
+  const other = x.subbedInFor || x.subbedOutFor;
   return {
     id: String(x.athlete?.id || ''),
     name: x.athlete?.displayName || x.athlete?.fullName || x.athlete?.shortName || '',
+    short: x.athlete?.shortName || '',
     jersey: x.jersey || x.athlete?.jersey || '',
     pos: x.position?.abbreviation || x.athlete?.position?.abbreviation || '',
+    place: x.formationPlace || '',
     face: x.athlete?.headshot?.href || '',
     subbedOut: !!x.subbedOut, subbedIn: !!x.subbedIn,
+    subMinute: sub?.clock?.displayValue || '',
+    subFor: other?.athlete?.displayName || other?.displayName || '',
+    events: {
+      goals: Math.max(statOf(x, ['totalGoals', 'G']), count((p) => p.didScore && !p.ownGoal)),
+      assists: Math.max(statOf(x, ['goalAssists', 'A']), count((p) => p.didAssist)),
+      yellow: Math.max(statOf(x, ['yellowCards', 'YC']), count((p) => p.yellowCard)),
+      red: Math.max(statOf(x, ['redCards', 'RC']), count((p) => p.redCard)),
+    },
   };
 }
 
@@ -264,9 +282,15 @@ function normLineups(j, box) {
   }
   const out = [];
   for (const p of box.players) {
-    const starters = [];
-    for (const g of p.groups) for (const r of g.rows) if (r.starter) starters.push({ ...r, group: g.name });
-    if (starters.length) out.push({ teamId: p.teamId, abbr: p.abbr, starters, bench: [] });
+    const starters = [], bench = [], seen = new Map();
+    for (const g of p.groups) for (const r of g.rows) {
+      const key = r.id || r.name;
+      if (seen.has(key)) { const was = seen.get(key); if (r.batOrder && !was.batOrder) was.batOrder = r.batOrder; continue; } // a two-way player sits in both groups
+      const row = { ...r, group: g.name };
+      seen.set(key, row);
+      if (r.starter) starters.push(row); else if (!r.dnp) bench.push(row);
+    }
+    if (starters.length) out.push({ teamId: p.teamId, abbr: p.abbr, starters, bench });
   }
   return out.length ? { kind: 'starters', teams: out } : null;
 }

@@ -95,6 +95,13 @@ for (const [lg, id] of games) {
   ok(`game ${lg}/${id} (${tabs.length} tabs)`);
 }
 
+// lineups tab draws players on the field
+for (const [lg, id, sel] of [['eng.1', 1002, '.f-soccer .tok'], ['mlb', 1002, '.f-diamond .tok'], ['nba', 1002, '.f-court .tok']]) {
+  await visit(`#/game/${lg}/${id}`, { wait: 350 });
+  app().querySelector('#tab-lineups').click(); await sleep(80);
+  assert.ok(app().querySelectorAll(sel).length >= 1, lg + ' tokens'); ok(`${lg} lineups on the field`);
+}
+
 // betting game
 const slipEl = w.document.getElementById('slip');
 const { mountSlip } = await import('../js/slip.js');

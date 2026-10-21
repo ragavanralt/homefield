@@ -624,6 +624,100 @@ import * as S from '../js/specials.js';
   });
 }
 
+// ---- lineups on the field ----
+{
+  const LY = await import('../js/lineup-layout.js');
+  const ath = (id, name, extra = {}) => ({ athlete: { id: String(id), displayName: name, shortName: name.replace(/^(\S)\S*\s/, '$1. ') }, ...extra });
+  // a 4-2-3-1 the way ESPN's soccer summary lists it: formationPlace, detailed positions, stats and plays on each entry
+  const xi = [['G', 'Keeper Kay', 1], ['RB', 'Right Back', 2], ['CD-R', 'Centre Right', 5], ['CD-L', 'Centre Left', 6], ['LB', 'Left Back', 3], ['DM-R', 'Holder Right', 4], ['DM-L', 'Holder Left', 8],
+    ['AM-R', 'Wide Right', 7], ['AM', 'Ten Ten', 10], ['AM-L', 'Wide Left', 11], ['F', 'Nine Nine', 9]];
+  const j = F.summary('uefa.champions', 900, { state: 'in', hs: 2, as: 1, detail: "67'", clock: "67'", period: 2 });
+  j.rosters = [
+    { homeAway: 'home', team: j.header.competitions[0].competitors.find((c) => c.homeAway === 'home').team, formation: '4-2-3-1', roster: [
+      ...xi.map(([pos, name, place], i) => ath(100 + i, name, { starter: true, jersey: String(place), formationPlace: String(place), position: { abbreviation: pos },
+        stats: name === 'Nine Nine' ? [{ name: 'totalGoals', abbreviation: 'G', value: 2 }] : name === 'Holder Left' ? [{ name: 'yellowCards', abbreviation: 'YC', value: 1 }] : [],
+        plays: name === 'Ten Ten' ? [{ didAssist: true, clock: { displayValue: "23'" } }] : name === 'Wide Left' ? [{ substitution: true, clock: { displayValue: "61'" } }] : [],
+        subbedOut: name === 'Wide Left' })),
+      ath(150, 'Super Sub', { starter: false, subbedIn: true, jersey: '19', position: { abbreviation: 'F' }, plays: [{ substitution: true, clock: { displayValue: "61'" } }], subbedInFor: { athlete: { displayName: 'Wide Left' } } }),
+      ath(151, 'Unused Keeper', { starter: false, jersey: '13', position: { abbreviation: 'G' } }),
+    ] },
+  ];
+  const L = normSummary(j, 'uefa.champions', 900).lineups;
+  const home = L.teams[0];
+  t('soccer roster entries keep formation place, goals, assists, cards and subs', () => {
+    const by = (n) => [...home.starters, ...home.bench].find((p) => p.name === n);
+    assert.equal(by('Nine Nine').events.goals, 2);
+    assert.equal(by('Ten Ten').events.assists, 1);
+    assert.equal(by('Holder Left').events.yellow, 1);
+    assert.ok(by('Wide Left').subbedOut); assert.equal(by('Wide Left').subMinute, "61'");
+    assert.equal(by('Super Sub').subFor, 'Wide Left'); assert.equal(by('Keeper Kay').place, '1');
+  });
+  t('soccer: 4-2-3-1 lands in four lines, left to right, keeper deepest', () => {
+    const sh = LY.soccerShape(home.starters, home.formation);
+    assert.deepEqual(sh.lines.map((l) => l.length), [4, 2, 3, 1]);
+    assert.deepEqual(sh.lines[0].map((p) => p.name), ['Left Back', 'Centre Left', 'Centre Right', 'Right Back']);
+    assert.deepEqual(sh.lines[2].map((p) => p.name), ['Wide Left', 'Ten Ten', 'Wide Right']);
+    assert.equal(sh.keeper.name, 'Keeper Kay');
+    const bottom = LY.pitchSpots(sh, 'bottom'), top = LY.pitchSpots(sh, 'top');
+    const at = (sp, n) => sp.find((x) => x.p.name === n);
+    assert.ok(at(bottom, 'Keeper Kay').y > 90 && at(bottom, 'Nine Nine').y > 50, 'home stays in its own half');
+    assert.ok(at(top, 'Keeper Kay').y < 10 && at(top, 'Nine Nine').y < 50, 'away stays in its own half');
+    assert.ok(at(bottom, 'Left Back').x < 50 && at(top, 'Left Back').x > 50, 'away is mirrored because it attacks down');
+  });
+  t('soccer: a formation that does not add up falls back to back, middle and front', () => {
+    const sh = LY.soccerShape(home.starters, '4-4-4');
+    assert.equal(sh.formation, '4-5-1');
+    assert.deepEqual(LY.parseFormation('3-5-2'), [3, 5, 2]); assert.equal(LY.parseFormation(''), null);
+  });
+  t('soccer: goals and cards are also counted from the play feed', () => {
+    const tl = LY.tallyFromPlays([{ scoring: true, participants: ['A Striker', 'A Maker'], text: 'Goal!' }, { scoring: true, participants: ['A Striker'], text: 'Own Goal by X' }, { red: true, participants: ['Hot Head'] }]);
+    assert.deepEqual(LY.eventsFor({ name: 'A Striker', events: { goals: 0 } }, tl), { goals: 1, assists: 0, yellow: 0, red: 0 });
+    assert.equal(LY.eventsFor({ name: 'A Maker' }, tl).assists, 1);
+    assert.equal(LY.eventsFor({ name: 'Hot Head', events: { red: 1 } }, tl).red, 1, 'roster and feed are not added together');
+  });
+  t('mlb: fielders on the diamond, pitcher on the mound, batting order from batOrder, DH off the field', () => {
+    const P = (name, pos, batOrder, group = 'batting') => ({ name, pos, batOrder, group });
+    const ps = [P('Lead Off', 'CF', 1), P('Two Hole', 'SS', 2), P('Big Bat', 'DH', 3), P('Clean Up', '1B', 4), P('Five', 'RF', 5), P('Six', '3B', 6), P('Seven', 'LF', 7), P('Eight', '2B', 8), P('Nine', 'C', 9), P('Ace', 'SP', null, 'pitching')];
+    const d = LY.diamond(ps);
+    assert.equal(d.spots.length, 9);
+    const at = (k) => d.spots.find((s) => s.pos === k);
+    assert.equal(at('P').p.name, 'Ace'); assert.equal(at('C').p.name, 'Nine');
+    assert.ok(at('CF').y < at('2B').y && at('2B').y < at('P').y && at('P').y < at('C').y, 'outfield deep, catcher behind the plate');
+    assert.deepEqual(d.order.map((p) => p.name), ['Lead Off', 'Two Hole', 'Big Bat', 'Clean Up', 'Five', 'Six', 'Seven', 'Eight', 'Nine']);
+    assert.ok(!d.spots.some((s) => s.p.name === 'Big Bat'));
+    assert.equal(LY.diamond(ps, { name: 'Probable Guy' }).spots.find((s) => s.pos === 'P').p.name, 'Probable Guy');
+  });
+  t('mlb: box score starters keep batting order and a two-way player is listed once', () => {
+    const jj = F.summary('mlb', 901);
+    const bat = jj.boxscore.players[0].statistics[0], pit = jj.boxscore.players[0].statistics[1];
+    bat.athletes = [{ athlete: { id: '7', displayName: 'Two Way', position: { abbreviation: 'DH' } }, starter: true, batOrder: 1, stats: [] }, { athlete: { id: '8', displayName: 'Catcher', position: { abbreviation: 'C' } }, starter: true, batOrder: 2, stats: [] }];
+    pit.athletes = [{ athlete: { id: '7', displayName: 'Two Way', position: { abbreviation: 'SP' } }, starter: true, stats: [] }];
+    const tm = normSummary(jj, 'mlb', 901).lineups.teams[0];
+    assert.equal(tm.starters.length, 2); assert.equal(tm.starters[0].batOrder, 1);
+  });
+  t('nba: starting five fill the court by position, guards out top, bigs near the rim', () => {
+    const sp = LY.court([{ name: 'Big', pos: 'C' }, { name: 'G1', pos: 'G' }, { name: 'F1', pos: 'F' }, { name: 'G2', pos: 'G' }, { name: 'F2', pos: 'F' }, { name: 'Sixth', pos: 'G' }]);
+    assert.equal(sp.length, 5);
+    assert.equal(sp.find((s) => s.pos === 'C').p.name, 'Big');
+    assert.deepEqual(sp.filter((s) => s.pos === 'PG' || s.pos === 'SG').map((s) => s.p.name), ['G1', 'G2']);
+    assert.ok(!sp.some((s) => s.p.name === 'Sixth'));
+  });
+  t('nfl: depth chart spots become an offense and a defense formation', () => {
+    const off = LY.gridiron(['QB', 'RB', 'WR', 'WR', 'WR', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'K'].map((pos, i) => ({ name: pos + i, pos })), 'Offense');
+    assert.equal(off.spots.length, 11); assert.deepEqual(off.extra.map((p) => p.pos), ['K']);
+    const at = (g, k) => g.spots.find((s) => s.pos === k);
+    assert.ok(at(off, 'QB').y > at(off, 'C').y && at(off, 'RB').y > at(off, 'QB').y, 'backs behind the line');
+    assert.ok(at(off, 'LT').x < at(off, 'C').x && at(off, 'C').x < at(off, 'RT').x);
+    const def = LY.gridiron(['LDE', 'NT', 'RDE', 'LOLB', 'LILB', 'RILB', 'ROLB', 'LCB', 'RCB', 'SS', 'FS'].map((pos) => ({ name: pos, pos })), 'Defense');
+    assert.equal(def.spots.length, 11); assert.equal(def.extra.length, 0);
+    assert.ok(at(def, 'FS').y < at(def, 'LILB').y && at(def, 'LILB').y < at(def, 'NT').y, 'safeties deep, line at the ball');
+  });
+  t('nhl: dressed players split into forwards, defense and goalies', () => {
+    const g = LY.dressed([{ id: '1', name: 'C1', pos: 'C' }, { id: '2', name: 'W1', pos: 'LW' }, { id: '3', name: 'D1', pos: 'D' }, { id: '4', name: 'G1', pos: 'G' }, { id: '1', name: 'C1', pos: 'C' }]);
+    assert.deepEqual(g.map((x) => [x.name, x.players.length]), [['Forwards', 2], ['Defense', 1], ['Goalies', 1]]);
+  });
+}
+
 // ---- OddsPapi fallback ----
 {
   const store = {};

@@ -1,5 +1,5 @@
 // The game page: story (matchup, recap, win chance with replay), plays, box score, lineups.
-import { h, clear, crest, face, applySkin, errorBox, loading, downloadText, toast, isHidden, reveal, scoreText, poll } from '../ui.js';
+import { h, s, clear, crest, face, applySkin, errorBox, loading, downloadText, toast, isHidden, reveal, scoreText, poll } from '../ui.js';
 import { CONFIG } from '../config.js';
 import { getState, myTeamIn, markWatched, isWatched, track } from '../store.js';
 import { LEAGUES, groupOf, isSoccer, leagueLabel } from '../leagues.js';
@@ -13,7 +13,8 @@ import { buildRecap, whenLabel } from '../recap.js';
 import { wpChart } from '../chart.js';
 import { buildICS, googleUrl } from '../ics.js';
 import { shareRecap } from '../share.js';
-import { fmtDay, fmtTime, fmtDateTime, skinFromColors, colorDistance } from '../util.js';
+import { fmtDay, fmtTime, fmtDateTime, skinFromColors, colorDistance, initials } from '../util.js';
+import { soccerShape, pitchSpots, tallyFromPlays, eventsFor, diamond, basePos, court, gridiron, dressed, shortName } from '../lineup-layout.js';
 
 const titleCase = (s) => String(s || '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
 
@@ -333,51 +334,180 @@ export async function render(root, { league, id }) {
   }
 
   /* ---------- lineups ---------- */
+  const person = (p) => h('li', { class: 'pl-row' }, face(p, league, 34), h('span', { class: 'jn' }, p.jersey ? '#' + p.jersey : ''), h('span', { class: 'pn' }, p.name), p.injury ? h('small', { class: 'inj' }, String(p.injury)) : null, p.pos ? h('small', null, p.pos) : null);
+  const plist = (ps) => h('ul', { class: 'pl-list' }, ps.map(person));
+
+  // Shirt colours for both teams; when they clash the away side wears its second colour.
+  function kits() {
+    const home = skinFromColors(game.home.color, game.home.alt);
+    let away = skinFromColors(game.away.color, game.away.alt);
+    if (colorDistance(home.t1, away.t1) < 90 && game.away.alt) away = skinFromColors(game.away.alt, game.away.color);
+    return { home, away };
+  }
+
+  function token(sp, kit, badges = []) {
+    const p = sp.p;
+    return h('div', { class: 'tok' + (p.subbedOut ? ' off' : ''), style: { left: sp.x + '%', top: sp.y + '%', '--t1': kit.t1, '--tink': kit.tink }, title: [p.name, p.pos].filter(Boolean).join(' · ') },
+      h('span', { class: 'tok-c' }, p.jersey || initials(p.name)),
+      badges.length ? h('span', { class: 'tok-b' }, badges) : null,
+      h('span', { class: 'tok-n' }, shortName(p)));
+  }
+
+  function field(kind, marks, tokens, label) {
+    return h('div', { class: 'field f-' + kind, role: 'img', 'aria-label': label }, marks, tokens);
+  }
+
+  /* markings, drawn in each sport's own units so circles stay round */
+  const LINE = { fill: 'none', stroke: 'currentColor', 'stroke-width': 0.4 };
+  function soccerMarks() {
+    const box = (y, hgt, w) => s('rect', { ...LINE, x: (68 - w) / 2, y, width: w, height: hgt });
+    return s('svg', { class: 'marks', viewBox: '0 0 68 105', 'aria-hidden': 'true' },
+      s('rect', { ...LINE, x: 0.5, y: 0.5, width: 67, height: 104 }),
+      s('line', { ...LINE, x1: 0.5, y1: 52.5, x2: 67.5, y2: 52.5 }),
+      s('circle', { ...LINE, cx: 34, cy: 52.5, r: 9.15 }), s('circle', { cx: 34, cy: 52.5, r: 0.5, fill: 'currentColor' }),
+      box(0.5, 16.5, 40.3), box(0.5, 5.5, 18.3), box(88, 16.5, 40.3), box(99, 5.5, 18.3),
+      s('circle', { cx: 34, cy: 11.5, r: 0.5, fill: 'currentColor' }), s('circle', { cx: 34, cy: 93.5, r: 0.5, fill: 'currentColor' }),
+      s('path', { ...LINE, d: 'M26.7 17 A9.15 9.15 0 0 0 41.3 17' }), s('path', { ...LINE, d: 'M26.7 88 A9.15 9.15 0 0 1 41.3 88' }));
+  }
+  function diamondMarks() {
+    return s('svg', { class: 'marks', viewBox: '0 0 100 100', 'aria-hidden': 'true' },
+      s('path', { class: 'grass', d: 'M50 88 L6 44 Q50 -12 94 44 Z' }),
+      s('path', { class: 'dirt', d: 'M50 92 L24 66 Q50 34 76 66 Z' }),
+      s('path', { class: 'infield', d: 'M50 84 L68 66 L50 48 L32 66 Z' }),
+      s('path', { ...LINE, d: 'M50 88 L6 44 M50 88 L94 44 M6 44 Q50 -12 94 44' }),
+      s('circle', { class: 'dirt', cx: 50, cy: 66, r: 3.2 }),
+      ...[[50, 86], [68, 66], [50, 48], [32, 66]].map(([x, y]) => s('rect', { class: 'base', x: x - 1.3, y: y - 1.3, width: 2.6, height: 2.6, transform: `rotate(45 ${x} ${y})` })));
+  }
+  function courtMarks() {
+    return s('svg', { class: 'marks', viewBox: '0 0 50 47', 'aria-hidden': 'true' },
+      s('rect', { ...LINE, x: 0.3, y: 0.3, width: 49.4, height: 46.4 }),
+      s('rect', { ...LINE, x: 17, y: 0.3, width: 16, height: 18.7 }),
+      s('circle', { ...LINE, cx: 25, cy: 19, r: 6 }),
+      s('path', { ...LINE, d: 'M3 0.3 L3 14 A23.75 23.75 0 0 0 47 14 L47 0.3' }),
+      s('line', { ...LINE, x1: 22, y1: 4, x2: 28, y2: 4 }), s('circle', { ...LINE, cx: 25, cy: 5.25, r: 0.75 }),
+      s('path', { ...LINE, d: 'M19 46.7 A6 6 0 0 1 31 46.7' }));
+  }
+  function gridMarks(los) {
+    const lines = [];
+    for (let y = 5; y < 80; y += 10) lines.push(s('line', { ...LINE, x1: 0, y1: y, x2: 100, y2: y, opacity: 0.45 }));
+    return s('svg', { class: 'marks', viewBox: '0 0 100 80', preserveAspectRatio: 'none', 'aria-hidden': 'true' }, lines,
+      s('line', { class: 'los', x1: 0, y1: los, x2: 100, y2: los }));
+  }
+
+  function eventBadges(p, tally) {
+    const e = eventsFor(p, tally);
+    const out = [];
+    for (let i = 0; i < e.goals; i++) out.push(h('i', { class: 'bd goal', title: 'Goal' }, '⚽'));
+    for (let i = 0; i < e.assists; i++) out.push(h('i', { class: 'bd assist', title: 'Assist' }, 'A'));
+    if (e.yellow && !e.red) out.push(h('i', { class: 'bd yc', title: 'Yellow card' }));
+    if (e.red) out.push(h('i', { class: 'bd rc', title: 'Red card' }));
+    if (p.subbedOut) out.push(h('i', { class: 'bd sub-off', title: 'Subbed off' + (p.subMinute ? ' ' + p.subMinute : '') }, '▼' + (p.subMinute || '')));
+    return out;
+  }
+
+  function soccerLineups(wrap, L) {
+    const teams = sides.map((sd) => [sd, L.teams.find((t) => t.teamId === game[sd].id) || L.teams.find((t) => t.homeAway === sd)]).filter(([, t]) => t && t.starters.length);
+    if (!teams.length) { wrap.append(card('Starting lineups', note('Lineups are not posted yet. Most feeds publish them about an hour before kick off, and this page fills in by itself.'))); return wrap; }
+    const kit = kits();
+    const tally = tallyFromPlays(data.plays);
+    const tokens = [], heads = [];
+    for (const [sd, t] of teams) {
+      const shape = soccerShape(t.starters, t.formation);
+      const half = sd === 'home' ? 'bottom' : 'top';
+      pitchSpots(shape, half).forEach((sp) => tokens.push(token(sp, kit[sd], eventBadges(sp.p, tally))));
+      heads.push(h('div', { class: 'pitch-team ' + half }, crest(game[sd], 22), h('span', null, game[sd].short || game[sd].name), h('small', null, t.formation || shape.formation)));
+    }
+    const top = heads.find((x) => x.classList.contains('top')), bottom = heads.find((x) => x.classList.contains('bottom'));
+    wrap.append(h('section', { class: 'card pitch-card' }, h('h2', { class: 'card-h' }, 'Lineups'), top,
+      field('soccer', soccerMarks(), tokens, 'Both starting elevens on the pitch'), bottom,
+      h('p', { class: 'muted small-note legend' }, h('span', null, '⚽ goal'), h('span', null, h('b', null, 'A'), ' assist'), h('span', null, h('i', { class: 'bd yc' }), ' yellow'), h('span', null, h('i', { class: 'bd rc' }), ' red'), h('span', null, '▼ subbed off'))));
+    for (const [sd, t] of teams) {
+      const subs = t.bench.filter((p) => p.subbedIn);
+      const unused = t.bench.filter((p) => !p.subbedIn);
+      const subRow = (p) => h('li', { class: 'pl-row' }, h('span', { class: 'jn' }, p.subMinute || '·'), h('span', { class: 'sub-on' }, '▲'), h('span', { class: 'pn' }, p.name, p.subFor ? h('small', null, ' for ' + p.subFor) : null), eventBadges(p, tally));
+      wrap.append(card(null, h('div', { class: 'ldr-h' }, crest(game[sd], 26), h('span', null, game[sd].name)),
+        subs.length ? [h('h4', { class: 'dc-h' }, 'Substitutions'), h('ul', { class: 'pl-list' }, subs.map(subRow))] : null,
+        unused.length ? h('details', null, h('summary', null, `${subs.length ? 'Unused bench' : 'Bench'} (${unused.length})`), plist(unused)) : null,
+        !subs.length && !unused.length ? note('No bench listed.') : null));
+    }
+    return wrap;
+  }
+
+  // One team's starters drawn on its sport's field. players carry pos, and for the feed also group and batOrder.
+  function teamField(sd, players, bench, expected) {
+    const kit = kits()[sd];
+    const head = h('div', { class: 'ldr-h' }, crest(game[sd], 26), h('span', null, game[sd].name), expected ? h('small', null, ' · expected') : null);
+    const tok = (sp) => token(sp, kit);
+    if (league === 'mlb') {
+      const pitcher = game.state === 'pre' && game[sd].probable ? { ...game[sd].probable, pos: 'SP' } : null;
+      const d = diamond(players, pitcher);
+      return card(null, head, field('diamond', diamondMarks(), d.spots.map(tok), `${game[sd].name} in the field`),
+        d.order.length ? [h('h4', { class: 'dc-h' }, 'Batting order'), h('ol', { class: 'bat-order' }, d.order.map((p) => h('li', null, h('span', { class: 'pn' }, p.name), h('small', null, basePos(p.pos)))))] : null,
+        d.extra.length ? [h('h4', { class: 'dc-h' }, expected ? 'Also expected' : 'Also in the lineup'), plist(d.extra)] : null);
+    }
+    if (league === 'nba') {
+      const spots = court(players);
+      return card(null, head, field('court', courtMarks(), spots.map(tok), `${game[sd].name} starting five`),
+        bench && bench.length ? h('details', null, h('summary', null, `Bench (${bench.length})`), plist(bench)) : null);
+    }
+    if (league === 'nhl') {
+      return card(null, head, dressed([...players, ...(bench || [])]).map((g) => h('div', null, h('h4', { class: 'dc-h' }, `${g.name} (${g.players.length})`), plist(g.players))));
+    }
+    // nfl: offense and defense from the depth chart groups
+    const units = [];
+    for (const grp of players) {
+      if (grp.name === 'Offense' || grp.name === 'Defense') {
+        const g = gridiron(grp.players, grp.name);
+        units.push(h('h4', { class: 'dc-h' }, grp.name), field('grid', gridMarks(grp.name === 'Offense' ? 30 : 76), g.spots.map(tok), `${game[sd].name} ${grp.name.toLowerCase()}`));
+        if (g.extra.length) units.push(h('details', null, h('summary', null, `Also listed (${g.extra.length})`), plist(g.extra)));
+      } else units.push(h('details', null, h('summary', null, `${grp.name} (${grp.players.length})`), plist(grp.players)));
+    }
+    return card(null, head, units);
+  }
+
   function lineups() {
     const L = data.lineups;
     const wrap = h('div', { class: 'stack gcols' });
     const probables = sides.map((sd) => game[sd].probable ? [sd, game[sd].probable] : null).filter(Boolean);
     if (probables.length) wrap.append(card('Probable starters', h('div', { class: 'probs' }, probables.map(([sd, p]) => h('div', { class: 'prob' }, face(p, league, 44), h('div', null, h('small', null, game[sd].name), h('div', null, p.name)))))));
-    if (!L && ['nfl', 'nba', 'nhl', 'mlb'].includes(league)) { // these feeds carry no starters before the game, so use Sleeper's expected lineups
-      const holder = h('div', { class: 'stack gcols' });
-      const drawDepth = () => {
-        clear(holder);
-        const person = (p) => h('li', { class: 'pl-row' }, face(p, league, 34), h('span', { class: 'jn' }, p.jersey ? '#' + p.jersey : ''), h('span', { class: 'pn' }, p.name), p.injury ? h('small', { class: 'inj' }, String(p.injury)) : null, p.pos ? h('small', null, p.pos) : null);
-        for (const sd of sides) {
-          const res = depthCache.get(`${league}:${game[sd].id}`);
-          holder.append(card(null, h('div', { class: 'ldr-h' }, crest(game[sd], 26), h('span', null, game[sd].name), h('small', null, ' · expected')),
-            res === undefined ? loading('Loading expected lineup')
-              : !res ? note('No expected lineup is available for this team yet.')
-                : [h('small', { class: 'muted' }, `Source: ${res.src}`), ...res.groups.map((grp) => h('div', null, h('h4', { class: 'dc-h' }, grp.name), h('ul', { class: 'pl-list' }, grp.players.map(person))))]));
-        }
-      };
-      drawDepth();
-      const loadSide = async (sd) => {
-        try { const s = await getSleeperLineup(league, game[sd].abbr); if (s && s.length) return { src: 'Sleeper', groups: s }; } catch (e) { /* fall through */ }
-        if (league === 'nfl') { try { const d = await getDepthChart(league, game[sd].id); if (d.length) return { src: 'ESPN depth chart', groups: d }; } catch (e) { /* none */ } }
-        return null;
-      };
-      sides.forEach((sd) => {
-        const k = `${league}:${game[sd].id}`;
-        if (depthCache.has(k)) return;
-        loadSide(sd).then((r) => depthCache.set(k, r)).then(() => { if (tab === 'lineups') drawDepth(); });
-      });
-      wrap.append(holder, note('These are expected lineups from depth charts, not the official game-day list. They fill in with the real starters once the feed posts them.'));
+    if (isSoccer(league)) return L && L.kind === 'rosters' ? soccerLineups(wrap, L) : (wrap.append(card('Starting lineups', note('Lineups are not posted yet. Most feeds publish them about an hour before kick off, and this page fills in by itself.'))), wrap);
+    const fed = league !== 'nfl' && L ? L : null; // football feeds list stat leaders, not starters, so it always uses the depth chart
+    if (fed) {
+      for (const sd of sides) {
+        const t = fed.teams.find((x) => x.teamId === game[sd].id);
+        if (t) wrap.append(teamField(sd, t.starters, t.bench, false));
+      }
       return wrap;
     }
-    if (!L) {
+    if (!['nfl', 'nba', 'nhl', 'mlb'].includes(league)) {
       wrap.append(card('Starting lineups', note('Lineups are not posted yet. Most feeds publish them shortly before the game starts, and this page fills in by itself.')));
       return wrap;
     }
-    const ordered = [...L.teams].sort((a, b) => sides.indexOf(a.teamId === game.home.id ? 'home' : 'away') - sides.indexOf(b.teamId === game.home.id ? 'home' : 'away'));
-    ordered.forEach((t) => {
-      const side = t.teamId === game.home.id ? 'home' : t.teamId === game.away.id ? 'away' : null;
-      const person = (p) => h('li', { class: 'pl-row' }, face(p, league, 34), h('span', { class: 'jn' }, p.jersey ? '#' + p.jersey : ''), h('span', { class: 'pn' }, p.name), p.pos ? h('small', null, p.pos) : null);
-      wrap.append(card(null,
-        h('div', { class: 'ldr-h' }, side ? crest(game[side], 26) : null, h('span', null, side ? game[side].name : t.abbr), t.formation ? h('small', null, ' · ' + t.formation) : null),
-        h('ul', { class: 'pl-list' }, t.starters.map(person)),
-        t.bench && t.bench.length ? h('details', null, h('summary', null, `Bench (${t.bench.length})`), h('ul', { class: 'pl-list' }, t.bench.map(person))) : null));
+    // no starters in the feed yet, so use Sleeper's expected lineups (and ESPN's depth chart for football)
+    const holder = h('div', { class: 'stack gcols' });
+    const drawDepth = () => {
+      clear(holder);
+      for (const sd of sides) {
+        const res = depthCache.get(`${league}:${game[sd].id}`);
+        if (res) { holder.append(teamField(sd, league === 'nfl' ? res.groups : res.groups.flatMap((g) => g.players), null, true)); continue; }
+        holder.append(card(null, h('div', { class: 'ldr-h' }, crest(game[sd], 26), h('span', null, game[sd].name), h('small', null, ' · expected')),
+          res === undefined ? loading('Loading expected lineup') : note('No expected lineup is available for this team yet.')));
+      }
+    };
+    drawDepth();
+    const loadSide = async (sd) => {
+      try { const s = await getSleeperLineup(league, game[sd].abbr); if (s && s.length) return { src: 'Sleeper', groups: s }; } catch (e) { /* fall through */ }
+      if (league === 'nfl') { try { const d = await getDepthChart(league, game[sd].id); if (d.length) return { src: 'ESPN depth chart', groups: d }; } catch (e) { /* none */ } }
+      return null;
+    };
+    sides.forEach((sd) => {
+      const k = `${league}:${game[sd].id}`;
+      if (depthCache.has(k)) return;
+      loadSide(sd).then((r) => depthCache.set(k, r)).then(() => { if (tab === 'lineups') drawDepth(); });
     });
+    wrap.append(holder, note(league === 'nfl'
+      ? 'Formations come from team depth charts (Sleeper, then ESPN), not the official game-day list, so expect a few changes.'
+      : 'These are expected lineups from depth charts, not the official game-day list. They fill in with the real starters once the feed posts them.'));
     return wrap;
   }
 
