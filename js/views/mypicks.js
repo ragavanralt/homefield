@@ -1,7 +1,9 @@
 // Live: everything you have riding right now, with a live bar for each pick whose game has started.
 import { h, poll } from '../ui.js';
 import { pageHead } from '../components.js';
-import { openBets, getBank } from '../store.js';
+import { openBets, getBank, getState } from '../store.js';
+import { betCard as doneCard } from '../bankroll.js';
+import { recap } from './duels.js';
 import * as soc from '../social.js';
 import { liveLine, legCard } from '../cardlive.js';
 import { fmt, dayTime, add, loader } from '../social-ui.js';
@@ -31,6 +33,7 @@ export async function render(root) {
     let f = null;
     if (soc.enabled() && soc.signedIn()) f = await soc.daily().catch(() => null);
     const mineDaily = f ? (f.cards || []).filter((c) => c.mine && !c.result) : [];
+    const done = Object.values(getState().bets).filter((b) => b.status !== 'pending').sort((a, b) => (b.settledTs || b.ts || 0) - (a.settledTs || a.ts || 0)).slice(0, 15);
     host.replaceChildren();
     add(host,
       h('section', { class: 'stack' }, h('h2', { class: 'card-h' }, 'Your bets', h('small', null, `${bets.length} open · ${fmt(getBank().coins)} coins`)),
@@ -39,7 +42,10 @@ export async function render(root) {
         mineDaily.length ? mineDaily.map((c) => h('article', { class: 'card dcard', 'data-card': c.id },
           h('div', { class: 'dc-t' }, h('b', null, c.title), h('small', null, `You took ${c.line != null && c.kind !== 'winner' ? `${c.mine === 'a' ? c.a : c.b} ${c.line}` : c.mine === 'a' ? c.a : c.b}`)),
           liveLine(c) || h('small', { class: 'muted' }, `Starts ${dayTime(c.start_at)}`)))
-          : h('p', { class: 'muted' }, 'No Daily Five picks waiting on a game.'), h('a', { href: '#/daily' }, 'Open the Daily Five')) : null);
+          : h('p', { class: 'muted' }, 'No Daily Five picks waiting on a game.'), h('a', { href: '#/daily' }, 'Open the Daily Five')) : null,
+      h('section', { class: 'stack' }, h('h2', { class: 'card-h' }, 'Settled', h('small', null, 'latest results')),
+        done.length ? h('div', { class: 'betgrid' }, done.map(doneCard)) : h('p', { class: 'muted' }, 'Nothing settled yet.'),
+        (() => { const a = f && recap(f.cards || [], 'Daily Five today'), b = f && recap(f.prev || [], 'Daily Five yesterday'); return a || b ? h('div', { class: 'card' }, a, b) : null; })()));
   };
   await paint();
   const stop = poll(paint, 120000);

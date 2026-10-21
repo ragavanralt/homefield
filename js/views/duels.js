@@ -149,7 +149,7 @@ const lgTag = (c) => (c.league ? h('span', { class: 'lg-tag' }, String(c.league)
 
 /* -------------------------------------------------------------- daily five */
 /** a plain list of how each of your picks ended, with the real number */
-function recap(cards, title) {
+export function recap(cards, title) {
   const mine = cards.filter((c) => c.mine && (c.result === 'win' || c.result === 'loss' || c.result === 'push'));
   if (!mine.length) return null;
   const right = mine.filter((c) => c.result === 'win').length;
