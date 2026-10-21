@@ -129,6 +129,7 @@ store.clearSlip ? store.clearSlip() : null;
 app().querySelector('#scope-mine').click(); await sleep(500); app().querySelector('#scope-all').click(); await sleep(500); ok('all / my teams switch');
 assert.ok(/Parlay|parlay/.test(app().textContent)); ok('open bets listed');
 app().querySelector('#daily').click(); await sleep(20); assert.ok(store.getState().bank.coins > 1000 - 50); ok('daily bonus');
+text = await visit('#/mypicks', { wait: 400 }); assert.ok(app().querySelector('.live-bet'), 'an open bet shows on Live picks'); assert.ok(/Live picks/.test(text)); ok('Live picks page lists open bets');
 // settlement end to end: bets on finished game 1002 (final 3-2, home TB... home team wins)
 {
   const { settleAll } = await import('../js/settle.js');

@@ -783,3 +783,8 @@ html { background: var(--bg); }
 .crew-tabs { margin: 4px 0 12px; }
 .crew-pane { display: flex; flex-direction: column; gap: 14px; }
 .daily-link { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.live-bet .bet-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.live-bet .bet-who { display: flex; flex-direction: column; }
+.live-leg { padding-top: 8px; border-top: 1px solid var(--line); }
+.live-leg .row { display: flex; gap: 10px; align-items: flex-start; }
+.live-leg.won .lm { color: #22c55e; } .live-leg.lost .lm { color: #ef4444; }
