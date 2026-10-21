@@ -116,3 +116,14 @@ export async function announceDaily() {
   toast(`Daily Five: ${right} right, ${fresh.length - right} wrong. ${fresh.length === 1 ? finalText(first) : 'Open Duels for the breakdown.'}`);
   try { localStorage.setItem(SEEN, JSON.stringify([...seen, ...fresh.map((c) => c.id)].slice(-60))); } catch (e) { /* fine */ }
 }
+
+/** a bet leg as the kind of card the live bar understands */
+export function legCard(l) {
+  const base = { id: l.key, league: l.league, game_id: l.gameId, locked: new Date(l.date).getTime() <= Date.now(), status: 'open' };
+  if (l.kind === 'ml') {
+    if (l.side === 'draw') return null;
+    return { ...base, kind: 'winner', a: l.home.abbr, b: l.away.abbr, mine: l.side === 'home' ? 'a' : 'b' };
+  }
+  if (l.kind === 'prop' && l.prop) return { ...base, kind: 'player', line: l.prop.line, a: 'Over', b: 'Under', mine: l.prop.dir === 'over' ? 'a' : 'b', meta: { playerId: l.prop.playerId, name: l.prop.name, label: l.prop.label, box: l.prop.box } };
+  return null;
+}

@@ -4,6 +4,7 @@ import { getState, getBank, claimDaily, dailyReady, canRescue, rescue, onSlipCha
 import { levelFor, xpForLevel, rankFor, streakBoost, betStats, american, fmtX } from './bets.js';
 import { renderAvatar, syncUnlocks } from './avatar.js';
 import { fmtDay, fmtTime } from './util.js';
+import { liveLine, legCard } from './cardlive.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
@@ -43,7 +44,7 @@ export function betCard(b) {
       h('span', { class: 'pill ' + b.status }, b.status === 'won' ? `Won +${fmt(b.payout - b.stake)}` : b.status === 'lost' ? `Lost ${fmt(b.stake)}` : b.status === 'void' ? 'Refunded' : 'Open')),
     h('ul', { class: 'bet-legs' }, b.legs.map((l) => h('li', { class: l.result },
       h('span', { class: 'ico' }, ICON[l.result] || '•'),
-      h('div', null, h('div', null, l.label), h('small', null, `${l.away.abbr} @ ${l.home.abbr}${l.result === 'pending' && l.date ? ' · ' + fmtDay(l.date) + ' ' + fmtTime(l.date) : ''}`)),
+      h('div', { class: 'leg-main' }, h('div', null, l.label), h('small', null, `${l.away.abbr} @ ${l.home.abbr}${l.result === 'pending' && l.date ? ' · ' + fmtDay(l.date) + ' ' + fmtTime(l.date) : ''}`), l.result === 'pending' && b.status === 'pending' && legCard(l) ? liveLine(legCard(l)) : null),
       h('span', { class: 'lo' }, american(l.dec))))),
     h('div', { class: 'bet-f' }, h('span', null, `Stake ${fmt(b.stake)}`), h('span', null, pend ? `To collect ${fmt(potential)}` : b.status === 'won' ? `Paid ${fmt(b.payout)}${b.boost ? ` (incl. +${Math.round(b.boost * 100)}% streak boost)` : ''}` : '')));
 }

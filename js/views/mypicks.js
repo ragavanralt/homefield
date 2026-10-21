@@ -3,19 +3,9 @@ import { h, poll } from '../ui.js';
 import { pageHead } from '../components.js';
 import { openBets, getBank } from '../store.js';
 import * as soc from '../social.js';
-import { liveLine } from '../cardlive.js';
+import { liveLine, legCard } from '../cardlive.js';
 import { fmt, dayTime, add, loader } from '../social-ui.js';
 
-/** a bet leg as the kind of card the live bar understands */
-function legCard(l) {
-  const base = { id: l.key, league: l.league, game_id: l.gameId, locked: new Date(l.date).getTime() <= Date.now(), status: 'open' };
-  if (l.kind === 'ml') {
-    if (l.side === 'draw') return null;
-    return { ...base, kind: 'winner', a: l.home.abbr, b: l.away.abbr, mine: l.side === 'home' ? 'a' : 'b' };
-  }
-  if (l.kind === 'prop' && l.prop) return { ...base, kind: 'player', line: l.prop.line, a: 'Over', b: 'Under', mine: l.prop.dir === 'over' ? 'a' : 'b', meta: { playerId: l.prop.playerId, name: l.prop.name, label: l.prop.label, box: l.prop.box } };
-  return null;
-}
 const mark = (r) => (r === 'won' ? '✓' : r === 'lost' ? '✗' : r === 'push' || r === 'void' ? '–' : '•');
 
 function betCard(b) {
