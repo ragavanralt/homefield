@@ -1,34 +1,34 @@
 {
   "v": 1,
-  "updated": "2026-10-20",
+  "updated": "2026-10-21",
   "daily": {
-    "date": "2026-10-20",
+    "date": "2026-10-21",
     "quests": [
       {
-        "id": "d2026-10-20-1",
-        "metric": "daily_claimed",
-        "target": 1,
-        "coins": 50,
-        "title": "Claim your daily bonus"
-      },
-      {
-        "id": "d2026-10-20-2",
-        "metric": "games_marked",
-        "target": 1,
+        "id": "d2026-10-21-1",
+        "metric": "games_opened",
+        "target": 3,
         "coins": 60,
-        "title": "Mark a game as watched"
+        "title": "Open 3 different games"
       },
       {
-        "id": "d2026-10-20-3",
+        "id": "d2026-10-21-2",
+        "metric": "bets_placed",
+        "target": 1,
+        "coins": 70,
+        "title": "Place a bet"
+      },
+      {
+        "id": "d2026-10-21-3",
         "metric": "bets_won",
-        "target": 2,
-        "coins": 300,
-        "title": "Win 2 bets"
+        "target": 1,
+        "coins": 150,
+        "title": "Win a bet"
       }
     ],
     "deal": {
-      "itemId": "workjacket",
-      "pct": 30
+      "itemId": "henley",
+      "pct": 25
     }
   },
   "weekly": {
