@@ -240,8 +240,24 @@ function normBox(j) {
   return { teams, players };
 }
 
+// A soccer player's match so far, from the roster stats or, failing that, the roster's own play list.
+function matchMarks(x) {
+  const st = {};
+  for (const s of x.stats || []) st[String(s.abbreviation || s.name || '').toUpperCase()] = Number(s.value ?? s.displayValue) || 0;
+  const plays = Array.isArray(x.plays) ? x.plays : [];
+  const count = (k) => plays.filter((p) => p && p[k]).length;
+  return {
+    goals: st.G ?? st.TOTALGOALS ?? count('didScore'),
+    assists: st.A ?? st.GOALASSISTS ?? count('didAssist'),
+    yellow: st.YC ?? st.YELLOWCARDS ?? count('yellowCard'),
+    red: st.RC ?? st.REDCARDS ?? count('redCard'),
+  };
+}
+
 function mapRoster(x) {
   return {
+    ...matchMarks(x),
+    place: Number(x.formationPlace) || 0,
     id: String(x.athlete?.id || ''),
     name: x.athlete?.displayName || x.athlete?.fullName || x.athlete?.shortName || '',
     jersey: x.jersey || x.athlete?.jersey || '',
@@ -266,7 +282,10 @@ function normLineups(j, box) {
   for (const p of box.players) {
     const starters = [];
     for (const g of p.groups) for (const r of g.rows) if (r.starter) starters.push({ ...r, group: g.name });
-    if (starters.length) out.push({ teamId: p.teamId, abbr: p.abbr, starters, bench: [] });
+    const seen = new Set(starters.map((r) => r.id));
+    const bench = [];
+    for (const g of p.groups) for (const r of g.rows) if (!r.starter && !r.dnp && r.id && !seen.has(r.id)) { seen.add(r.id); bench.push({ ...r, group: g.name }); }
+    if (starters.length) out.push({ teamId: p.teamId, abbr: p.abbr, starters, bench });
   }
   return out.length ? { kind: 'starters', teams: out } : null;
 }

@@ -5,6 +5,7 @@ import { getState, myTeamIn, markWatched, isWatched, track } from '../store.js';
 import { LEAGUES, groupOf, isSoccer, leagueLabel } from '../leagues.js';
 import { getSummary, rememberGame, recallGame, getDepthChart } from '../espn.js';
 import { getSleeperLineup } from '../sleeper.js';
+import { soccerSpots, mlbSpots, nbaSpots, nhlSpots, hockeyRole, shortName } from '../lineup-layout.js';
 import { statusInfo, watchBlock } from '../components.js';
 import { marketTabs } from '../markets.js';
 import { betCard } from '../bankroll.js';
@@ -333,6 +334,62 @@ export async function render(root, { league, id }) {
   }
 
   /* ---------- lineups ---------- */
+  // Field markings, drawn once per kind. 100 x 100 viewBox stretched to the box.
+  const LINES = {
+    pitch: '<rect x="2" y="1.5" width="96" height="97" /><line x1="2" y1="50" x2="98" y2="50" /><ellipse cx="50" cy="50" rx="13" ry="8.7" /><rect x="22" y="1.5" width="56" height="15" /><rect x="36" y="1.5" width="28" height="5.2" /><rect x="22" y="83.5" width="56" height="15" /><rect x="36" y="93.3" width="28" height="5.2" />',
+    diamond: '<path d="M50 94 L2 46 A68 68 0 0 1 98 46 Z" /><path d="M50 88 L74 64 L50 40 L26 64 Z" /><circle cx="50" cy="60" r="3.5" />',
+    court: '<rect x="2" y="2" width="96" height="96" /><rect x="34" y="62" width="32" height="36" /><circle cx="50" cy="62" r="12" /><path d="M8 98 L8 78 A44 44 0 0 1 92 78 L92 98" /><circle cx="50" cy="91" r="2.5" />',
+    rink: '<rect x="2" y="2" width="96" height="96" rx="14" /><line x1="2" y1="4" x2="98" y2="4" class="red" /><line x1="2" y1="38" x2="98" y2="38" class="blue" /><line x1="2" y1="90" x2="98" y2="90" class="red" /><path d="M42 90 A8 6 0 0 1 58 90" /><circle cx="26" cy="66" r="11" /><circle cx="74" cy="66" r="11" />',
+  };
+  function fieldBox(kind, spots, colorOf) {
+    const box = h('div', { class: 'lu-field lu-' + kind, role: 'img', 'aria-label': spots.map((p) => `${p.pos || ''} ${p.name}`.trim()).join(', ') });
+    const marks = h('div', { class: 'lu-lines', 'aria-hidden': 'true' });
+    marks.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${LINES[kind]}</svg>`;
+    box.append(marks);
+    for (const p of spots) {
+      const sk = colorOf(p);
+      const tags = [];
+      for (let i = 0; i < Math.min(p.goals || 0, 3); i++) tags.push(h('i', { class: 'lu-goal', title: 'Goal' }, '⚽'));
+      if (p.red) tags.push(h('i', { class: 'lu-card red', title: 'Red card' }));
+      else if (p.yellow) tags.push(h('i', { class: 'lu-card', title: 'Yellow card' }));
+      if (p.subbedOut) tags.push(h('i', { class: 'lu-sub', title: 'Subbed off' }, '↓'));
+      box.append(h('div', { class: 'lu-spot' + (p.subbedOut ? ' off' : ''), style: { left: p.x + '%', top: p.y + '%' } },
+        h('span', { class: 'lu-dot', style: { background: sk.t1, color: sk.tink, borderColor: sk.t2 } }, p.jersey || (p.pos || '').slice(0, 2) || '·',
+          tags.length ? h('span', { class: 'lu-tags' }, tags) : null),
+        h('span', { class: 'lu-name' }, shortName(p.name)),
+        p.assists ? h('small', { class: 'lu-ast' }, p.assists === 1 ? 'Assist' : p.assists + ' assists') : null));
+    }
+    return box;
+  }
+  const skinOf = (side) => (side ? skinFromColors(game[side].color, game[side].alt) : skinFromColors('', ''));
+  const sideOf = (t) => (t.teamId === game.home.id ? 'home' : t.teamId === game.away.id ? 'away' : null);
+  const person = (p) => h('li', { class: 'pl-row' }, face(p, league, 34), h('span', { class: 'jn' }, p.jersey ? '#' + p.jersey : ''), h('span', { class: 'pn' }, p.name),
+    p.subbedIn ? h('small', { class: 'lu-in' }, '↑ on') : null, p.injury ? h('small', { class: 'inj' }, String(p.injury)) : null, p.pos ? h('small', null, p.pos) : null);
+  const teamHead = (side, fallback, extra) => h('div', { class: 'ldr-h' }, side ? crest(game[side], 26) : null, h('span', null, side ? game[side].name : fallback), extra ? h('small', null, ' · ' + extra) : null);
+  const groupList = (name, list) => (list.length ? h('div', null, h('h4', { class: 'dc-h' }, name), h('ul', { class: 'pl-list' }, list.map(person))) : null);
+
+  // One team's drawing for the US sports, or null when there is not enough to draw.
+  function teamField(starters, side) {
+    const colorOf = () => skinOf(side);
+    if (league === 'mlb') {
+      const bat = starters.filter((p) => p.group !== 'pitching');
+      const pit = starters.find((p) => p.group === 'pitching') || starters.find((p) => /^(SP|RP|P)$/i.test(p.pos || ''));
+      const m = mlbSpots(bat.filter((p) => p !== pit), pit);
+      if (m.spots.length < 5) return null;
+      return [fieldBox('diamond', m.spots, colorOf),
+        h('div', null, h('h4', { class: 'dc-h' }, 'Batting order'), h('ol', { class: 'pl-list lu-order' }, m.order.map((p) => person(p))))];
+    }
+    if (league === 'nba') {
+      const spots = nbaSpots(starters);
+      return spots.length === 5 ? [fieldBox('court', spots, colorOf)] : null;
+    }
+    if (league === 'nhl') {
+      const spots = nhlSpots(starters);
+      return spots.length >= 5 ? [fieldBox('rink', spots, colorOf)] : null;
+    }
+    return null;
+  }
+
   function lineups() {
     const L = data.lineups;
     const wrap = h('div', { class: 'stack gcols' });
@@ -342,13 +399,14 @@ export async function render(root, { league, id }) {
       const holder = h('div', { class: 'stack gcols' });
       const drawDepth = () => {
         clear(holder);
-        const person = (p) => h('li', { class: 'pl-row' }, face(p, league, 34), h('span', { class: 'jn' }, p.jersey ? '#' + p.jersey : ''), h('span', { class: 'pn' }, p.name), p.injury ? h('small', { class: 'inj' }, String(p.injury)) : null, p.pos ? h('small', null, p.pos) : null);
         for (const sd of sides) {
           const res = depthCache.get(`${league}:${game[sd].id}`);
-          holder.append(card(null, h('div', { class: 'ldr-h' }, crest(game[sd], 26), h('span', null, game[sd].name), h('small', null, ' · expected')),
+          const all = res ? res.groups.flatMap((g) => g.players) : [];
+          const drawn = res && league !== 'nfl' ? teamField(all, sd) : null;
+          holder.append(card(null, teamHead(sd, '', 'expected'),
             res === undefined ? loading('Loading expected lineup')
               : !res ? note('No expected lineup is available for this team yet.')
-                : [h('small', { class: 'muted' }, `Source: ${res.src}`), ...res.groups.map((grp) => h('div', null, h('h4', { class: 'dc-h' }, grp.name), h('ul', { class: 'pl-list' }, grp.players.map(person))))]));
+                : [h('small', { class: 'muted' }, `Source: ${res.src}`), ...(drawn || res.groups.map((grp) => groupList(grp.name, grp.players)))]));
         }
       };
       drawDepth();
@@ -369,14 +427,43 @@ export async function render(root, { league, id }) {
       wrap.append(card('Starting lineups', note('Lineups are not posted yet. Most feeds publish them shortly before the game starts, and this page fills in by itself.')));
       return wrap;
     }
-    const ordered = [...L.teams].sort((a, b) => sides.indexOf(a.teamId === game.home.id ? 'home' : 'away') - sides.indexOf(b.teamId === game.home.id ? 'home' : 'away'));
+    const ordered = [...L.teams].sort((a, b) => sides.indexOf(sideOf(a)) - sides.indexOf(sideOf(b)));
+
+    if (isSoccer(league)) {
+      const home = ordered.find((t) => sideOf(t) === 'home') || ordered[0];
+      const away = ordered.find((t) => t !== home);
+      if (home && away && home.starters.length >= 7 && away.starters.length >= 7) {
+        const spots = [
+          ...soccerSpots(away.starters, away.formation, 'top').map((p) => ({ ...p, side: sideOf(away) })),
+          ...soccerSpots(home.starters, home.formation, 'bottom').map((p) => ({ ...p, side: sideOf(home) })),
+        ];
+        const label = (t) => h('div', { class: 'lu-team' }, crest(game[sideOf(t)] || { abbr: t.abbr }, 22), h('b', null, game[sideOf(t)]?.name || t.abbr), t.formation ? h('small', null, t.formation) : null);
+        wrap.append(card('On the pitch', label(away), fieldBox('pitch', spots, (p) => skinOf(p.side)), label(home),
+          game.state === 'in' ? h('p', { class: 'muted small-note' }, 'Goals, cards and subs update as the match goes on.') : null));
+        for (const t of ordered) {
+          const used = t.bench.filter((p) => p.subbedIn);
+          if (!t.bench.length) continue;
+          wrap.append(card(null, teamHead(sideOf(t), t.abbr, t.formation),
+            groupList('Came on', used), groupList(used.length ? 'Unused subs' : 'Bench', t.bench.filter((p) => !p.subbedIn))));
+        }
+        return wrap;
+      }
+    }
+
     ordered.forEach((t) => {
-      const side = t.teamId === game.home.id ? 'home' : t.teamId === game.away.id ? 'away' : null;
-      const person = (p) => h('li', { class: 'pl-row' }, face(p, league, 34), h('span', { class: 'jn' }, p.jersey ? '#' + p.jersey : ''), h('span', { class: 'pn' }, p.name), p.pos ? h('small', null, p.pos) : null);
-      wrap.append(card(null,
-        h('div', { class: 'ldr-h' }, side ? crest(game[side], 26) : null, h('span', null, side ? game[side].name : t.abbr), t.formation ? h('small', null, ' · ' + t.formation) : null),
-        h('ul', { class: 'pl-list' }, t.starters.map(person)),
-        t.bench && t.bench.length ? h('details', null, h('summary', null, `Bench (${t.bench.length})`), h('ul', { class: 'pl-list' }, t.bench.map(person))) : null));
+      const side = sideOf(t);
+      const drawn = teamField(t.starters, side);
+      let rest;
+      if (league === 'nhl') {
+        const everyone = [...t.starters, ...t.bench];
+        rest = [['Forwards', 'F'], ['Defence', 'D'], ['Goalies', 'G']].map(([n, r]) => groupList(n, everyone.filter((p) => hockeyRole(p.pos) === r)));
+        rest = [h('details', { open: !drawn }, h('summary', null, `Dressed (${everyone.length})`), rest)];
+      } else {
+        rest = [drawn && league === 'mlb' ? null : h('ul', { class: 'pl-list' }, t.starters.map(person)),
+          t.bench && t.bench.length ? h('details', null, h('summary', null, `Bench (${t.bench.length})`), h('ul', { class: 'pl-list' }, t.bench.map(person))) : null];
+        if (drawn && league !== 'mlb') rest[0] = null;
+      }
+      wrap.append(card(null, teamHead(side, t.abbr, t.formation), ...(drawn || []), ...rest));
     });
     return wrap;
   }

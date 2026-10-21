@@ -604,6 +604,66 @@ import * as S from '../js/specials.js';
   });
 }
 
+// ---- lineups on the field ----
+{
+  const LL = await import('../js/lineup-layout.js');
+  const P = (name, pos, place) => ({ name, pos, place, jersey: String(place) });
+  // Arsenal-style 4-2-3-1 the way ESPN spells the spots
+  const xi = [P('Keeper', 'G', 1), P('Right Back', 'RB', 2), P('Left Back', 'LB', 3), P('Centre R', 'CD-R', 5), P('Centre L', 'CD-L', 6), P('Holder R', 'DM-R', 4), P('Holder L', 'DM-L', 8),
+    P('Right Wing', 'RM', 7), P('Ten', 'AM', 10), P('Left Wing', 'LM', 11), P('Nine', 'F', 9)];
+  t('soccer: formation splits the XI into lines, back line first, left to right', () => {
+    const { gk, lines } = LL.soccerLines(xi, '4-2-3-1');
+    assert.equal(gk.name, 'Keeper');
+    assert.deepEqual(lines.map((l) => l.length), [4, 2, 3, 1]);
+    assert.deepEqual(lines[0].map((p) => p.name), ['Left Back', 'Centre L', 'Centre R', 'Right Back']);
+    assert.deepEqual(lines[2].map((p) => p.name), ['Left Wing', 'Ten', 'Right Wing']);
+  });
+  t('soccer: no formation falls back to one line per kind of spot', () => {
+    const { lines } = LL.soccerLines(xi, '');
+    assert.deepEqual(lines.map((l) => l.length), [4, 2, 2, 1, 1]);
+  });
+  t('soccer: bottom team attacks up, top team attacks down and is mirrored', () => {
+    const bot = LL.soccerSpots(xi, '4-2-3-1', 'bottom');
+    const top = LL.soccerSpots(xi, '4-2-3-1', 'top');
+    const at = (s, n) => s.find((p) => p.name === n);
+    assert.ok(at(bot, 'Keeper').y > 90 && at(bot, 'Nine').y > 50 && at(bot, 'Nine').y < at(bot, 'Ten').y);
+    assert.ok(at(top, 'Keeper').y < 10 && at(top, 'Nine').y < 50);
+    assert.ok(at(bot, 'Left Back').x < 50 && at(top, 'Left Back').x > 50);
+    assert.ok([...bot, ...top].every((p) => p.x > 0 && p.x < 100 && p.y > 0 && p.y < 100));
+  });
+  t('baseball: fielders on their spots, DH kept in the order only', () => {
+    const bats = [P('Lead Off', 'CF', 1), P('Two', 'SS', 2), P('Big Bat', 'DH', 3), P('Four', '1B', 4), P('Catcher', 'C', 5)];
+    const m = LL.mlbSpots(bats, P('Ace', 'SP', 0));
+    assert.equal(m.spots.find((p) => p.name === 'Ace').pos, 'P');
+    assert.equal(m.spots.length, 5);
+    assert.deepEqual(m.extra.map((p) => p.name), ['Big Bat']);
+    assert.deepEqual(m.order.map((p) => p.name), bats.map((p) => p.name));
+    assert.ok(m.spots.find((p) => p.name === 'Catcher').y > m.spots.find((p) => p.name === 'Ace').y);
+  });
+  t('basketball: guards up top, big man down low', () => {
+    const s = LL.nbaSpots([P('Centre', 'C', 1), P('Guard', 'G', 2), P('Fwd', 'F', 3), P('Guard 2', 'G', 4), P('Fwd 2', 'F', 5)]);
+    assert.equal(s.length, 5);
+    assert.ok(s.find((p) => p.name === 'Guard').y < s.find((p) => p.name === 'Centre').y);
+  });
+  t('hockey: three forwards, two defence, goalie in net', () => {
+    const s = LL.nhlSpots([P('G1', 'G', 1), P('D1', 'D', 2), P('C1', 'C', 3), P('D2', 'D', 4), P('RW1', 'RW', 5), P('LW1', 'LW', 6), P('Extra', 'C', 7)]);
+    assert.equal(s.length, 6);
+    assert.deepEqual(s.slice(0, 3).map((p) => p.name), ['LW1', 'C1', 'RW1']);
+    assert.equal(s[5].name, 'G1');
+    assert.equal(LL.shortName('Bukayo Saka'), 'Saka');
+  });
+}
+t('soccer lineups carry formation spot, goals and cards', () => {
+  const j = F.summary('eng.1', 778, { state: 'in', hs: 1, as: 0, detail: "55'", clock: "55'", period: 2 });
+  j.rosters[0].roster[0].formationPlace = '9';
+  j.rosters[0].roster[0].stats = [{ abbreviation: 'G', value: 1 }, { abbreviation: 'YC', value: 1 }];
+  j.rosters[1].roster[0].plays = [{ didScore: true }, { didAssist: true }];
+  const L = normSummary(j, 'eng.1', 778).lineups;
+  const a = L.teams[0].starters[0], b = L.teams[1].starters[0];
+  assert.equal(a.place, 9); assert.equal(a.goals, 1); assert.equal(a.yellow, 1); assert.equal(a.red, 0);
+  assert.equal(b.goals, 1); assert.equal(b.assists, 1);
+});
+
 // ---- Sleeper lineups ----
 {
   const sl = await import('../js/sleeper.js');
