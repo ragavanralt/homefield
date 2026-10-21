@@ -858,7 +858,10 @@ begin
   select * into pr from profiles where id = u;
   return jsonb_build_object('day', today, 'coins_per_win', x_cfg_int('solo_coins'), 'streak', pr.solo_streak, 'best', pr.solo_best, 'last', pr.solo_last,
     'cards', coalesce((select jsonb_agg(x_card_json(c, u) || jsonb_build_object('mine', sp.side, 'result', sp.result) order by f.pos)
-                       from daily_five f join cards c on c.id = f.card_id left join solo_picks sp on sp.card_id = c.id and sp.user_id = u where f.day = today), '[]'::jsonb));
+                       from daily_five f join cards c on c.id = f.card_id left join solo_picks sp on sp.card_id = c.id and sp.user_id = u where f.day = today), '[]'::jsonb),
+    'prev_day', today - 1,
+    'prev', coalesce((select jsonb_agg(x_card_json(c, u) || jsonb_build_object('mine', sp.side, 'result', sp.result) order by f.pos)
+                      from daily_five f join cards c on c.id = f.card_id left join solo_picks sp on sp.card_id = c.id and sp.user_id = u where f.day = today - 1), '[]'::jsonb));
 end $$;
 
 create or replace function hf_daily_pick(p_token text, p_card uuid, p_side text) returns jsonb language plpgsql security definer set search_path = public, pg_temp as $$

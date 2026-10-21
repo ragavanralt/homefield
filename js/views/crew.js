@@ -92,21 +92,33 @@ export async function render(root, params = {}) {
         h('span', null, 'Show my recent bets to the crew (they can mirror them)')));
   }
 
+  let tab = 'table';
   function body(el) {
     const run = loader(el, () => soc.crew(), (d) => {
       const ms = d.members.slice();
-      add(el,
-        awards(ms),
-        h('section', { class: 'card' },
+      const panels = {
+        table: () => [awards(ms), h('section', { class: 'card' },
           h('h2', { class: 'card-h' }, 'The table', h('small', null, 'tap a column to re-rank')),
           tableBox(ms),
-          h('p', { class: 'muted' }, 'Records come from each person\'s own app, so it is for fun.')),
-        feed(ms),
-        wall(ms),
-        h('section', { class: 'card' },
+          h('p', { class: 'muted' }, 'Records come from each person\'s own app, so it is for fun.'))],
+        bets: () => [feed(ms)],
+        wall: () => [wall(ms)],
+        fits: () => [h('section', { class: 'card' },
           h('h2', { class: 'card-h' }, 'Fit gallery', h('small', null, "what everyone's wearing right now")),
-          h('div', { class: 'fit-gallery crew-fits' }, ms.map(fitCard))),
-        soc.me().owner ? owner(d.members) : null);
+          h('div', { class: 'fit-gallery crew-fits' }, ms.map(fitCard)))],
+        owner: () => [owner(d.members)],
+      };
+      const tabs = [['table', 'Table'], ['bets', 'Bets'], ['wall', 'Wall'], ['fits', 'Fits'], ...(soc.me().owner ? [['owner', 'Owner']] : [])];
+      if (!panels[tab]) tab = 'table';
+      const bar = h('div', { class: 'seg crew-tabs', role: 'tablist' });
+      const pane = h('div', { class: 'crew-pane' });
+      const paint = () => {
+        add(clear(bar), tabs.map(([id, label]) => h('button', { type: 'button', role: 'tab', class: 'seg-b' + (tab === id ? ' on' : ''), 'aria-selected': tab === id ? 'true' : 'false', 'data-tab': id, onclick: () => { tab = id; paint(); } }, label)));
+        clearInterval(timer);
+        add(clear(pane), panels[tab]());
+      };
+      paint();
+      add(el, bar, pane);
     });
     run();
   }

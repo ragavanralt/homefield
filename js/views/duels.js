@@ -3,6 +3,7 @@ import { h, clear, toast, poll } from '../ui.js';
 import * as soc from '../social.js';
 import { getBank } from '../store.js';
 import { gate, claimBar, fmt, dayTime, loader, actionBtn, errText, sideBtn, bubble, add } from '../social-ui.js';
+import { liveLine, finalText } from '../cardlive.js';
 
 const LEN = { game: ['One game', '3 cards from a single game'], day: ['One day', '5 cards from the day\'s slate'], week: ['One week', '10 cards over 7 days'] };
 const STAKES = [25, 50, 100, 250];
@@ -31,7 +32,7 @@ function list(host, vs) {
   const load = (spin) => {
     const el = top.querySelector('.duel-main');
     if (!el) return;
-    return loader(el, async () => ({ d: await soc.duels(), f: await soc.daily().catch(() => null) }), ({ d, f }) => {
+    return loader(el, async () => ({ d: await soc.duels() }), ({ d }) => {
       add(el,
         h('div', { class: 'duel-head' },
           h('div', null, h('b', null, `${d.record.w}–${d.record.l}${d.record.t ? `–${d.record.t}` : ''}`), h('small', null, ' duel record')),
@@ -39,7 +40,7 @@ function list(host, vs) {
         d.open.length ? h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Challenges for you', h('small', null, `${d.open.length}`)), h('div', { class: 'stack' }, d.open.map(row))) : null,
         h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Your duels'),
           d.mine.length ? h('div', { class: 'stack' }, d.mine.map(row)) : h('p', { class: 'muted' }, 'No duels yet. Start one and send your friend a heads up.')),
-        f ? daily(f, () => load(false)) : null);
+        h('a', { class: 'card daily-link', href: '#/daily' }, h('b', null, 'Daily Five'), h('small', null, 'your five picks for today and how yesterday went  →')));
     })(spin === false ? true : false);
   };
   paint();
@@ -140,13 +141,27 @@ function cardRow(c, d, oppName, onNew) {
   return h('article', { class: `dcard ${ok}${c.status === 'void' ? ' void' : ''}`, 'data-card': c.id },
     h('div', { class: 'dc-t' }, h('b', null, lgTag(c), c.title), h('small', null, c.status === 'final' ? (c.outcome === 'push' ? 'Push' : c.outcome === 'a' || c.outcome === 'b' ? `Result: ${lab(c.outcome)}${c.actual != null ? ` (${c.actual})` : ''}` : 'No result') : c.status === 'void' ? 'Void' : c.locked ? 'Locked' : `Locks ${dayTime(c.start_at)}`)),
     h('div', { class: 'dc-s' }, sideBtn(lab('a'), mineSide === 'a', !canPick, () => pick('a')), sideBtn(lab('b'), mineSide === 'b', !canPick, () => pick('b'))),
+    liveLine({ ...c, mine: mineSide }),
     d.opponent && d.status !== 'open' ? h('small', { class: 'dc-o' }, theirs ? `${oppName} took ${lab(theirs)}` : c.their_made ? `${oppName} has picked` : `${oppName} has not picked`) : null);
 }
 
 const lgTag = (c) => (c.league ? h('span', { class: 'lg-tag' }, String(c.league).toUpperCase()) : null);
 
 /* -------------------------------------------------------------- daily five */
-function daily(f, reload) {
+/** a plain list of how each of your picks ended, with the real number */
+function recap(cards, title) {
+  const mine = cards.filter((c) => c.mine && (c.result === 'win' || c.result === 'loss' || c.result === 'push'));
+  if (!mine.length) return null;
+  const right = mine.filter((c) => c.result === 'win').length;
+  const lab = (c) => (c.line != null && c.kind !== 'winner' ? `${c.mine === 'a' ? c.a : c.b} ${c.line}` : c.mine === 'a' ? c.a : c.b);
+  const name = (c) => (c.kind === 'player' && c.meta && c.meta.name ? `${c.meta.name} ${c.meta.label || ''}`.trim() : c.title);
+  return h('div', { class: 'recap' },
+    h('h3', null, `${title}: ${right} of ${mine.length} right`),
+    h('ul', null, mine.map((c) => h('li', { class: c.result }, h('span', { class: 'lm', 'aria-hidden': 'true' }, c.result === 'win' ? '✓' : c.result === 'loss' ? '✗' : '–'),
+      h('div', null, h('b', null, name(c)), h('small', null, `You took ${lab(c)}`), h('small', { class: 'lv-final' }, finalText(c)))))));
+}
+
+export function daily(f, reload) {
   const sec = h('section', { class: 'card daily' });
   const right = f.cards.filter((c) => c.result === 'win').length;
   add(sec, h('h2', { class: 'card-h' }, 'Daily Five', h('small', null, `practice · ${f.coins_per_win} coins a win · streak ${f.streak || 0}${f.best ? ` (best ${f.best})` : ''}`)),
@@ -155,8 +170,10 @@ function daily(f, reload) {
       const pick = async (side) => { try { await soc.dailyPick(c.id, side); reload(); } catch (e) { toast(errText(e)); } };
       return h('article', { class: `dcard ${c.result === 'win' ? 'good' : c.result === 'loss' ? 'bad' : ''}`, 'data-card': c.id },
         h('div', { class: 'dc-t' }, h('b', null, lgTag(c), c.title), h('small', null, c.result ? (c.result === 'win' ? 'Right' : c.result === 'loss' ? 'Wrong' : 'No result') : c.locked ? 'Locked' : `Locks ${dayTime(c.start_at)}`)),
-        h('div', { class: 'dc-s' }, sideBtn(lab('a'), c.mine === 'a', c.locked, () => pick('a')), sideBtn(lab('b'), c.mine === 'b', c.locked, () => pick('b'))));
+        h('div', { class: 'dc-s' }, sideBtn(lab('a'), c.mine === 'a', c.locked, () => pick('a')), sideBtn(lab('b'), c.mine === 'b', c.locked, () => pick('b'))),
+        liveLine(c));
     })) : h('p', { class: 'muted' }, 'Today\'s five arrive with the next slate.'),
-    right ? h('p', { class: 'muted' }, `${right} right so far today.`) : null);
+    right ? h('p', { class: 'muted' }, `${right} right so far today.`) : null,
+    recap(f.cards || [], 'Today'), recap(f.prev || [], 'Yesterday'));
   return sec;
 }

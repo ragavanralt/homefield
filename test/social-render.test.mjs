@@ -71,8 +71,9 @@ byText('button', /Join the crew/).click(); await sleep(400);
 assert.match($('#recovery-code').textContent, /^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/); ok('joining shows the recovery code once');
 const ownerCode = $('#recovery-code').textContent;
 $('#code-saved').click(); await sleep(400);
-assert.ok($('.crew-table tr[data-handle="ragavan"]'), 'table row'); assert.ok($('.crew-fits .fit-card[data-handle="ragavan"]'), 'fit card'); ok('crew table and fit gallery show you');
-assert.ok(byText('button', /Make an invite link/), 'owner tools'); ok('owner sees invite tools');
+const tab = async (id) => { $(`[data-tab="${id}"]`).click(); await sleep(250); };
+assert.ok($('.crew-table tr[data-handle="ragavan"]'), 'table row'); await tab('fits'); assert.ok($('.crew-fits .fit-card[data-handle="ragavan"]'), 'fit card'); ok('crew table and fit gallery show you');
+await tab('owner'); assert.ok(byText('button', /Make an invite link/), 'owner tools'); ok('owner sees invite tools');
 
 /* a second person, made through the client, so there is someone to challenge */
 const inv2 = (await soc.makeInvite()).code;
@@ -82,11 +83,11 @@ await soc.logout(); await soc.login('ragavan', ownerCode);
 
 store.update((s) => { s.bank.coins = 1000; });
 text = await visit('#/duels', 250);
-assert.ok($('#duel-new')); assert.match(text, /Daily Five/); assert.ok($$('.daily .dcard').length === 5, 'five daily cards'); ok('duels page lists Daily Five');
+assert.ok($('#duel-new')); assert.ok($('.daily-link'), 'link to the Daily Five'); text = await visit('#/daily', 250); assert.match(text, /Daily Five/); assert.ok($$('.daily .dcard').length === 5, 'five daily cards'); ok('Daily Five has its own page under Pick\'em');
 $$('.daily .dcard')[0].querySelector('.side').click(); await sleep(250);
 assert.ok($('.daily .side.on'), 'daily pick sticks'); ok('a Daily Five pick is saved');
 
-$('#duel-new').click(); await sleep(300);
+text = await visit('#/duels', 250); $('#duel-new').click(); await sleep(300);
 assert.ok($('#d-game'), 'game picker'); assert.ok($('#d-opp')); ok('new duel form loads the slate and the crew');
 type($('#d-opp'), 'bro');
 type($('#d-stake'), '60');
@@ -134,7 +135,7 @@ store.update((s) => { s.avatar.owned.push('curly', 'tank'); s.avatar.eq.top = 't
 await soc.syncNow();
 await soc.logout(); await soc.login('bro', bro.code);
 store.update((s) => { s.avatar.eq.top = 'tee'; s.avatar.eq.hair = 'short'; s.avatar.owned = s.avatar.owned.filter((x) => !['curly', 'tank'].includes(x)); });
-text = await visit('#/crew', 400);
+text = await visit('#/crew', 400); await tab('fits');
 const rc = $('.fit-card[data-handle="ragavan"]');
 assert.ok(rc, 'ragavan card'); assert.ok(rc.querySelector('.avatar.full svg'), 'full body look'); assert.ok(!/bust/.test(rc.querySelector('.avatar').className)); ok('gallery shows the full-body look');
 assert.equal(rc.querySelectorAll('.fit-pick .chip').length, 0, 'only the current fit'); ok('the gallery shows just the current fit');
@@ -155,7 +156,7 @@ store.update((s) => { s.bank.streak = 3; s.bets.mir1 = { id: 'mir1', ts: Date.no
 await soc.syncNow();
 await soc.logout(); await soc.login('bro', bro.code);
 store.clearSlip();
-text = await visit('#/crew', 500);
+text = await visit('#/crew', 500); await tab('bets');
 assert.ok($('.bet-card[data-bet="mir1"]'), 'ragavan\'s bet shows in the crew feed'); assert.match($('.bet-card[data-bet="mir1"]').textContent, /HOM to win/); ok('crew bets feed shows what a member just bet');
 $('.bet-card[data-bet="mir1"] .mirror').click(); await sleep(200);
 assert.equal(store.getState().slip.legs.length, 1, 'only the leg that has not started is copied'); assert.equal(store.getState().slip.legs[0].key, 'g1|ml|home'); assert.equal(store.getState().slip.legs[0].result, 'pending'); ok('mirror copies the open legs onto your slip');
@@ -163,14 +164,14 @@ store.clearSlip();
 store.update((s) => { s.shareBets = false; });
 await soc.syncNow(); await sleep(100);
 // the wall
-text = await visit('#/crew', 500);
+text = await visit('#/crew', 500); await tab('wall');
 $('.wall-in').value = 'who has the Knicks tonight'; $('.crew-wall .wall-form .btn.main').click(); await sleep(600);
 assert.match($('.wall-list').textContent, /Knicks tonight/); ok('posting on the wall shows the post');
 $('.wall-post .btn.like').click(); await sleep(400);
 assert.match($('.wall-post .btn.like').textContent, /1/); ok('cheering a post counts it');
 $('.wall-post .btn.danger').click(); await sleep(400);
 assert.ok(!$('.wall-post'), 'deleted'); ok('you can delete your own post');
-assert.match($('.crew-awards').textContent, /Hottest streak/); ok('awards card shows the streak leader');
+await tab('table'); assert.match($('.crew-awards').textContent, /Hottest streak/); ok('awards card shows the streak leader');
 const th = $('.crew-table th [data-sort="streak"]'); th.click(); assert.ok($('.crew-table th [data-sort="streak"].on'), 'sorted'); ok('tapping a column re-ranks the table');
 
 text = await visit('#/crew', 300);

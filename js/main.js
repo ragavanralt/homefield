@@ -21,6 +21,7 @@ const ROUTES = [
   { re: /^\/quests$/, view: () => import('./views/quests.js'), nav: 'quests', params: () => ({}) },
   { re: /^\/crew$/, view: () => import('./views/crew.js'), nav: 'crew', params: () => ({}) },
   { re: /^\/join\/([^/]+)$/, view: () => import('./views/crew.js'), nav: 'crew', params: (m) => ({ code: decodeURIComponent(m[1]) }) },
+  { re: /^\/daily$/, view: () => import('./views/daily.js'), nav: 'daily', params: () => ({}) },
   { re: /^\/duels$/, view: () => import('./views/duels.js'), nav: 'duels', params: () => ({}) },
   { re: /^\/duels\/vs\/([^/]+)$/, view: () => import('./views/duels.js'), nav: 'duels', params: (m) => ({ vs: decodeURIComponent(m[1]) }) },
   { re: /^\/duels\/([^/]+)$/, view: () => import('./views/duels.js'), nav: 'duels', params: (m) => ({ id: decodeURIComponent(m[1]) }) },
@@ -45,11 +46,11 @@ const lastLeague = () => { try { const v = localStorage.getItem(LAST_KEY); if (T
 const SECTIONS = [
   { id: 'home', label: 'Home', href: () => '#/', subs: [] },
   { id: 'sports', label: 'Sports', href: () => `#/league/${lastLeague()}`, subs: TABS.map((t) => ({ id: t.id, label: t.label, href: `#/league/${t.id}` })) },
-  { id: 'picks', label: "Pick'em", href: () => '#/picks', get subs() { return socialOn() ? [{ id: 'picks', label: "Pick'em", href: '#/picks' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] : []; } },
+  { id: 'picks', label: "Pick'em", href: () => '#/picks', get subs() { return socialOn() ? [{ id: 'picks', label: "Pick'em", href: '#/picks' }, { id: 'daily', label: 'Daily 5', href: '#/daily' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] : []; } },
   { id: 'quests', label: 'Quests', href: () => '#/quests', subs: [{ id: 'quests', label: 'Quests', href: '#/quests' }, { id: 'season', label: 'Season', href: '#/season' }] },
   { id: 'fan', label: 'Fan', href: () => '#/profile', get subs() { return [{ id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }, ...(socialOn() ? [{ id: 'crew', label: 'Crew', href: '#/crew' }] : [])]; } },
 ];
-const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : navId === 'season' ? 'quests' : navId === 'profile' || navId === 'shop' || navId === 'crew' ? 'fan' : navId === 'duels' || navId === 'survivor' || navId === 'cap' ? 'picks' : navId);
+const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : navId === 'season' ? 'quests' : navId === 'profile' || navId === 'shop' || navId === 'crew' ? 'fan' : navId === 'duels' || navId === 'daily' || navId === 'survivor' || navId === 'cap' ? 'picks' : navId);
 
 let cleanup = null;
 let token = 0;
@@ -155,6 +156,13 @@ export function start() {
     }).catch(() => {});
   } catch (e) { /* ignore */ }
   try { startSocial(); } catch (e) { /* the crew games are optional */ }
+  try {
+    import('./cardlive.js').then((m) => {
+      const go = () => m.announceDaily().catch(() => {});
+      setTimeout(go, 2500);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) go(); });
+    }).catch(() => {});
+  } catch (e) { /* notices are optional */ }
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }

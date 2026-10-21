@@ -103,6 +103,17 @@ await t('a deleted saved fit stays deleted when the other copy still has it', ()
   const m2 = soc.mergeFan(b, a); assert.deepEqual(m2.avatar.fits.map((x) => x.id), ['keep'], 'same either way');
 });
 
+await t('Daily Five cards say what actually happened and how far a live number is from the line', async () => {
+  const live = await import('../js/cardlive.js');
+  const player = { kind: 'player', line: 25.5, a: 'Over', b: 'Under', meta: { name: 'Scottie Barnes', label: 'Points' }, actual: 18, outcome: 'b' };
+  assert.match(live.finalText(player), /Scottie Barnes: 18 Points · line 25.5 \(under by 7.5\)/);
+  assert.match(live.finalText({ kind: 'winner', a: 'TOR', b: 'BOS', actual: -4 }), /BOS won by 4/);
+  assert.match(live.finalText({ kind: 'total', line: 220.5, title: 'x total points', actual: 231 }), /231 pts · line 220.5 \(over by 10.5\)/);
+  const p = live.progress({ ...player, mine: 'a' }, { state: 'in', now: 18, detail: 'Q3 4:12' });
+  assert.equal(p.pct, 71); assert.equal(p.over, false); assert.match(p.lead, /8 more for the over/); assert.equal(live.looking({ mine: 'a' }, p), false); assert.equal(live.looking({ mine: 'b' }, p), true);
+  assert.equal(live.progress(player, { state: 'pre' }), null);
+});
+
 /* ---- duels and the coin ledger ---- */
 const g = { league: 'nba', game_id: '9001', start_at: '2026-10-20T19:00:00-04:00', home: { id: 'h1', name: 'Home', abbr: 'HOM' }, away: { id: 'a1', name: 'Away', abbr: 'AWY' }, fav_team: 'h1', fav_prob: 0.6, ou: 220.5, home_spread: -4.5 };
 const base = { league: 'nba', game_id: '9001' };
