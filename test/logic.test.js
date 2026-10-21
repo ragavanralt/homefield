@@ -167,6 +167,38 @@ t('props settle from the box score', () => {
   const dnp = B.propLeg(nflPre, { playerId: '999', name: 'Bench Guy', label: 'x', stat: 'passyds', line: 1.5, over: 2, under: 2, box: [{ g: /pass/, l: ['YDS'] }] }, 'over');
   assert.equal(B.evalLeg(dnp, data), 'void');
 });
+t('soccer props: priced from season rates, only the right players, and settled from the roster stats', () => {
+  const g = normEvent(F.event('uefa.champions', 77, { state: 'pre', hs: 0, as: 0 }), 'uefa.champions');
+  const P = (id, name, pos) => ({ id, name, short: name, pos, face: '' });
+  const players = [P('1', 'Striker S', 'F'), P('2', 'Mid M', 'M'), P('3', 'Def D', 'D'), P('4', 'Keeper K', 'G')];
+  assert.deepEqual(B.propCandidates('uefa.champions', players, g).map((p) => p.id).sort(), ['1', '2', '4'], 'no defenders; keeper kept for saves');
+  const stats = new Map([
+    ['1', [{ labels: ['GP', 'G', 'A', 'SH', 'ST'], values: ['10', '8', '2', '35', '18'] }]],
+    ['2', [{ labels: ['GP', 'G', 'A', 'SH', 'ST'], values: ['10', '1', '4', '14', '5'] }]],
+    ['4', [{ labels: ['GP', 'SV', 'GA'], values: ['10', '36', '9'] }]],
+  ]);
+  const ms = B.buildProps('uefa.champions', players, stats, g.home.id);
+  const by = (stat, id) => ms.find((m) => m.stat === stat && m.playerId === id);
+  assert.equal(by('goals', '1').line, 0.5); assert.ok(by('goals', '1').over < by('goals', '2')?.over || !by('goals', '2'), 'the striker is the shorter price');
+  assert.ok(by('sot', '1') && by('shots', '1') && by('assists', '2'), 'shots and assists priced');
+  assert.equal(by('saves', '4').line, 3.5); assert.ok(!by('goals', '4') && !by('saves', '1'), 'keepers only get saves, outfielders never do');
+  // results: roster stats become a box score; a sub who never came on is refunded
+  const j = F.summary('uefa.champions', 77);
+  const st = (o) => Object.entries(o).map(([abbreviation, displayValue]) => ({ abbreviation, displayValue: String(displayValue) }));
+  j.boxscore = { teams: [] };
+  j.rosters = [{ homeAway: 'home', team: { id: g.home.id }, roster: [
+    { athlete: { id: '1', displayName: 'Striker S' }, starter: true, position: { abbreviation: 'F' }, stats: st({ G: 2, SH: 5, ST: 3 }) },
+    { athlete: { id: '4', displayName: 'Keeper K' }, starter: true, position: { abbreviation: 'G' }, stats: st({ SV: 5 }) },
+    { athlete: { id: '9', displayName: 'Unused Sub' }, starter: false, subbedIn: false, position: { abbreviation: 'F' }, stats: [] },
+  ] }];
+  const data = normSummary(j, 'uefa.champions', 77);
+  data.game = { ...data.game, state: 'post' };
+  const leg = (stat, id, dir) => B.propLeg(g, { ...by(stat, id), playerId: id, stat }, dir);
+  assert.equal(B.evalLeg(leg('goals', '1', 'over'), data), 'won');
+  assert.equal(B.evalLeg(leg('sot', '1', 'under'), data), 'lost');
+  assert.equal(B.evalLeg(leg('saves', '4', 'over'), data), 'won');
+  assert.equal(B.evalLeg({ ...leg('goals', '1', 'over'), prop: { ...leg('goals', '1', 'over').prop, playerId: '9', name: 'Unused Sub' } }, data), 'void');
+});
 t('prop lines come from season averages and never push', () => {
   const def = B.PROP_DEFS.nba[0];
   const p = B.priceProp(def, 24.6);

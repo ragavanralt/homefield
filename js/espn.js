@@ -217,6 +217,26 @@ function normBox(j) {
     }
     players.push({ teamId: String(p.team?.id || ''), abbr: p.team?.abbreviation || '', groups });
   }
+  // soccer has no boxscore.players: each player's match numbers sit on the roster entries instead
+  if (!players.length && Array.isArray(j.rosters)) {
+    for (const r of j.rosters) {
+      const labels = [], rows = [];
+      for (const x of r.roster || []) {
+        if (!x.starter && !x.subbedIn) continue; // never came on: no stats, so a prop on them is refunded
+        const map = {};
+        for (const st of x.stats || []) {
+          const lab = String(st.abbreviation || st.shortDisplayName || '').toUpperCase();
+          if (!lab) continue;
+          map[lab] = st.displayValue ?? st.value;
+          if (!labels.includes(lab)) labels.push(lab);
+        }
+        rows.push({ id: String(x.athlete?.id || ''), name: x.athlete?.displayName || x.athlete?.shortName || '', short: x.athlete?.shortName || x.athlete?.displayName || '', jersey: x.jersey || x.athlete?.jersey || '',
+          pos: x.position?.abbreviation || x.athlete?.position?.abbreviation || '', face: x.athlete?.headshot?.href || '', starter: !!x.starter, dnp: false, map });
+      }
+      if (!rows.length) continue;
+      players.push({ teamId: String(r.team?.id || ''), abbr: r.team?.abbreviation || '', groups: [{ name: 'soccer', labels, totals: [], rows: rows.map(({ map, ...row }) => ({ ...row, stats: labels.map((l) => String(map[l] ?? '0')) })) }] });
+    }
+  }
   return { teams, players };
 }
 

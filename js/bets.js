@@ -60,6 +60,14 @@ export const PROP_DEFS = {
     { key: 'recyds', label: 'Receiving yards', dist: 'normal', sd: 0.55, labels: ['YDS'], need: 'REC', box: [{ g: /receiv/i, l: ['YDS'] }], min: 25, top: 3 },
     { key: 'rec', label: 'Receptions', dist: 'poisson', labels: ['REC'], need: 'REC', box: [{ g: /receiv/i, l: ['REC'] }], min: 2.5, top: 3 },
   ],
+  // soccer: season rates come from ESPN's per-player stat block, results from the match's player stats
+  soccer: [
+    { key: 'goals', label: 'Goals', dist: 'poisson', labels: ['G', 'GLS'], box: [{ g: /./, l: ['G', 'GLS'] }], min: 0.12, top: 4, fixedLine: 0.5, outfield: true },
+    { key: 'sot', label: 'Shots on target', dist: 'poisson', labels: ['ST', 'SOT'], box: [{ g: /./, l: ['ST', 'SOT'] }], min: 0.5, top: 3, outfield: true },
+    { key: 'shots', label: 'Shots', dist: 'poisson', labels: ['SH', 'SHOTS'], box: [{ g: /./, l: ['SH', 'SHOTS'] }], min: 1.2, top: 3, outfield: true },
+    { key: 'assists', label: 'Assists', dist: 'poisson', labels: ['A', 'AST'], box: [{ g: /./, l: ['A', 'AST'] }], min: 0.12, top: 3, fixedLine: 0.5, outfield: true },
+    { key: 'saves', label: 'Saves', dist: 'poisson', labels: ['SV', 'SAVES'], box: [{ g: /./, l: ['SV', 'SAVES'] }], min: 1.5, top: 1, keeper: true },
+  ],
   mlb: [
     { key: 'hits', label: 'Hits', dist: 'poisson', labels: ['H'], need: 'AB', box: [{ g: /batt/i, l: ['H'] }], min: 0.7, top: 3 },
     { key: 'hr', label: 'Home runs', dist: 'poisson', labels: ['HR'], need: 'AB', box: [{ g: /batt/i, l: ['HR'] }], min: 0.12, top: 2, fixedLine: 0.5 },
@@ -71,6 +79,7 @@ export const PROP_CATS = {
   nba: [{ id: 'pts', label: 'Points', stats: ['pts'] }, { id: 'reb', label: 'Rebounds', stats: ['reb'] }, { id: 'ast', label: 'Assists', stats: ['ast'] }],
   nhl: [{ id: 'pts', label: 'Points', stats: ['pts'] }, { id: 'sog', label: 'Shots on goal', stats: ['sog'] }],
   mlb: [{ id: 'hits', label: 'Hits', stats: ['hits'] }, { id: 'hr', label: 'Home runs', stats: ['hr'] }],
+  soccer: [{ id: 'goals', label: 'Anytime goal', stats: ['goals'] }, { id: 'shots', label: 'Shots', stats: ['sot', 'shots'] }, { id: 'assists', label: 'Assists', stats: ['assists'] }, { id: 'saves', label: 'Saves', stats: ['saves'] }],
 };
 export const propCatsFor = (league) => PROP_CATS[LEAGUES[league]?.group] || [];
 export const propDefsFor = (league) => PROP_DEFS[LEAGUES[league]?.group] || [];
@@ -111,6 +120,8 @@ export function priceProp(def, avg) {
   return { line, pOver, over: fromProb(pOver), under: fromProb(1 - pOver) };
 }
 
+/** ESPN calls the goalkeeper G (or GK) */
+export const isKeeper = (p) => /^(G|GK)$/i.test(p.pos);
 const FOOT_POS = { QB: ['passyds', 'passtd'], RB: ['rushyds', 'recyds', 'rec'], FB: ['rushyds'], WR: ['recyds', 'rec'], TE: ['recyds', 'rec'] };
 
 /** Which roster players are worth pulling stats for. Keeps the number of requests small. */
@@ -123,6 +134,10 @@ export function propCandidates(league, players, game) {
     return [...take('QB', 3), ...take('RB', 4), ...take('WR', 6), ...take('TE', 3)];
   }
   if (grp === 'mlb') return players.filter((p) => !/^(SP|RP|P|CP)$/.test(p.pos)).slice(0, 14);
+  if (grp === 'soccer') { // attackers and midfielders first (defenders rarely score), plus the keepers
+    const keeper = (p) => isKeeper(p), att = (p) => /^(F|FW|CF|LF|RF|ST|SS|LW|RW|W)$/i.test(p.pos), mid = (p) => /^(M|MF|AM|CAM|CM|DM|CDM|LM|RM)$/i.test(p.pos);
+    return [...players.filter(att), ...players.filter(mid)].slice(0, 14).concat(players.filter(keeper).slice(0, 2));
+  }
   return [];
 }
 
@@ -175,6 +190,7 @@ export function buildProps(league, players, statsById, teamId) {
     for (const p of players) {
       if (grp === 'nfl' && FOOT_POS[p.pos] && !FOOT_POS[p.pos].includes(def.key)) continue;
       if (grp === 'nfl' && !FOOT_POS[p.pos]) continue;
+      if (grp === 'soccer' && ((def.keeper && !isKeeper(p)) || (def.outfield && isKeeper(p)))) continue;
       const avg = seasonAvg(statsById.get(p.id), def);
       const pr = priceProp(def, avg);
       if (pr) rows.push({ p, avg, pr });

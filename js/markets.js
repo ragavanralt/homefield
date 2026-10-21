@@ -40,7 +40,7 @@ function byTeam(g, data, draw) {
 export function propsPanel(g) {
   const cats = propCatsFor(g.league);
   const wrap = h('div', { class: 'mk' });
-  if (!cats.length) { wrap.append(note('Player props are available for NBA, NHL, NFL and MLB. Soccer has winner and game bets.')); return wrap; }
+  if (!cats.length) { wrap.append(note('Player props are available for NBA, NHL, NFL, MLB and soccer.')); return wrap; }
   const chips = h('div', { class: 'chip-row' });
   const body = h('div', { class: 'props' });
   let cur = cats[0], token = 0;
