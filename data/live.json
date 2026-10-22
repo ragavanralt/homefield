@@ -1,33 +1,33 @@
 {
   "v": 1,
-  "updated": "2026-10-21",
+  "updated": "2026-10-22",
   "daily": {
-    "date": "2026-10-21",
+    "date": "2026-10-22",
     "quests": [
       {
-        "id": "d2026-10-21-1",
-        "metric": "games_opened",
-        "target": 3,
-        "coins": 60,
-        "title": "Open 3 different games"
+        "id": "d2026-10-22-1",
+        "metric": "daily_claimed",
+        "target": 1,
+        "coins": 50,
+        "title": "Claim your daily bonus"
       },
       {
-        "id": "d2026-10-21-2",
+        "id": "d2026-10-22-2",
         "metric": "bets_placed",
         "target": 1,
         "coins": 70,
         "title": "Place a bet"
       },
       {
-        "id": "d2026-10-21-3",
-        "metric": "bets_won",
-        "target": 1,
-        "coins": 150,
-        "title": "Win a bet"
+        "id": "d2026-10-22-3",
+        "metric": "games_opened",
+        "target": 6,
+        "coins": 120,
+        "title": "Open 6 different games"
       }
     ],
     "deal": {
-      "itemId": "henley",
+      "itemId": "ballpark",
       "pct": 25
     }
   },
