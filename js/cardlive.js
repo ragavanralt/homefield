@@ -38,7 +38,7 @@ export async function cardLive(c) {
   if (c.kind === 'total') out.now = hs + as;
   else if (c.kind === 'team_total') out.now = (c.meta && c.meta.team) === g.home.abbr ? hs : as;
   else if (c.kind === 'player') out.now = playerNow(s.box, c.meta);
-  else if (c.kind === 'winner') out.now = hs - as; // home margin
+  else if (c.kind === 'winner' || c.kind === 'spread' || c.kind === 'score') out.now = hs - as; // home margin
   return out;
 }
 
@@ -63,6 +63,11 @@ export function progress(c, live) {
     const m = live.now || 0;
     return { pct: null, text: `${live.score}${live.detail ? ` · ${live.detail}` : ''}`, lead: m === 0 ? 'Level' : `${m > 0 ? c.a : c.b} ahead by ${fix(Math.abs(m))}`, side: m === 0 ? null : m > 0 ? 'a' : 'b' };
   }
+  if (c.kind === 'spread') { // c.a is the side you took, line is its handicap
+    const cover = (c.home ? live.now || 0 : -(live.now || 0)) + Number(c.line);
+    return { pct: null, text: `${live.score}${live.detail ? ` · ${live.detail}` : ''}`, lead: cover === 0 ? 'On the number' : cover > 0 ? `${c.a} covering by ${fix(cover)}` : `${c.a} needs ${fix(-cover)} more`, side: cover > 0 ? 'a' : 'b' };
+  }
+  if (c.kind === 'score') return { pct: null, text: live.score, lead: live.detail || '', side: null };
   const now = live.now == null ? 0 : live.now, line = Number(c.line) || 0;
   const over = now > line;
   const need = Math.floor(line - now) + 1; // the over needs this many more
@@ -81,9 +86,13 @@ export function liveLine(c) {
   if (done) return c.status === 'void' ? null : h('div', { class: 'lv-final' }, finalText(c));
   if (!c.locked || c.status === 'void') return null;
   const box = h('div', { class: 'lv', 'aria-live': 'polite' }, h('small', { class: 'muted' }, 'Checking the game…'));
-  let stop = false;
+  let stop = false, shown = false;
+  const born = Date.now();
   const tick = async () => {
-    if (stop || !document.body.contains(box)) { stop = true; return; }
+    if (stop) return;
+    // The box is built before the page puts it on screen, so wait for it. Once it has been shown and is gone, stop.
+    if (!box.isConnected) { if (!shown && Date.now() - born < 10000) setTimeout(tick, 300); else stop = true; return; }
+    shown = true;
     try {
       const live = await cardLive(c), p = progress(c, live);
       clear(box);
@@ -92,12 +101,16 @@ export function liveLine(c) {
         const good = looking(c, p);
         box.append(h('div', { class: 'lv-row' }, h('span', null, p.text), h('b', { class: good == null ? '' : good ? 'ok' : 'no' }, p.lead)));
         if (p.pct != null) box.append(h('div', { class: 'lv-bar' + (good == null ? '' : good ? ' ok' : ' no'), role: 'progressbar', 'aria-valuenow': String(p.pct), 'aria-valuemin': '0', 'aria-valuemax': '100' }, h('i', { style: { width: `${p.pct}%` } })));
-        if (live && live.state === 'post') { stop = true; box.append(h('small', { class: 'muted' }, 'Final. Result lands shortly.')); }
+        if (live && live.state === 'post') {
+          stop = true;
+          box.append(h('small', { class: 'muted' }, 'Final. Result lands shortly.'));
+          if (c.bet) import('./settle.js').then((m) => m.settleAll()).catch(() => {}); // settle now instead of on the next app open
+        }
       }
     } catch (e) { clear(box); box.append(h('small', { class: 'muted' }, 'Live feed unavailable right now')); }
     if (!stop) setTimeout(tick, 30000);
   };
-  tick();
+  setTimeout(tick, 0);
   return box;
 }
 
@@ -119,11 +132,17 @@ export async function announceDaily() {
 
 /** a bet leg as the kind of card the live bar understands */
 export function legCard(l) {
-  const base = { id: l.key, league: l.league, game_id: l.gameId, locked: new Date(l.date).getTime() <= Date.now(), status: 'open' };
+  const base = { id: l.key, league: l.league, game_id: l.gameId, locked: new Date(l.date).getTime() <= Date.now(), status: 'open', bet: true };
   if (l.kind === 'ml') {
     if (l.side === 'draw') return null;
     return { ...base, kind: 'winner', a: l.home.abbr, b: l.away.abbr, mine: l.side === 'home' ? 'a' : 'b' };
   }
   if (l.kind === 'prop' && l.prop) return { ...base, kind: 'player', line: l.prop.line, a: 'Over', b: 'Under', mine: l.prop.dir === 'over' ? 'a' : 'b', meta: { playerId: l.prop.playerId, name: l.prop.name, label: l.prop.label, box: l.prop.box } };
+  if (l.kind === 'special' && l.sp) {
+    const sp = l.sp;
+    if (sp.t === 'total') return { ...base, kind: 'total', line: sp.line, a: 'Over', b: 'Under', mine: sp.dir === 'over' ? 'a' : 'b', meta: { label: /goals/i.test(l.label) ? 'goals' : '' } };
+    if (sp.t === 'spread') { const side = sp.side === 'home' ? l.home : l.away; return { ...base, kind: 'spread', line: sp.line, home: sp.side === 'home', a: side.abbr, b: 'Other side', mine: 'a' }; }
+    return { ...base, kind: 'score' }; // first scorer, overtime and the rest: show the live score
+  }
   return null;
 }

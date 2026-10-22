@@ -684,6 +684,24 @@ t('soccer lineups carry formation spot, goals and cards', () => {
   });
 }
 
+// ---- device sync keeps quest coins ----
+{
+  const store = await import('../js/store.js');
+  const soc = await import('../js/social.js');
+  t('a quest claim survives a refresh before the background save (coins up, xp the same)', () => {
+    const st = store.getState();
+    const saved = JSON.parse(JSON.stringify({ teams: st.teams, bets: st.bets, bank: st.bank, avatar: st.avatar })); // what the server last got
+    store.update((s) => { s.bank.coins += 350; }); // claimQuest pays coins and no xp
+    const now = store.getState();
+    assert.equal(now.bank.rev, (saved.bank.rev || 0) + 1, 'a coin change bumps rev');
+    const m = soc.mergeFan({ teams: now.teams, bets: now.bets, bank: now.bank, avatar: now.avatar }, saved);
+    assert.equal(m.bank.coins, saved.bank.coins + 350, 'the newer bank wins, so the 350 stays');
+    const old = soc.mergeFan({ teams: [], bets: {}, bank: { xp: 5, coins: 500 }, avatar: {} }, { teams: [], bets: {}, bank: { xp: 5, coins: 200 }, avatar: {} });
+    assert.equal(old.bank.coins, 200, 'saves from before rev keep the old rule');
+    store.update((s) => { s.bank.coins -= 350; });
+  });
+}
+
 // ---- OddsPapi fallback ----
 {
   const store = {};

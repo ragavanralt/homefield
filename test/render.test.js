@@ -95,6 +95,22 @@ for (const [lg, id] of games) {
   ok(`game ${lg}/${id} (${tabs.length} tabs)`);
 }
 
+// live bars on bet legs: built before they are on the page, they must still load the game
+{
+  const { liveLine, legCard } = await import('../js/cardlive.js');
+  const past = new Date(Date.now() - 36e5).toISOString();
+  const leg = (kind, extra) => ({ key: 'k' + kind, kind, league: 'nhl', gameId: '1001', gameKey: 'nhl:1001', date: past, label: 'Leg', result: 'pending', home: { abbr: 'TB' }, away: { abbr: 'BOS' }, ...extra });
+  const legs = [leg('ml', { side: 'home' }), leg('special', { sp: { t: 'total', dir: 'over', line: 5.5 } }), leg('special', { sp: { t: 'spread', side: 'away', line: 1.5 } }), leg('special', { sp: { t: 'ot', yes: true } })];
+  const host = w.document.createElement('div');
+  const boxes = legs.map((l) => liveLine(legCard(l)));
+  host.append(...boxes); w.document.body.append(host); // put on the page after they were built, as every screen does
+  await sleep(700);
+  boxes.forEach((b, i) => assert.ok(!/Checking the game/.test(b.textContent) && /\d/.test(b.textContent), `leg ${i} stuck: ${b.textContent}`));
+  assert.ok(/ahead by|Level/.test(boxes[0].textContent)); assert.ok(/of 5\.5/.test(boxes[1].textContent)); assert.ok(/covering|needs|On the number/.test(boxes[2].textContent));
+  host.remove();
+  ok('live bars load the game for moneyline, total, spread and other bets');
+}
+
 // betting game
 const slipEl = w.document.getElementById('slip');
 const { mountSlip } = await import('../js/slip.js');

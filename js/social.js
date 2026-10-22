@@ -162,8 +162,10 @@ export function mergeFan(local, remote) {
   out.watched = { ...(remote.watched || {}) };
   for (const [k, v] of Object.entries(local.watched || {})) if (!out.watched[k] || (v.ts || 0) >= (out.watched[k].ts || 0)) out.watched[k] = v;
   const lb = local.bank || {}, rb = remote.bank || {};
-  // same xp on both sides means nothing was earned in between, so the lower balance is the one that already paid for something
-  const useLocal = (lb.xp || 0) > (rb.xp || 0) || ((lb.xp || 0) === (rb.xp || 0) && (lb.coins || 0) <= (rb.coins || 0));
+  // rev goes up with every coin change, so the higher one has seen more (a quest claim earns coins but no xp).
+  // Copies saved before rev existed fall back to xp: same xp means nothing was earned in between, so the lower balance already paid for something.
+  const lr = lb.rev || 0, rr = rb.rev || 0;
+  const useLocal = lr !== rr ? lr > rr : (lb.xp || 0) > (rb.xp || 0) || ((lb.xp || 0) === (rb.xp || 0) && (lb.coins || 0) <= (rb.coins || 0));
   out.bank = { ...(useLocal ? lb : rb) };
   // Once-a-day things are claimed once across all your devices: the later claim day wins, and so do quest claims.
   const chosen = useLocal ? lb : rb, later = (rb.lastDaily || '') > (lb.lastDaily || '') ? rb : lb;

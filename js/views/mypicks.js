@@ -2,6 +2,7 @@
 import { h, poll } from '../ui.js';
 import { pageHead } from '../components.js';
 import { openBets, getBank, getState } from '../store.js';
+import { settleAll } from '../settle.js';
 import { betCard as doneCard } from '../bankroll.js';
 import { recap } from './duels.js';
 import * as soc from '../social.js';
@@ -48,6 +49,11 @@ export async function render(root) {
         (() => { const a = f && recap(f.cards || [], 'Daily Five today'), b = f && recap(f.prev || [], 'Daily Five yesterday'); return a || b ? h('div', { class: 'card' }, a, b) : null; })()));
   };
   await paint();
-  const stop = poll(paint, 120000);
-  return () => stop();
+  // settle finished games while this page is open, and redraw when a bet lands
+  const check = () => settleAll().catch(() => 0);
+  const onSettled = () => paint();
+  window.addEventListener('homefield:settled', onSettled);
+  check();
+  const stop = poll(() => { check(); paint(); }, 120000);
+  return () => { stop(); window.removeEventListener('homefield:settled', onSettled); };
 }

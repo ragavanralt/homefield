@@ -28,6 +28,7 @@ export function settleAll() {
       if (decision || results.some((r, i) => r !== b.legs[i].result)) { resolveBet(b.id, results, decision); if (decision) changed++; }
     }
     for (const b of done) fillLegs(b.id, b.legs.map((l) => (l.result !== 'pending' ? l.result : data.has(l.gameKey) ? evalLeg(l, data.get(l.gameKey)) : 'pending')));
+    if (changed && typeof window !== 'undefined') window.dispatchEvent(new Event('homefield:settled'));
     return changed;
   })().finally(() => { running = null; });
   return running;

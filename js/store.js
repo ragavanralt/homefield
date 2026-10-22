@@ -52,7 +52,12 @@ export const getState = () => state;
 let saveHook = null;
 /** Called after every change is saved. The crew sync uses it to back changes up in the background. */
 export const onSaved = (fn) => { saveHook = fn; };
-export function update(fn) { fn(state); save(); if (saveHook) { try { saveHook(); } catch (e) { /* never block a save */ } } return state; }
+export function update(fn) {
+  const coins0 = state.bank && state.bank.coins, rev0 = (state.bank && state.bank.rev) || 0;
+  fn(state);
+  // every coin change bumps rev, so a device sync can tell which copy of the bank is newer
+  if (state.bank && state.bank.coins !== coins0) state.bank.rev = Math.max(rev0, state.bank.rev || 0) + 1;
+  save(); if (saveHook) { try { saveHook(); } catch (e) { /* never block a save */ } } return state; }
 
 export const myTeams = () => state.teams;
 export const isFollowing = (league, id) => state.teams.some((t) => t.league === league && t.id === String(id));

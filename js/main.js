@@ -147,14 +147,18 @@ export function start() {
   route();
   try { startBrand(); } catch (e) { /* the logo is optional */ }
   try {
-    settleAll().then(() => {
+    const notify = () => {
       for (const n of takeNotices()) {
         if (n.status === 'won') toast(`You won! ${n.title}: +${(n.payout - n.stake).toLocaleString()} coins`);
         else if (n.status === 'lost') toast(`Lost: ${n.title}`);
         else toast(`Refunded: ${n.title}`);
       }
       queueSync();
-    }).catch(() => {});
+    };
+    window.addEventListener('homefield:settled', notify);
+    settleAll().then(notify).catch(() => {});
+    // check open bets again whenever the app comes back to the screen, not only on first open
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) settleAll().catch(() => {}); });
   } catch (e) { /* ignore */ }
   try { startSocial(); } catch (e) { /* the crew games are optional */ }
   try {
