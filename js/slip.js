@@ -38,28 +38,32 @@ function draw() {
     h('span', { class: 'sb-n' }, String(legs.length)), h('span', { class: 'sb-t' }, 'Betslip'),
     h('span', { class: 'sb-p' }, `${fmt(total)} → ${fmt(payout)}`), h('span', { class: 'sb-c' }, open ? '▾' : '▴')));
 
+  // the picks scroll on their own, so the stake and the place button always stay on screen however long the parlay gets
   const body = h('div', { class: 'slip-body' });
-  body.append(h('ul', { class: 'slip-legs' }, legs.map((l) => h('li', null,
+  const scroll = h('div', { class: 'slip-scroll' });
+  const foot = h('div', { class: 'slip-foot' });
+  body.append(scroll, foot);
+  scroll.append(h('ul', { class: 'slip-legs' }, legs.map((l) => h('li', null,
     h('div', { class: 'sl-t' }, h('div', { class: 'sl-n' }, l.label), h('small', null, `${l.away.abbr} @ ${l.home.abbr}`)),
     h('div', { class: 'sl-o' }, american(l.dec)),
     h('button', { type: 'button', class: 'x', 'aria-label': 'Remove', onclick: () => removeLeg(l.key) }, '×')))));
 
-  body.append(h('div', { class: 'seg' }, [['single', 'Singles'], ['parlay', 'Parlay']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (slip.mode === k ? ' on' : ''), id: 'slip-' + k, disabled: k === 'parlay' && legs.length < 2 ? true : null, onclick: () => setSlip({ mode: k }) }, l))));
-  if (slip.mode === 'parlay' && legs.length < 2) body.append(h('p', { class: 'muted small-note' }, 'Add a second pick to build a parlay.'));
+  scroll.append(h('div', { class: 'seg' }, [['single', 'Singles'], ['parlay', 'Parlay']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (slip.mode === k ? ' on' : ''), id: 'slip-' + k, disabled: k === 'parlay' && legs.length < 2 ? true : null, onclick: () => setSlip({ mode: k }) }, l))));
+  if (slip.mode === 'parlay' && legs.length < 2) scroll.append(h('p', { class: 'muted small-note' }, 'Add a second pick to build a parlay.'));
 
   const input = h('input', { class: 'stake', id: 'stake', type: 'number', inputmode: 'numeric', min: MIN_STAKE, step: 5, value: String(slip.stake), 'aria-label': 'Stake in coins' });
   input.addEventListener('change', () => setSlip({ stake: Math.max(0, Math.floor(Number(input.value) || 0)) }));
-  body.append(h('label', { class: 'stake-l' }, h('span', null, parlay || legs.length === 1 ? 'Stake' : 'Stake per bet'), input),
+  foot.append(h('label', { class: 'stake-l' }, h('span', null, parlay || legs.length === 1 ? 'Stake' : 'Stake per bet'), input),
     h('div', { class: 'chip-row' }, [10, 25, 50, 100, 250].map((n) => h('button', { type: 'button', class: 'chip', onclick: () => setSlip({ stake: n }) }, String(n))),
       h('button', { type: 'button', class: 'chip', onclick: () => setSlip({ stake: Math.max(MIN_STAKE, Math.floor(bank.coins / count)) }) }, 'Max')));
 
-  body.append(h('dl', { class: 'slip-sum' },
+  foot.append(h('dl', { class: 'slip-sum' },
     h('dt', null, 'Total stake'), h('dd', null, fmt(total)),
     parlay ? h('dt', null, 'Parlay odds') : null, parlay ? h('dd', null, `${fmtX(dec)} (${american(dec)})`) : null,
     boost > 0 ? h('dt', null, 'Streak boost') : null, boost > 0 ? h('dd', { class: 'hot' }, `+${Math.round(boost * 100)}%`) : null,
     h('dt', null, 'To collect'), h('dd', { class: 'big' }, fmt(payout))));
 
-  body.append(h('div', { class: 'row' },
+  foot.append(h('div', { class: 'row' },
     h('button', { type: 'button', class: 'btn main grow', id: 'place-bet', onclick: () => {
       const r = placeSlip();
       if (!r.ok) { toast(r.error); return; }
@@ -67,6 +71,6 @@ function draw() {
       toast(r.bets.length === 1 ? `Bet placed: ${fmt(r.total)} coins on the line` : `${r.bets.length} bets placed: ${fmt(r.total)} coins on the line`);
     } }, `Place bet · ${fmt(total)}`),
     h('button', { type: 'button', class: 'btn', onclick: () => clearSlip() }, 'Clear')));
-  body.append(h('p', { class: 'muted small-note' }, `Play money only. Bankroll: ${fmt(bank.coins)} coins.`));
+  foot.append(h('p', { class: 'muted small-note' }, `Play money only. Bankroll: ${fmt(bank.coins)} coins.`));
   host.append(body);
 }
