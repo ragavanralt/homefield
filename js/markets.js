@@ -63,7 +63,7 @@ export function propsPanel(g) {
         m.ladder && m.ladder.length ? h('div', { class: 'pr-ladder', 'aria-label': `${m.name} ${m.label} milestones` }, m.ladder.map((r) => betButton(ladderLeg(g, m, r.t, r.dec), `${r.t}+`, null, !can))) : null));
       if (!rows.length) body.append(note('No ' + cur.label.toLowerCase() + ' props could be built for this game yet.'));
       else body.append(...rows);
-      body.append(note(`${data.source ? data.source + '. ' : ''}Settled from the final box score. A player who does not play is refunded.`), ...warnings(data.notes), why((data.notes || []).filter((n) => !WARN.test(n))));
+      body.append(note(`${data.source ? data.source + '. ' : ''}Settled from the final box score. A player who does not play is refunded.`), ...warnings(data.notes), ...[why((data.notes || []).filter((n) => !WARN.test(n)))].filter(Boolean));
     } catch (e) { if (my === token) clear(body).append(note('Could not load props: ' + e.message)); }
   }
   drawChips(); load();
@@ -90,7 +90,7 @@ export function scorerPanel(g) {
       });
       if (!rows.length) wrap.append(note('No first scorer prices yet. They need rosters and season stats, or a live-lines key in Settings.'));
       else wrap.append(h('p', { class: 'mk-t' }, (FIRST[g.league] || {}).label || 'First scorer'), ...rows);
-      wrap.append(note(`${data.source ? data.source + '. ' : ''}${g.league === 'nfl' ? 'Counts touchdowns only. ' : ''}If nobody qualifies, the bet is refunded.`), why(data.notes));
+      wrap.append(note(`${data.source ? data.source + '. ' : ''}${g.league === 'nfl' ? 'Counts touchdowns only. ' : ''}If nobody qualifies, the bet is refunded.`), ...[why(data.notes)].filter(Boolean));
     } catch (e) { clear(wrap).append(note('Could not load first scorer: ' + e.message)); }
   })();
   return wrap;
