@@ -7,6 +7,7 @@ import { betCard as doneCard } from '../bankroll.js';
 import { recap } from './duels.js';
 import * as soc from '../social.js';
 import { liveLine, legCard } from '../cardlive.js';
+import { cashBox } from '../cashout.js';
 import { fmt, dayTime, add, loader } from '../social-ui.js';
 
 const mark = (r) => (r === 'won' ? '✓' : r === 'lost' ? '✗' : r === 'push' || r === 'void' ? '–' : '•');
@@ -22,7 +23,8 @@ function betCard(b) {
       return h('div', { class: 'live-leg ' + (l.result || 'pending') },
         h('div', { class: 'row' }, h('span', { class: 'lm', 'aria-hidden': 'true' }, mark(l.result)), h('div', null, h('span', null, l.label), h('small', { class: 'muted' }, ` ${l.away ? l.away.abbr : ''} @ ${l.home ? l.home.abbr : ''} · ${new Date(l.date).getTime() > Date.now() ? dayTime(l.date) : 'started'}`))),
         c && l.result === 'pending' ? liveLine(c) : null);
-    })));
+    }),
+    cashBox(b)));
 }
 
 export async function render(root) {

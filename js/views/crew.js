@@ -195,12 +195,12 @@ export async function render(root, params = {}) {
     const now = Date.now();
     const open = b.status === 'pending';
     const live = (b.legs || []).filter((l) => new Date(l.date).getTime() > now);
-    const net = b.status === 'won' ? (b.payout || 0) - b.stake : b.status === 'lost' ? -b.stake : 0;
+    const net = b.status === 'won' || (b.status === 'lost' && b.cashed) ? (b.payout || 0) - b.stake : b.status === 'lost' ? -b.stake : 0;
     const mark = (l) => (l.result === 'won' ? '✓' : l.result === 'lost' ? '✗' : l.result === 'push' || l.result === 'void' ? '–' : '•');
     const row = h('article', { class: 'bet-card ' + b.status, 'data-bet': b.id },
       h('div', { class: 'bet-h' }, bubble(m, 'bust sm'),
         h('div', { class: 'bet-who' }, h('b', null, m.me ? 'You' : m.display), h('small', null, `${b.mode === 'parlay' ? `${(b.legs || []).length}-leg parlay` : 'Single'} · ${ago(b.ts)}`)),
-        h('div', { class: 'bet-res' }, h('span', { class: 'pill ' + b.status }, open ? 'Open' : b.status === 'won' ? 'Hit' : b.status === 'lost' ? 'Missed' : 'Refunded'),
+        h('div', { class: 'bet-res' }, h('span', { class: 'pill ' + b.status }, open ? 'Open' : b.cashed ? 'Cashed out' : b.status === 'won' ? 'Hit' : b.status === 'lost' ? 'Missed' : 'Refunded'),
           h('small', null, open ? `${fmt(b.stake)} → ${fmt(Math.round(b.stake * (b.dec || 1)))}` : b.status === 'void' ? `${fmt(b.stake)} back` : `${signed(net)} coins`))),
       h('ul', { class: 'bet-legs' }, (b.legs || []).map((l) => h('li', { class: l.result || 'pending' }, h('span', { class: 'lm', 'aria-hidden': 'true' }, mark(l)),
         h('span', null, l.label || 'Pick', l.away && l.home ? h('small', null, ` ${l.away.abbr} @ ${l.home.abbr}`) : null),

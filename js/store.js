@@ -170,6 +170,23 @@ export function resolveBet(id, results, decision) {
   if (decision && decision.status === 'won') track('bets_won');
   ping();
 }
+/** Take a cash out offer: the bet ends now at that many coins. Pays no streak boost and does not touch the streak.
+ *  It counts as a win when it returns at least the stake, otherwise a loss. Its legs keep resolving afterwards so you can see what would have happened. */
+export function cashOutBet(id, amount) {
+  let ok = false;
+  update((s) => {
+    const b = s.bets[id];
+    if (!b || b.status !== 'pending' || !Number.isFinite(amount) || amount < 1) return;
+    const pay = Math.round(amount);
+    b.status = pay >= b.stake ? 'won' : 'lost'; b.payout = pay; b.boost = 0; b.cashed = true; b.settledTs = Date.now();
+    s.bank.coins += pay;
+    s.bank.peak = Math.max(s.bank.peak, s.bank.coins);
+    s.bank.xp += Math.round(b.stake / 10) + (pay >= b.stake ? 10 : 2);
+    ok = true;
+  });
+  if (ok) ping();
+  return ok;
+}
 /** A bet that is already decided (say, lost on its first leg) still shows how its other legs went. This only fills in legs, it never changes the payout. */
 export function fillLegs(id, results) {
   update((s) => { const b = s.bets[id]; if (!b || b.status === 'pending') return; b.legs.forEach((l, i) => { if (l.result === 'pending' && results[i] && results[i] !== 'pending') l.result = results[i]; }); });

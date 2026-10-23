@@ -146,6 +146,24 @@ app().querySelector('#scope-mine').click(); await sleep(500); app().querySelecto
 assert.ok(/Parlay|parlay/.test(app().textContent)); ok('open bets listed');
 app().querySelector('#daily').click(); await sleep(20); assert.ok(store.getState().bank.coins > 1000 - 50); ok('daily bonus');
 text = await visit('#/mypicks', { wait: 400 }); assert.ok(app().querySelector('.live-bet'), 'an open bet shows on Live picks'); assert.ok(/Live picks/.test(text)); ok('Live picks page lists open bets');
+// cash out: the strip shows under open bets, and taking an offer ends the bet at that many coins
+assert.ok(app().querySelector('.live-bet .cash'), 'cash out strip under an open bet'); ok('open bets carry a cash out strip');
+{
+  const open = store.openBets()[0];
+  assert.ok(open, 'there is an open bet');
+  const coins0 = store.getBank().coins, streak0 = store.getBank().streak, xp0 = store.getBank().xp;
+  assert.equal(store.cashOutBet(open.id, 0), false); assert.equal(store.cashOutBet('nope', 50), false);
+  const offer = Math.round(open.stake * 0.8);
+  assert.equal(store.cashOutBet(open.id, offer), true);
+  const done = store.getState().bets[open.id];
+  assert.ok(done.cashed && done.status === 'lost' && done.payout === offer, 'a cash out below the stake is recorded as a loss with its payout');
+  assert.equal(store.getBank().coins, coins0 + offer); assert.equal(store.getBank().streak, streak0, 'the streak is not touched'); assert.ok(store.getBank().xp > xp0);
+  assert.equal(store.cashOutBet(open.id, 999), false, 'cannot cash out twice'); assert.equal(store.getBank().coins, coins0 + offer);
+  const { betCard } = await import('../js/bankroll.js');
+  const card = betCard(done);
+  assert.ok(/Cashed out -/.test(card.textContent) || /Cashed out −/.test(card.textContent) || /Cashed out/.test(card.textContent), 'card says cashed out'); assert.ok(!card.querySelector('.cash'), 'no cash out strip on a settled bet');
+  ok('taking a cash out pays the offer and closes the bet');
+}
 // settlement end to end: bets on finished game 1002 (final 3-2, home TB... home team wins)
 {
   const { settleAll } = await import('../js/settle.js');

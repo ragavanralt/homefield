@@ -4,6 +4,7 @@ import * as W from '../js/winprob.js';
 import { normEvent, normSummary, normStandings, parseOdds } from '../js/espn.js';
 import { buildRecap, playerOfTheGame } from '../js/recap.js';
 import * as B from '../js/bets.js';
+import * as CM from '../js/cashmodel.js';
 import { buildICS, googleUrl, gameTitle } from '../js/ics.js';
 import * as F from './fixtures.js';
 import { playoffPicture, buildBracket, soccerZone, sortRows } from '../js/playoffs.js';
@@ -850,6 +851,134 @@ t('parlays hit counts complete parlays only', () => {
   const mk = (id, results) => ({ id, mode: 'parlay', status: 'won', stake: 100, payout: 300, dec: 3, legs: results.map((r) => ({ result: r, dec: 1.5 })) });
   const st = B.betStats({ a: mk('a', ['won', 'won', 'won']), b: mk('b', ['won', 'push', 'won']), c: mk('c', ['won', 'void']) }, { streak: 0, bestStreak: 0 });
   assert.equal(st.parlayWins, 1, 'only the clean parlay counts'); assert.equal(st.biggestParlay, 3);
+});
+
+/* ---------- cash out model ---------- */
+const hrAgo = () => new Date(Date.now() - 3600e3).toISOString();
+const inHr = () => new Date(Date.now() + 3600e3).toISOString();
+const mkLeg = (league, over) => ({ league, gameKey: `${league}:1`, gameId: '1', date: hrAgo(), home: { abbr: 'HOM', id: '1' }, away: { abbr: 'AWY', id: '2' }, result: 'pending', ...over });
+const mlLeg = (league, side, p, over = {}) => mkLeg(league, { key: 'ml' + side, kind: 'ml', side, dec: 1 / (p * B.VIG), ...over });
+const spLeg = (league, sp, p, over = {}) => mkLeg(league, { key: 'sp' + JSON.stringify(sp), kind: 'special', sp: { grp: sp.t, ...sp }, dec: 1 / (p * B.VIG), ...over });
+const pgame = (league, hs, as, period, clock, detail, state = 'in') => ({ league, state, period, clock, detail, home: { score: hs, abbr: 'HOM', id: '1' }, away: { score: as, abbr: 'AWY', id: '2' } });
+const stOf = (league, g, extra = {}) => new Map([[`${league}:1`, { game: g, ...extra }]]);
+const betOf = (legs, stake = 100) => ({ id: 'bx', status: 'pending', stake, mode: 'parlay', legs });
+const wonLeg = { key: 'w', kind: 'ml', side: 'home', dec: 1.5, result: 'won', gameKey: 'nba:0', league: 'nba', date: hrAgo(), home: { abbr: 'A' }, away: { abbr: 'B' } };
+const q = (league, leg, g, extra) => CM.quoteBet(betOf([leg]), stOf(league, g, extra));
+
+t('cash out: the normal curve and its inverse agree', () => {
+  assert.ok(Math.abs(CM.normInv(0.975) - 1.96) < 0.002); assert.equal(CM.normInv(0.5), 0);
+  for (const p of [0.01, 0.2, 0.5, 0.8, 0.99]) assert.ok(Math.abs(CM.normCdf(CM.normInv(p)) - p) < 0.002);
+});
+t('cash out: NBA leads are worth what real leads are worth', () => {
+  const home = mlLeg('nba', 'home', 0.5);
+  const up10half = q('nba', home, pgame('nba', 60, 50, 3, '12:00', 'Halftime')).pWin;
+  assert.ok(up10half > 0.74 && up10half < 0.86, 'up 10 at the half ' + up10half);
+  const up10q4 = q('nba', home, pgame('nba', 80, 70, 4, '12:00', '4th 12:00')).pWin;
+  assert.ok(up10q4 > 0.82 && up10q4 < 0.92, 'up 10 with 12 left ' + up10q4);
+  const tied = q('nba', home, pgame('nba', 65, 65, 3, '6:00', '3rd 6:00')).pWin;
+  assert.ok(Math.abs(tied - 0.5) < 0.05, 'level game is a coin flip ' + tied);
+  assert.ok(q('nba', home, pgame('nba', 100, 80, 4, '2:00', '4th 2:00')).pWin > 0.99, 'up 20 with 2 left is over');
+  const down3 = q('nba', home, pgame('nba', 98, 101, 4, '1:00', '4th 1:00')).pWin;
+  assert.ok(down3 > 0.05 && down3 < 0.2, 'down 3 with a minute left ' + down3);
+});
+t('cash out: a fresh game prices back to the chance it was sold at', () => {
+  for (const [lg, p] of [['nba', 0.6], ['nfl', 0.35], ['nhl', 0.55], ['mlb', 0.62], ['eng.1', 0.4]]) {
+    const r = CM.quoteBet(betOf([wonLeg, mlLeg(lg, 'home', p, { date: inHr() })]), new Map());
+    assert.ok(r.ok, lg);
+    assert.ok(Math.abs(r.pWin - p) < 0.04, `${lg} priced ${p}, model says ${r.pWin}`);
+  }
+});
+t('cash out: a total reacts to the pace of the game', () => {
+  const over = spLeg('nba', { t: 'total', dir: 'over', line: 225.5 }, 0.5);
+  const slow = q('nba', over, pgame('nba', 40, 38, 3, '12:00', 'Halftime')).pWin;
+  const fast = q('nba', over, pgame('nba', 70, 68, 3, '12:00', 'Halftime')).pWin;
+  assert.ok(slow < 0.2 && fast > 0.8, `slow ${slow} fast ${fast}`);
+});
+t('cash out: soccer goals dry up as the clock runs', () => {
+  const over = spLeg('eng.1', { t: 'total', dir: 'over', line: 2.5 }, 0.5);
+  const dead = q('eng.1', over, pgame('eng.1', 0, 0, 2, "82'", "82'")).pWin;
+  const live = q('eng.1', over, pgame('eng.1', 2, 0, 2, "70'", "70'")).pWin;
+  assert.ok(dead < 0.06, 'no goals with 8 minutes left ' + dead); assert.ok(live > 0.3 && live < 0.65, 'two in, 20 left ' + live);
+  const draw = mlLeg('eng.1', 'draw', 0.26);
+  assert.ok(q('eng.1', draw, pgame('eng.1', 1, 1, 2, "85'", "85'")).pWin > 0.75, 'level late is likely to stay level');
+});
+t('cash out: hockey and baseball use goals and innings', () => {
+  const nhl = q('nhl', mlLeg('nhl', 'home', 0.5), pgame('nhl', 3, 1, 3, '5:00', '3rd 5:00')).pWin;
+  assert.ok(nhl > 0.93, 'up two late in hockey ' + nhl);
+  const mlb = q('mlb', mlLeg('mlb', 'home', 0.5), pgame('mlb', 2, 5, 7, '', 'Top 7th')).pWin;
+  assert.ok(mlb > 0.05 && mlb < 0.25, 'down three in the 7th ' + mlb);
+});
+t('cash out: a player prop follows his stat line and the clock', () => {
+  const prop = (over) => mkLeg('nba', { key: 'p', kind: 'prop', dec: 1 / (0.5 * B.VIG), prop: { playerId: 'p1', name: 'Scottie Barnes', label: 'Points', stat: 'pts', line: 24.5, dir: 'over', box: [{ g: '.', l: ['PTS'] }] }, ...over });
+  const box = (pts) => ({ box: { players: [{ groups: [{ name: 'starters', labels: ['MIN', 'PTS'], rows: [{ id: 'p1', name: 'Scottie Barnes', stats: ['20', String(pts)] }] }] }] } });
+  const half = pgame('nba', 55, 50, 3, '12:00', 'Halftime');
+  const hot = q('nba', prop(), half, box(20)).pWin, ok = q('nba', prop(), half, box(12)).pWin, cold = q('nba', prop(), half, box(4)).pWin;
+  assert.ok(hot > 0.8 && ok > 0.25 && ok < 0.6 && cold < 0.15, `hot ${hot} par ${ok} cold ${cold}`);
+  const late = q('nba', prop(), pgame('nba', 100, 95, 4, '1:00', '4th 1:00'), box(22)).pWin;
+  assert.ok(late < 0.1, 'needs 3 more with a minute left: ' + late);
+  const under = q('nba', prop({ prop: { ...prop().prop, dir: 'under' } }), half, box(20)).pWin;
+  assert.ok(under < 0.25, 'under with 20 at half ' + under);
+  const dnp = q('nba', prop(), pgame('nba', 90, 80, 4, '6:00', '4th 6:00'), { box: { players: [] } });
+  assert.ok(dnp.ok && dnp.pWin > 0.5, 'a player with no box score line is likely refunded, which keeps the bet alive ' + dnp.pWin);
+});
+t('cash out: a blowout slows the starters', () => {
+  const prop = mkLeg('nba', { key: 'p', kind: 'prop', dec: 1 / (0.5 * B.VIG), prop: { playerId: 'p1', name: 'A B', label: 'Points', stat: 'pts', line: 24.5, dir: 'over', box: [{ g: '.', l: ['PTS'] }] } });
+  const box = { box: { players: [{ groups: [{ name: 's', labels: ['PTS'], rows: [{ id: 'p1', name: 'A B', stats: ['19'] }] }] }] } };
+  const close = q('nba', prop, pgame('nba', 85, 83, 4, '9:00', '4th 9:00'), box).pWin;
+  const rout = q('nba', prop, pgame('nba', 105, 80, 4, '9:00', '4th 9:00'), box).pWin;
+  assert.ok(rout < close, `${rout} < ${close}`);
+});
+t('cash out: bets in one game move together, other games do not', () => {
+  const g = pgame('nba', 60, 50, 3, '12:00', 'Halftime');
+  const ml = mlLeg('nba', 'home', 0.5), ov = spLeg('nba', { t: 'total', dir: 'over', line: 225.5 }, 0.5);
+  const sgp = CM.quoteBet(betOf([ml, ov]), stOf('nba', g));
+  const alone = (leg) => q('nba', leg, g).pWin;
+  assert.ok(sgp.ok && Math.abs(sgp.pWin - alone(ml) * alone(ov)) < 0.08);
+  const two = CM.quoteBet(betOf([ml, { ...mlLeg('nba', 'home', 0.5), key: 'm2', gameKey: 'nba:2', gameId: '2' }]), new Map([['nba:1', { game: g }], ['nba:2', { game: g }]]));
+  assert.ok(Math.abs(two.pWin - alone(ml) ** 2) < 0.04, 'two different games are independent');
+});
+t('cash out: legs already won pay their price, voids drop out, a lost leg ends it', () => {
+  const g = pgame('nba', 65, 65, 3, '6:00', '3rd 6:00');
+  const one = CM.quoteBet(betOf([wonLeg, mlLeg('nba', 'home', 0.5)]), stOf('nba', g));
+  assert.ok(one.ok && one.hold === Math.round(100 * 1.5 * (1 / (0.5 * B.VIG))), 'hold is stake x won price x live leg price: ' + one.hold);
+  const voided = CM.quoteBet(betOf([{ ...wonLeg, result: 'void' }, wonLeg, mlLeg('nba', 'home', 0.5)]), stOf('nba', g));
+  assert.equal(voided.hold, one.hold, 'a void leg adds nothing');
+  assert.equal(CM.quoteBet(betOf([{ ...wonLeg, result: 'lost' }, mlLeg('nba', 'home', 0.5)]), stOf('nba', g)).ok, false);
+  const done = CM.quoteBet(betOf([wonLeg, { ...wonLeg, key: 'w2', result: 'won', dec: 2 }]), new Map());
+  assert.ok(done.ok && done.final && done.offer === 300);
+});
+t('cash out: never worth more than fair value, never more than holding', () => {
+  const g = pgame('nba', 70, 60, 3, '6:00', '3rd 6:00');
+  const r = CM.quoteBet(betOf([wonLeg, mlLeg('nba', 'home', 0.5), spLeg('nba', { t: 'total', dir: 'over', line: 200.5 }, 0.5)]), stOf('nba', g));
+  assert.ok(r.ok && r.offer <= Math.floor(r.fair * (1 - CM.CUT)) && r.offer < r.hold && r.offer >= 1, JSON.stringify(r));
+  assert.ok(r.offer <= r.fair * 0.97);
+});
+t('cash out: waits for the live score and opens only once something has started', () => {
+  const fresh = CM.quoteBet(betOf([mlLeg('nba', 'home', 0.5, { date: inHr() }), { ...mlLeg('nba', 'away', 0.5), key: 'x', gameKey: 'nba:2', date: inHr() }]), new Map());
+  assert.equal(fresh.ok, false); assert.ok(fresh.early);
+  const noFeed = CM.quoteBet(betOf([mlLeg('nba', 'home', 0.5)]), new Map());
+  assert.equal(noFeed.ok, false); assert.ok(noFeed.wait);
+  assert.equal(CM.quoteBet({ ...betOf([wonLeg]), status: 'won' }, new Map()).ok, false);
+});
+t('cash out: same game, same offer', () => {
+  const g = pgame('nba', 70, 60, 3, '6:00', '3rd 6:00');
+  const a = CM.quoteBet(betOf([mlLeg('nba', 'home', 0.5)]), stOf('nba', g)), b = CM.quoteBet(betOf([mlLeg('nba', 'home', 0.5)]), stOf('nba', g));
+  assert.equal(a.offer, b.offer);
+  const c = CM.quoteBet(betOf([mlLeg('nba', 'home', 0.5)]), stOf('nba', pgame('nba', 72, 60, 3, '6:00', '3rd 6:00')));
+  assert.ok(c.offer > a.offer, 'a bigger lead is a bigger offer');
+});
+t('cash out: a finished game that has not paid out yet is read from its final score', () => {
+  const fin = pgame('nba', 100, 90, 4, '0:00', 'Final', 'post');
+  const r = CM.quoteBet(betOf([wonLeg, mlLeg('nba', 'home', 0.5)]), stOf('nba', fin));
+  assert.ok(r.ok && r.final, 'final: ' + JSON.stringify(r));
+  const lost = CM.quoteBet(betOf([wonLeg, mlLeg('nba', 'away', 0.5)]), stOf('nba', fin));
+  assert.equal(lost.ok, false);
+});
+t('cash out: cashed bets are not bragging rights', () => {
+  const b = (cashed) => ({ id: 'c', status: 'won', stake: 100, payout: 400, dec: 6, mode: 'parlay', cashed, legs: [{ result: 'won', kind: 'ml', dec: 3 }, { result: 'won', kind: 'ml', dec: 2 }] });
+  const st = B.betStats({ a: b(true) }, { streak: 0, bestStreak: 0 }), hit = B.betStats({ a: b(false) }, { streak: 0, bestStreak: 0 });
+  assert.equal(st.won, 1); assert.equal(st.parlayWins, 0); assert.equal(st.biggest, null);
+  assert.equal(hit.parlayWins, 1); assert.equal(st.profit, 300);
 });
 
 console.log(`\n${passed} checks passed`);

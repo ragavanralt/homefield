@@ -348,11 +348,12 @@ export function betStats(bets, bank) {
   const won = settled.filter((b) => b.status === 'won'), lost = settled.filter((b) => b.status === 'lost');
   const staked = settled.filter((b) => b.status !== 'void').reduce((s, b) => s + b.stake, 0);
   const returned = settled.reduce((s, b) => s + (b.payout || 0), 0) - settled.filter((b) => b.status === 'void').reduce((s, b) => s + b.stake, 0);
-  const biggest = won.reduce((m, b) => (!m || b.payout - b.stake > m.payout - m.stake ? b : m), null);
-  const longshot = won.reduce((m, b) => (!m || b.dec > m.dec ? b : m), null);
-  const propWins = won.reduce((n, b) => n + b.legs.filter((l) => (l.kind === 'prop' || l.kind === 'special') && l.result === 'won').length, 0);
+  const hits = won.filter((b) => !b.cashed); // a cashed out win is a win, but not a bragging-rights hit
+  const biggest = hits.reduce((m, b) => (!m || b.payout - b.stake > m.payout - m.stake ? b : m), null);
+  const longshot = hits.reduce((m, b) => (!m || b.dec > m.dec ? b : m), null);
+  const propWins = hits.reduce((n, b) => n + b.legs.filter((l) => (l.kind === 'prop' || l.kind === 'special') && l.result === 'won').length, 0);
   // a parlay only counts as hit when every leg hit: a push or void leg is dropped from the payout, but it is not a clean hit
-  const parlayWins = won.filter((b) => b.mode === 'parlay' && b.legs.length > 1 && b.legs.every((l) => l.result === 'won'));
+  const parlayWins = hits.filter((b) => b.mode === 'parlay' && b.legs.length > 1 && b.legs.every((l) => l.result === 'won'));
   return {
     total: all.length, pending: all.length - settled.length, won: won.length, lost: lost.length,
     accuracy: won.length + lost.length ? won.length / (won.length + lost.length) : null,

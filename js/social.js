@@ -205,7 +205,7 @@ const fanOf = (s) => {
 /** the last few bets, trimmed for the crew to see (and mirror) */
 function recentOf(bets, n = 6) {
   return Object.values(bets || {}).sort((x, y) => (y.ts || y.placedAt || 0) - (x.ts || x.placedAt || 0)).slice(0, n)
-    .map((b) => ({ id: b.id, ts: b.ts || b.placedAt || 0, mode: b.mode, stake: b.stake, dec: b.dec, status: b.status, payout: b.payout || 0, legs: (b.legs || []).map((l) => ({ ...l })) }));
+    .map((b) => ({ id: b.id, ts: b.ts || b.placedAt || 0, mode: b.mode, stake: b.stake, dec: b.dec, status: b.status, payout: b.payout || 0, cashed: !!b.cashed || undefined, legs: (b.legs || []).map((l) => ({ ...l })) }));
 }
 function publicOf(s) {
   const st = betStats(s.bets || {}, s.bank);
