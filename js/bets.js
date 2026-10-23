@@ -45,13 +45,13 @@ export function moneylines(g) {
 // block: a label that must exist in the season stat block (picks the right block for the position).
 export const PROP_DEFS = {
   nba: [
-    { key: 'pts', label: 'Points', dist: 'normal', sd: 0.32, labels: ['PTS'], perGame: true, box: [{ g: /./, l: ['PTS'] }], min: 8, top: 3 },
-    { key: 'reb', label: 'Rebounds', dist: 'normal', sd: 0.42, labels: ['REB'], perGame: true, box: [{ g: /./, l: ['REB'] }], min: 4, top: 2 },
-    { key: 'ast', label: 'Assists', dist: 'normal', sd: 0.5, labels: ['AST'], perGame: true, box: [{ g: /./, l: ['AST'] }], min: 3, top: 2 },
+    { key: 'pts', label: 'Points', dist: 'normal', prior: 13, sd: 0.32, labels: ['PTS'], perGame: true, box: [{ g: /./, l: ['PTS'] }], min: 8, top: 3 },
+    { key: 'reb', label: 'Rebounds', dist: 'normal', prior: 5, sd: 0.42, labels: ['REB'], perGame: true, box: [{ g: /./, l: ['REB'] }], min: 4, top: 2 },
+    { key: 'ast', label: 'Assists', dist: 'normal', prior: 3, sd: 0.5, labels: ['AST'], perGame: true, box: [{ g: /./, l: ['AST'] }], min: 3, top: 2 },
   ],
   nhl: [
-    { key: 'pts', label: 'Points', dist: 'poisson', labels: ['PTS'], box: [{ g: /./, l: ['G'] }, { g: /./, l: ['A'] }], min: 0.4, top: 3, skater: true },
-    { key: 'sog', label: 'Shots on goal', dist: 'poisson', labels: ['SOG', 'S'], box: [{ g: /./, l: ['S', 'SOG'] }], min: 1.5, top: 3, skater: true },
+    { key: 'pts', label: 'Points', dist: 'poisson', prior: 0.6, labels: ['PTS'], box: [{ g: /./, l: ['G'] }, { g: /./, l: ['A'] }], min: 0.4, top: 3, skater: true },
+    { key: 'sog', label: 'Shots on goal', dist: 'poisson', prior: 2.2, labels: ['SOG', 'S'], box: [{ g: /./, l: ['S', 'SOG'] }], min: 1.5, top: 3, skater: true },
   ],
   nfl: [
     { key: 'passyds', label: 'Passing yards', dist: 'normal', sd: 0.3, labels: ['YDS'], need: 'CMP', box: [{ g: /pass/i, l: ['YDS'] }], min: 120, top: 1 },
@@ -62,14 +62,14 @@ export const PROP_DEFS = {
   ],
   // soccer: season rates come from ESPN's per-player stat block, results from the match's player stats
   soccer: [
-    { key: 'goals', label: 'Goals', dist: 'poisson', labels: ['G', 'GLS'], box: [{ g: /./, l: ['G', 'GLS'] }], min: 0.12, top: 4, fixedLine: 0.5, outfield: true },
-    { key: 'sot', label: 'Shots on target', dist: 'poisson', labels: ['ST', 'SOT'], box: [{ g: /./, l: ['ST', 'SOT'] }], min: 0.5, top: 3, outfield: true },
-    { key: 'shots', label: 'Shots', dist: 'poisson', labels: ['SH', 'SHOTS'], box: [{ g: /./, l: ['SH', 'SHOTS'] }], min: 1.2, top: 3, outfield: true },
-    { key: 'assists', label: 'Assists', dist: 'poisson', labels: ['A', 'AST'], box: [{ g: /./, l: ['A', 'AST'] }], min: 0.12, top: 3, fixedLine: 0.5, outfield: true },
+    { key: 'goals', label: 'Goals', dist: 'poisson', prior: 0.2, labels: ['G', 'GLS'], box: [{ g: /./, l: ['G', 'GLS'] }], min: 0.12, top: 4, fixedLine: 0.5, outfield: true },
+    { key: 'sot', label: 'Shots on target', dist: 'poisson', prior: 0.7, labels: ['ST', 'SOT'], box: [{ g: /./, l: ['ST', 'SOT'] }], min: 0.5, top: 3, outfield: true },
+    { key: 'shots', label: 'Shots', dist: 'poisson', prior: 1.8, labels: ['SH', 'SHOTS'], box: [{ g: /./, l: ['SH', 'SHOTS'] }], min: 1.2, top: 3, outfield: true },
+    { key: 'assists', label: 'Assists', dist: 'poisson', prior: 0.15, labels: ['A', 'AST'], box: [{ g: /./, l: ['A', 'AST'] }], min: 0.12, top: 3, fixedLine: 0.5, outfield: true },
     { key: 'saves', label: 'Saves', dist: 'poisson', labels: ['SV', 'SAVES'], box: [{ g: /./, l: ['SV', 'SAVES'] }], min: 1.5, top: 1, keeper: true },
   ],
   mlb: [
-    { key: 'hits', label: 'Hits', dist: 'poisson', labels: ['H'], need: 'AB', box: [{ g: /batt/i, l: ['H'] }], min: 0.7, top: 3 },
+    { key: 'hits', label: 'Hits', dist: 'poisson', prior: 0.9, labels: ['H'], need: 'AB', box: [{ g: /batt/i, l: ['H'] }], min: 0.7, top: 3 },
     { key: 'hr', label: 'Home runs', dist: 'poisson', labels: ['HR'], need: 'AB', box: [{ g: /batt/i, l: ['HR'] }], min: 0.12, top: 2, fixedLine: 0.5 },
   ],
 };
@@ -103,6 +103,18 @@ export function seasonAvg(blocks, def) {
     return v / gp;
   }
   return null;
+}
+
+/** Games played in a season stat block, or null. */
+export function seasonGP(blocks) {
+  for (const b of blocks || []) { const i = b.labels.map((x) => String(x).toUpperCase()).indexOf('GP'); if (i >= 0) { const v = numOf(b.values[i]); if (v != null) return v; } }
+  return null;
+}
+/** Early in the season one huge game is not a season average. Under 8 games, blend toward a typical player. */
+export function shrinkAvg(def, avg, gp) {
+  if (avg == null || !def.prior || gp == null || gp >= 8) return avg;
+  const w = Math.max(0, gp) / 8;
+  return w * avg + (1 - w) * def.prior;
 }
 
 /** Price one prop. Returns { line, over: dec, under: dec } or null. */
@@ -157,7 +169,7 @@ export function leaderProps(league, leaders, teamId, record) {
   const out = [];
   const add = (c, key, avg) => {
     const d = def(key);
-    const pr = d && priceProp(d, avg);
+    const pr = d && priceProp(d, shrinkAvg(d, avg, gp));
     if (pr) out.push({ teamId, playerId: c.id, name: c.who, short: c.who, pos: '', face: c.face, stat: key, label: d.label, line: pr.line, over: pr.over, under: pr.under, box: d.box });
   };
   for (const c of mine ? mine.cats : []) {
@@ -191,7 +203,8 @@ export function buildProps(league, players, statsById, teamId) {
       if (grp === 'nfl' && FOOT_POS[p.pos] && !FOOT_POS[p.pos].includes(def.key)) continue;
       if (grp === 'nfl' && !FOOT_POS[p.pos]) continue;
       if (grp === 'soccer' && ((def.keeper && !isKeeper(p)) || (def.outfield && isKeeper(p)))) continue;
-      const avg = seasonAvg(statsById.get(p.id), def);
+      const blocks = statsById.get(p.id);
+      const avg = shrinkAvg(def, seasonAvg(blocks, def), seasonGP(blocks));
       const pr = priceProp(def, avg);
       if (pr) rows.push({ p, avg, pr });
     }

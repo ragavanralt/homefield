@@ -199,6 +199,15 @@ t('soccer props: priced from season rates, only the right players, and settled f
   assert.equal(B.evalLeg(leg('saves', '4', 'over'), data), 'won');
   assert.equal(B.evalLeg({ ...leg('goals', '1', 'over'), prop: { ...leg('goals', '1', 'over').prop, playerId: '9', name: 'Unused Sub' } }, data), 'void');
 });
+t('one monster game early in the season does not set a 45.5 points line', () => {
+  const def = B.PROP_DEFS.nba[0];
+  const blocks = [{ labels: ['GP', 'MIN', 'PTS'], values: ['1', '38', '45'] }];
+  const avg = B.shrinkAvg(def, B.seasonAvg(blocks, def), B.seasonGP(blocks));
+  assert.ok(B.priceProp(def, avg).line < 20, 'one game barely moves the line');
+  assert.equal(B.shrinkAvg(def, 28, 20), 28, 'a real sample is left alone');
+  const lp = B.leaderProps('nba', [{ teamId: '5', cats: [{ name: 'Points', value: '45', who: 'T. Jerome', id: '9', face: '' }] }], '5', '1-0');
+  assert.ok(lp[0].line < 20, 'the leaders fallback is shrunk too');
+});
 t('prop lines come from season averages and never push', () => {
   const def = B.PROP_DEFS.nba[0];
   const p = B.priceProp(def, 24.6);
@@ -290,7 +299,7 @@ t('leader props: nfl from season leaders', () => {
   assert.ok(p.every((x) => x.over > 1 && x.under > 1));
 });
 t('leader props: nba per game', () => {
-  const p = B.leaderProps('nba', [{ teamId: '28', cats: [{ name: 'Points Per Game', value: '27.8', who: 'S Barnes', id: '5', face: '' }] }], '28', '3-1');
+  const p = B.leaderProps('nba', [{ teamId: '28', cats: [{ name: 'Points Per Game', value: '27.8', who: 'S Barnes', id: '5', face: '' }] }], '28', '12-8');
   assert.equal(p[0].stat, 'pts'); assert.ok(p[0].line >= 27.5 && p[0].line <= 28.5);
 });
 t('mlb best-of series closes when a team has enough wins', () => {
