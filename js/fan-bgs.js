@@ -159,3 +159,16 @@ ART.bg.confetti = bg((P) => {
   floor(P, '#3A2A0A', '#1E1606', 250);
   glow(P, 100, 312, 110, 26, '#FFD86A', 0.4);
 });
+
+// rooftop at sunset: warm sky, low sun, skyline, a ledge to stand on
+ART.bg.sunsetroof = bg((P) => {
+  sky(P, [[0, '#5A3A7A'], [0.35, '#D8607A'], [0.65, '#F59A5A'], [1, '#FFD08A']]);
+  glow(P, 100, 200, 110, 70, '#FFE2A8', 0.8);
+  P.add(`<circle cx="100" cy="206" r="26" fill="#FFE9B8"/>`);
+  const r = rng(41);
+  let x = -200;
+  while (x < 400) { const w = 16 + r() * 24, h = 20 + r() * 60; P.add(rect(x, 232 - h, w, h + 30, '#3A2448')); for (let wy = 232 - h + 5; wy < 228; wy += 9) for (let wx = x + 3; wx < x + w - 4; wx += 7) if (r() < 0.25) P.add(rect(wx, wy, 3, 4, '#FFD08A', ' opacity="0.8"')); x += w + 1; }
+  floor(P, '#4A3A52', '#241A2E', 250);
+  P.add(rect(X0, 246, W, 5, '#6A5870'));
+  for (let i = 0; i < 12; i++) P.add(rect(-190 + i * 50, 264, 24, 2, '#FFD08A', ' opacity="0.18"'));
+});

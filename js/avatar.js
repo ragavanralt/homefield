@@ -20,7 +20,7 @@ export const SLOTS = [
 // Shop sections. Each item belongs to one. Real brands and logos are not used; the labels are made up.
 export const SECTIONS = [
   { id: 'team', label: 'Team shop', blurb: 'Gear in the colours of the team you follow.' },
-  { id: 'casual', label: 'Casual', blurb: 'Sport-brand style sleeves and calf bands in fixed colours: black, white, red and royal. Original marks, no real logos.' },
+  { id: 'casual', label: 'Casual', blurb: 'Sport-brand style sleeves and calf bands in fixed colours, plus easy knits. Original marks, no real logos.' },
   { id: 'retro', label: 'Retros', blurb: 'Throwback jerseys, kits, shorts, hats and jackets from big moments in sports. Fixed colours.' },
   { id: 'look', label: 'Look', blurb: 'Hair, faces, beards and earrings.' },
   { id: 'blank', label: 'Blanks', blurb: 'Plain basics. Cheap, no logos.' },
@@ -172,6 +172,14 @@ export const ITEMS = [
   I('fsblack', 'armwear', 'Black full sleeve undershirt', 'casual', 450, { sided: true }), I('fswhite', 'armwear', 'White full sleeve undershirt', 'casual', 450, { sided: true }),
   I('fsbred', 'armwear', 'Black and red full sleeve undershirt', 'casual', 600, { sided: true }), I('fsroyal', 'armwear', 'Royal and gold full sleeve undershirt', 'casual', 600, { sided: true }), I('elbowblack', 'armwear', 'Black elbow sleeve', 'casual', 250, { sided: true }),
 
+  // ---- Weekly drop, 2026-10-23
+  I('gapgrin', 'expr', 'Gap-tooth grin', 'look', 250),
+  I('bowl', 'hair', 'Bowl cut', 'look', 150), I('pigtails', 'hair', 'Pigtails', 'look', 200), I('hightop', 'hair', 'High-top fade', 'look', 350),
+  I('silverhoops', 'ear', 'Silver hoops', 'look', 450), I('pearlstuds', 'ear', 'Pearl studs', 'look', 350), I('goldbars', 'ear', 'Gold drop bars', 'look', 900),
+  I('cableknit', 'top', 'Cable-knit sweater', 'casual', 550),
+  I('rt_lon04', 'top', "North London '04 home kit", 'retro', 5500),
+  I('sunsetroof', 'bg', 'Rooftop sunset', 'bg', 800),
+
   // ---- Earned
   I('ghost', 'top', 'Ghost sheet', 'team', 0, { ach: 'Get rescued with free coins once' }), I('goldscarf', 'scarf', 'Golden scarf', 'team', 0, { ach: 'Win 5 bets in a row' }), I('trophycape', 'back', 'Trophy cape', 'team', 0, { ach: 'Hit a parlay' }),
 ];
@@ -180,6 +188,7 @@ export const itemById = (id) => ITEMS.find((i) => i.id === id);
 // and the listed shade colours (cuffs, collars, pockets) follow it, darker or lighter by the amount.
 const W = '#ECEBE7', BK = '#1C1C21', HG = '#8E9196', NV = '#1F2A44', OL = '#4F5A3A', CR = '#E9E4D8';
 const COLS = {
+  cableknit: [['Oatmeal', '#D8CDB4'], ['Navy', NV], ['Forest', '#2F4F3A'], ['Burgundy', '#6B1E2A'], ['Charcoal', '#46474D'], ['Cream', CR]],
   tee: [['Slate', '#64748B'], ['White', W], ['Black', BK], ['Heather', HG], ['Navy', NV], ['Olive', '#5B6440'], ['Burgundy', '#6B1E2A'], ['Cream', CR], ['Sky', '#8DB4D8'], ['Forest', '#2F4F3A']],
   tank: [['Black', '#1F2937'], ['White', W], ['Heather', HG], ['Navy', NV], ['Olive', OL]],
   jeans: [['Mid wash', '#3A5A93'], ['Light wash', '#7FA0C9'], ['Dark wash', '#22324F'], ['Black', '#2A2B30'], ['Grey', '#6B7280']],

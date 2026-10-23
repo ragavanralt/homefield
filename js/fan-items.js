@@ -1144,3 +1144,28 @@ ART.back.sling = (P, g, col, ph, c) => {
   P.part(d, R, { shade: [[poly([[CX + 24, 150], [CX + 50, 150], [CX + 50, 200], [CX + 24, 200]]), R.sh]] });
   P.stroke(curve([[CX + 8, 168], [CX + 34, 173]]), SILVER, 1.4); P.dot(CX + 12, 168.6, 1.6, SILVER);
 };
+
+
+/* ---------- weekly drop, 2026-10-23 */
+// bowl cut: a round cap with a straight fringe
+ART.hair.bowl = hairOf(null, (P, hc) => hairShape(P, blob([[63, 66], [61, 44], [66, 28], [78, 16], [98, 9], [118, 12], [132, 22], [138, 38], [138, 66], [133, 66], [132, 52], [120, 49], [100, 50], [80, 49], [69, 52], [68, 66]]), hc, { strands: [[[84, 22], [80, 40]], [[100, 18], [100, 42]], [[116, 22], [120, 40]]], lights: [[[80, 22], [92, 15]]] }));
+// pigtails: two ties with tails hanging behind each ear
+ART.hair.pigtails = hairOf((P, hc) => both((s) => {
+  const X = (x) => CX + (x - CX) * s;
+  hairShape(P, blob([[X(134), 38], [X(150), 50], [X(158), 82], [X(154), 114], [X(144), 120], [X(140), 90], [X(136), 60]]), hc, { noHi: true, shX: 300, shX2: 300 });
+  P.shape(blob([[X(134), 40], [X(142), 38], [X(144), 48], [X(136), 50]]), '#C8432E', { line: '#5A1A10', w: 1.3 });
+}), (P, hc) => hairShape(P, blob(SHORT), hc, { noHi: true, strands: [[[80, 30], [96, 18], [116, 18]], [[90, 32], [108, 24], [126, 28]]], lights: [[[78, 26], [94, 16]]] }));
+// high-top fade: a tall flat block with tight sides
+ART.hair.hightop = hairOf(null, (P, hc) => {
+  hairShape(P, blob([[68, 52], [66, 26], [68, 4], [74, -12], [100, -16], [126, -12], [132, 4], [134, 26], [132, 52], [129, 50], [128, 36], [120, 30], [100, 28], [80, 30], [72, 36], [71, 50]]), hc, { strands: [[[80, -2], [80, 16]], [[100, -6], [100, 16]], [[120, -2], [120, 16]]], lights: [[[78, -8], [96, -12]]], noHi: true });
+});
+ART.ear.silverhoops = (P, g, col, ph) => { if (ph === 'face') both((s) => { P.add(`<ellipse cx="${CX + s * 35.6}" cy="85" rx="3.6" ry="5" fill="none" stroke="${SILVER2}" stroke-width="2.8"/><ellipse cx="${CX + s * 35.6}" cy="85" rx="3.6" ry="5" fill="none" stroke="${SILVER}" stroke-width="1.6"/>`); }); };
+ART.ear.pearlstuds = (P, g, col, ph) => { if (ph === 'face') both((s) => { P.add(`<circle cx="${CX + s * 35.4}" cy="79.6" r="2.3" fill="#F6F2EA" stroke="#B8B2A6" stroke-width="0.8"/><circle cx="${CX + s * 34.8}" cy="78.9" r="0.7" fill="#FFFFFF"/>`); }); };
+ART.ear.goldbars = (P, g, col, ph) => { if (ph === 'face') both((s) => { P.add(`<circle cx="${CX + s * 35.4}" cy="79.6" r="1.6" fill="${GOLD}" stroke="${GOLD2}" stroke-width="0.7"/><rect x="${CX + s * 35.4 - 1.3}" y="82" width="2.6" height="9" rx="1.2" fill="${GOLD}" stroke="${GOLD2}" stroke-width="0.8"/><rect x="${CX + s * 35.4 - 0.5}" y="83" width="0.9" height="6.5" fill="${GOLDHI}"/>`); }); };
+// cable-knit: chunky twisted columns down the front
+ART.top.cableknit = top({ def: '#D8CDB4', sleeve: 'long', grow: 7, sgrow: 7, hem: 207, neck: 'crew', detail: (P, c, R, d) => {
+  hem(P, c.B, 5, 207, R);
+  P.clip(d, [-30, -15, 0, 15, 30].map((dx) => Array.from({ length: 11 }, (_, i) => `<path d="M${CX + dx - 3} ${120 + i * 8.4} Q${CX + dx} ${123 + i * 8.4} ${CX + dx + 3} ${120 + i * 8.4 + 8.4} M${CX + dx + 3} ${120 + i * 8.4} Q${CX + dx} ${123 + i * 8.4} ${CX + dx - 3} ${120 + i * 8.4 + 8.4}" fill="none" stroke="${R.sh}" stroke-width="1.6" stroke-linecap="round"/>`).join('')).join('') + [-22.5, -7.5, 7.5, 22.5].map((dx) => `<path d="M${CX + dx} 116 L${CX + dx} 206" stroke="${R.deep}" stroke-width="1.1" opacity="0.7"/>`).join(''));
+} });
+// North London '04: red body, white sleeves, navy and gold trim; no real crest or sponsor
+ART.top.rt_lon04 = kit({ main: '#D81E2B', sleeve: W2, collar: '#1C2A55', cuff: '#1C2A55', cuff2: '#C9A23A', badge: { shape: 'shield', ring: '#C9A23A', field: ['#D81E2B', '#F4F1EA'], n: 2, symbol: 'star', symbolCol: '#C9A23A' }, neck: 'v' });
