@@ -208,7 +208,7 @@ export async function render(root, params = {}) {
       m.me ? null : h('div', { class: 'row wrap bet-act' },
         live.length ? h('button', { type: 'button', class: 'btn small main mirror', onclick: () => {
           const r = mirrorBet(b);
-          toast(r.added ? `Added ${r.added} pick${r.added === 1 ? '' : 's'} to your slip${r.started ? ` (${r.started} already started)` : ''}` : r.dupes ? 'Those picks are already on your slip' : 'Those games already started');
+          toast(r.added ? `Added ${r.added} pick${r.added === 1 ? '' : 's'} to your slip${r.started ? ` (${r.started} already started)` : ''}${r.full ? ` · ${r.full} left off, your slip is full` : ''}` : r.full ? 'Your slip is full. Remove a pick first.' : r.dupes ? 'Those picks are already on your slip' : 'Those games already started');
         } }, '⇄ Mirror this bet') : h('small', { class: 'muted' }, 'Games already started'),
         h('a', { class: 'btn small', href: `#/duels/vs/${encodeURIComponent(m.handle)}` }, 'Challenge')));
     return row;
@@ -217,10 +217,10 @@ export async function render(root, params = {}) {
   function mirrorBet(b) {
     const now = Date.now();
     const legs = (b.legs || []).filter((l) => new Date(l.date).getTime() > now);
-    let added = 0, dupes = 0;
-    legs.forEach((l) => { if (slipHas(l.key)) dupes++; else { toggleLeg({ ...l, result: 'pending' }); added++; } });
+    let added = 0, dupes = 0, full = 0;
+    legs.forEach((l) => { if (slipHas(l.key)) dupes++; else if (toggleLeg({ ...l, result: 'pending' }).ok) added++; else full++; });
     if (added) setSlip({ mode: b.mode === 'parlay' && (legs.length > 1 || getState().slip.legs.length > 1) ? 'parlay' : 'single' });
-    return { added, dupes, started: (b.legs || []).length - legs.length };
+    return { added, dupes, full, started: (b.legs || []).length - legs.length };
   }
 
   /* ----- the wall ----- */

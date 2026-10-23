@@ -819,3 +819,6 @@ html { background: var(--bg); }
 .lu-in { color: var(--good); font-weight: 700; }
 .lu-order { counter-reset: bat; } .lu-order .pl-row::before { counter-increment: bat; content: counter(bat); width: 16px; color: var(--muted); font-weight: 700; }
 @media (max-width: 380px) { .lu-spot { width: 58px; } .lu-name { font-size: 10px; max-width: 58px; } .lu-dot { width: 26px; height: 26px; font-size: 12px; } }
+@media (max-height: 760px) { .slip-foot > .small-note:last-child { display: none; } .slip-sum dd.big { font-size: 22px; } }
+/* very short screens: the pinned part would not fit, so the whole ticket scrolls instead */
+@media (max-height: 620px) { .slip .slip-body { overflow-y: auto; } .slip-scroll { flex: none; overflow: visible; } }

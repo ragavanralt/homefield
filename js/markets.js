@@ -1,16 +1,16 @@
 // Bet buttons and market panels: winner, player props (by stat), first scorer, game bets.
 // Tapping a price adds it to the betslip (tap again to remove).
-import { h, clear, face, loading } from './ui.js';
+import { h, clear, face, loading, toast } from './ui.js';
 import { toggleLeg, slipHas } from './store.js';
 import { isSoccer } from './leagues.js';
-import { moneylines, mlLeg, propLeg, american, propCatsFor } from './bets.js';
+import { moneylines, mlLeg, propLeg, american, propCatsFor, MAX_LEGS } from './bets.js';
 import { gameBets, firstLeg, hasFirst, FIRST } from './specials.js';
 import { loadPropsCat, loadFirst } from './props.js';
 
 const open = (g) => g.state === 'pre' && new Date(g.date).getTime() > Date.now() && !g.void;
 
 export function betButton(leg, top, sub, disabled) {
-  return h('button', { type: 'button', class: 'bet-btn', 'data-key': leg.key, 'aria-pressed': slipHas(leg.key) ? 'true' : 'false', disabled: disabled || null, onclick: () => toggleLeg(leg) },
+  return h('button', { type: 'button', class: 'bet-btn', 'data-key': leg.key, 'aria-pressed': slipHas(leg.key) ? 'true' : 'false', disabled: disabled || null, onclick: () => { if (!toggleLeg(leg).ok) toast(`Your slip is full: ${MAX_LEGS} picks max. Remove one to add this.`); } },
     h('span', { class: 'bb-t' }, top), h('span', { class: 'bb-o' }, american(leg.dec)), sub ? h('small', null, sub) : null);
 }
 

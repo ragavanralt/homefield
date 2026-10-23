@@ -6,7 +6,7 @@ import { evalSpecial } from './specials.js';
 
 export const START_COINS = 1000;
 export const MIN_STAKE = 10;
-export const MAX_LEGS = 8;
+export const MAX_LEGS = 15;
 export const VIG = 1.06; // the "house edge" baked into every price
 const r2 = (n) => Math.round(n * 100) / 100;
 

@@ -103,16 +103,19 @@ const ping = () => listeners.forEach((fn) => { try { fn(); } catch (e) { /* igno
 export const getBank = () => state.bank;
 export const slipHas = (key) => state.slip.legs.some((l) => l.key === key);
 
-/** Add a leg, or take it off if it is already there. A conflicting leg on the same market is swapped out. */
+/** Add a leg, or take it off if it is already there. A conflicting leg on the same market is swapped out.
+ * A full slip says no ({ ok: false, why: 'full' }) instead of quietly dropping a pick you already chose. */
 export function toggleLeg(leg) {
+  const legs = state.slip.legs;
+  if (!legs.some((l) => l.key === leg.key) && legs.filter((l) => !conflicts(l, leg)).length >= MAX_LEGS) return { ok: false, why: 'full' };
   update((s) => {
     const i = s.slip.legs.findIndex((l) => l.key === leg.key);
     if (i >= 0) { s.slip.legs.splice(i, 1); return; }
     s.slip.legs = s.slip.legs.filter((l) => !conflicts(l, leg));
-    if (s.slip.legs.length >= MAX_LEGS) s.slip.legs.shift();
     s.slip.legs.push(leg);
   });
   ping();
+  return { ok: true };
 }
 export function removeLeg(key) { update((s) => { s.slip.legs = s.slip.legs.filter((l) => l.key !== key); }); ping(); }
 export function clearSlip() { update((s) => { s.slip.legs = []; }); ping(); }

@@ -702,6 +702,23 @@ t('soccer lineups carry formation spot, goals and cards', () => {
   });
 }
 
+// ---- betslip leg limit ----
+{
+  const store = await import('../js/store.js');
+  const { MAX_LEGS } = await import('../js/bets.js');
+  t('a full slip refuses another pick instead of dropping your first one', () => {
+    store.clearSlip();
+    const leg = (i) => ({ key: 'cap' + i, kind: 'ml', gameKey: 'nhl:' + (5000 + i), league: 'nhl', gameId: String(5000 + i), side: 'home', dec: 1.9, label: 'Pick ' + i, home: { abbr: 'TB' }, away: { abbr: 'BOS' } });
+    for (let i = 0; i < MAX_LEGS; i++) assert.equal(store.toggleLeg(leg(i)).ok, true);
+    assert.deepEqual(store.toggleLeg(leg(99)), { ok: false, why: 'full' });
+    assert.equal(store.getState().slip.legs.length, MAX_LEGS);
+    assert.equal(store.getState().slip.legs[0].key, 'cap0', 'the first pick is still there');
+    assert.equal(store.toggleLeg(leg(3)).ok, true, 'taking one off still works when full');
+    assert.equal(store.toggleLeg(leg(99)).ok, true, 'and then there is room again');
+    store.clearSlip();
+  });
+}
+
 // ---- OddsPapi fallback ----
 {
   const store = {};

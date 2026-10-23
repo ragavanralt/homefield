@@ -1,7 +1,7 @@
 // The betslip: a panel that follows you around the app. Singles or a parlay, then place the bet.
 import { h, clear, toast } from './ui.js';
 import { getState, getBank, removeLeg, clearSlip, setSlip, placeSlip, onSlipChange } from './store.js';
-import { MIN_STAKE, parlayDec, streakBoost, american, fmtX } from './bets.js';
+import { MIN_STAKE, MAX_LEGS, parlayDec, streakBoost, american, fmtX } from './bets.js';
 import { syncButtons } from './markets.js';
 
 let host, open = false, lastCount = 0;
@@ -35,7 +35,7 @@ function draw() {
   const payout = parlay ? slip.stake * dec * (1 + boost) : legs.reduce((s, l) => s + slip.stake * l.dec * (1 + boost), 0);
 
   host.append(h('button', { type: 'button', class: 'slip-bar', id: 'slip-toggle', 'aria-expanded': open ? 'true' : 'false', onclick: () => { open = !open; draw(); } },
-    h('span', { class: 'sb-n' }, String(legs.length)), h('span', { class: 'sb-t' }, 'Betslip'),
+    h('span', { class: 'sb-n' }, String(legs.length)), h('span', { class: 'sb-t' }, 'Betslip', legs.length >= MAX_LEGS ? h('small', null, ' · full') : null),
     h('span', { class: 'sb-p' }, `${fmt(total)} → ${fmt(payout)}`), h('span', { class: 'sb-c' }, open ? '▾' : '▴')));
 
   // the picks scroll on their own, so the stake and the place button always stay on screen however long the parlay gets
@@ -48,8 +48,8 @@ function draw() {
     h('div', { class: 'sl-o' }, american(l.dec)),
     h('button', { type: 'button', class: 'x', 'aria-label': 'Remove', onclick: () => removeLeg(l.key) }, '×')))));
 
-  scroll.append(h('div', { class: 'seg' }, [['single', 'Singles'], ['parlay', 'Parlay']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (slip.mode === k ? ' on' : ''), id: 'slip-' + k, disabled: k === 'parlay' && legs.length < 2 ? true : null, onclick: () => setSlip({ mode: k }) }, l))));
-  if (slip.mode === 'parlay' && legs.length < 2) scroll.append(h('p', { class: 'muted small-note' }, 'Add a second pick to build a parlay.'));
+  foot.append(h('div', { class: 'seg' }, [['single', 'Singles'], ['parlay', 'Parlay']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (slip.mode === k ? ' on' : ''), id: 'slip-' + k, disabled: k === 'parlay' && legs.length < 2 ? true : null, onclick: () => setSlip({ mode: k }) }, l))));
+  if (slip.mode === 'parlay' && legs.length < 2) foot.append(h('p', { class: 'muted small-note' }, 'Add a second pick to build a parlay.'));
 
   const input = h('input', { class: 'stake', id: 'stake', type: 'number', inputmode: 'numeric', min: MIN_STAKE, step: 5, value: String(slip.stake), 'aria-label': 'Stake in coins' });
   input.addEventListener('change', () => setSlip({ stake: Math.max(0, Math.floor(Number(input.value) || 0)) }));
