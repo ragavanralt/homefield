@@ -13,10 +13,19 @@ const API = 'https://api.the-odds-api.com';
 const SPORT = { nfl: 'americanfootball_nfl', nba: 'basketball_nba', nhl: 'icehockey_nhl', mlb: 'baseball_mlb' };
 // book market key -> our prop key (which also carries the box score settlement rule)
 export const BOOK_MARKETS = {
-  nfl: { player_pass_yds: 'passyds', player_pass_tds: 'passtd', player_rush_yds: 'rushyds', player_reception_yds: 'recyds', player_receptions: 'rec' },
-  nba: { player_points: 'pts', player_rebounds: 'reb', player_assists: 'ast' },
-  nhl: { player_points: 'pts', player_shots_on_goal: 'sog' },
-  mlb: { batter_hits: 'hits', batter_home_runs: 'hr' },
+  nfl: { player_pass_yds: 'passyds', player_pass_tds: 'passtd', player_pass_completions: 'passcomp', player_rush_yds: 'rushyds', player_rush_attempts: 'rushatt', player_reception_yds: 'recyds', player_receptions: 'rec' },
+  nba: { player_points: 'pts', player_rebounds: 'reb', player_assists: 'ast', player_threes: 'threes', player_steals: 'stl', player_blocks: 'blk', player_turnovers: 'to',
+    player_points_rebounds_assists: 'pra', player_points_rebounds: 'pr', player_points_assists: 'pa', player_rebounds_assists: 'ra' },
+  nhl: { player_points: 'pts', player_shots_on_goal: 'sog', player_goals: 'goals', player_assists: 'assists', player_blocked_shots: 'blk' },
+  mlb: { batter_hits: 'hits', batter_home_runs: 'hr', batter_rbis: 'rbi', batter_runs_scored: 'runs', batter_strikeouts: 'bk', pitcher_strikeouts: 'pk' },
+};
+// the "X+" milestone ladders books post for the same stats
+export const BOOK_ALT = {
+  nfl: { player_pass_yds_alternate: 'passyds', player_pass_tds_alternate: 'passtd', player_pass_completions_alternate: 'passcomp', player_rush_yds_alternate: 'rushyds', player_rush_attempts_alternate: 'rushatt', player_reception_yds_alternate: 'recyds', player_receptions_alternate: 'rec' },
+  nba: { player_points_alternate: 'pts', player_rebounds_alternate: 'reb', player_assists_alternate: 'ast', player_threes_alternate: 'threes', player_steals_alternate: 'stl', player_blocks_alternate: 'blk', player_turnovers_alternate: 'to',
+    player_points_rebounds_assists_alternate: 'pra', player_points_rebounds_alternate: 'pr', player_points_assists_alternate: 'pa', player_rebounds_assists_alternate: 'ra' },
+  nhl: { player_points_alternate: 'pts', player_shots_on_goal_alternate: 'sog', player_goals_alternate: 'goals', player_assists_alternate: 'assists', player_blocked_shots_alternate: 'blk' },
+  mlb: { batter_hits_alternate: 'hits', batter_home_runs_alternate: 'hr', batter_rbis_alternate: 'rbi', batter_runs_scored_alternate: 'runs', batter_strikeouts_alternate: 'bk', pitcher_strikeouts_alternate: 'pk' },
 };
 const FIRST_MARKET = { nfl: 'player_1st_td', nhl: 'player_goal_scorer_first', nba: 'player_first_basket' };
 const PER_MARKET = 8;
@@ -105,12 +114,12 @@ async function oddsApiProps(game, stats) {
   const grp = LEAGUES[game.league]?.group;
   const sport = SPORT[grp];
   if (!sport || !hasMainKey()) return { markets: [], book: '' };
-  const map = BOOK_MARKETS[grp];
+  const map = { ...BOOK_MARKETS[grp], ...(BOOK_ALT[grp] || {}) };
   const want = Object.keys(map).filter((k) => !stats || stats.includes(map[k]));
   if (!want.length) return { markets: [], book: '' };
   const j = await eventOdds(game, sport, want, `p:${game.key}:${want.join(',')}`);
   const defs = PROP_DEFS[grp];
-  const rows = new Map();
+  const rows = new Map(), lad = new Map();
   for (const bk of ['draftkings', 'fanduel']) {
     const b = (j.bookmakers || []).find((x) => x.key === bk);
     if (!b) continue;
@@ -118,6 +127,17 @@ async function oddsApiProps(game, stats) {
       const key = map[m.key];
       const def = defs.find((d) => d.key === key);
       if (!def) continue;
+      if (/_alternate$/.test(m.key)) { // milestone ladder: Over 24.5 is "25+"
+        for (const o of m.outcomes || []) {
+          if (!/^over$/i.test(o.name) || !o.description || o.point == null || !(o.price > 1)) continue;
+          const lk = key + '|' + nameKey(o.description);
+          const rungs = lad.get(lk) || new Map();
+          const t = Math.ceil(o.point);
+          if (!rungs.has(t)) rungs.set(t, o.price); // first book wins
+          lad.set(lk, rungs);
+        }
+        continue;
+      }
       const by = new Map();
       for (const o of m.outcomes || []) {
         const who = o.description || '';
@@ -135,11 +155,47 @@ async function oddsApiProps(game, stats) {
       }
     }
   }
+  for (const m of rows.values()) { // attach each player's ladder, cheapest rung first
+    const rungs = lad.get(m.stat + '|' + nameKey(m.name));
+    if (rungs) m.ladder = [...rungs].map(([t, dec]) => ({ t, dec })).filter((x) => x.dec >= 1.05).sort((a, b) => a.t - b.t).slice(0, 8);
+  }
   const byStat = new Map();
   for (const m of rows.values()) { if (!byStat.has(m.stat)) byStat.set(m.stat, []); byStat.get(m.stat).push(m); }
   const out = [];
   for (const list of byStat.values()) out.push(...list.sort((a, b) => b.line - a.line).slice(0, PER_MARKET * 2));
   return { markets: out, book: [...new Set(out.map((m) => m.book))].join(' and ') };
+}
+
+/** Totals, spreads and team totals with every alternate line the books post. Returns { totals, spreads, teamTotals, book } or null. */
+export async function bookGame(game) {
+  const grp = LEAGUES[game.league]?.group;
+  const sport = SPORT[grp];
+  if (!sport || !hasMainKey() || mainOut()) return null;
+  const markets = ['spreads', 'totals', 'alternate_spreads', 'alternate_totals', 'team_totals', 'alternate_team_totals'];
+  const j = await eventOdds(game, sport, markets, `g:${game.key}`);
+  const tot = new Map(), spr = new Map(), tt = { home: new Map(), away: new Map() }, books = new Set();
+  const put = (map, line, field, price) => { const r = map.get(line) || { line }; if (!(r[field] > 1)) r[field] = price; map.set(line, r); };
+  for (const bk of ['draftkings', 'fanduel']) {
+    const b = (j.bookmakers || []).find((x) => x.key === bk);
+    if (!b) continue;
+    for (const m of b.markets || []) {
+      for (const o of m.outcomes || []) {
+        if (o.point == null || !(o.price > 1)) continue;
+        const over = /^over$/i.test(o.name), under = /^under$/i.test(o.name);
+        if (m.key === 'totals' || m.key === 'alternate_totals') { if (over || under) { put(tot, o.point, over ? 'over' : 'under', o.price); books.add(b.title || bk); } }
+        else if (m.key === 'spreads' || m.key === 'alternate_spreads') {
+          if (sameTeam(o.name, game.home.name)) { put(spr, o.point, 'home', o.price); books.add(b.title || bk); }
+          else if (sameTeam(o.name, game.away.name)) { put(spr, -o.point, 'away', o.price); books.add(b.title || bk); }
+        } else if ((m.key === 'team_totals' || m.key === 'alternate_team_totals') && (over || under)) {
+          const side = sameTeam(o.description, game.home.name) ? 'home' : sameTeam(o.description, game.away.name) ? 'away' : null;
+          if (side) { put(tt[side], o.point, over ? 'over' : 'under', o.price); books.add(b.title || bk); }
+        }
+      }
+    }
+  }
+  const list = (map) => [...map.values()].sort((a, b) => a.line - b.line);
+  const out = { totals: list(tot), spreads: list(spr), teamTotals: { home: list(tt.home), away: list(tt.away) }, book: [...books].join(' and ') };
+  return out.totals.length || out.spreads.length || out.teamTotals.home.length || out.teamTotals.away.length ? out : null;
 }
 
 /** First scorer prices. Returns { markets: [{ name, dec }], book }. */

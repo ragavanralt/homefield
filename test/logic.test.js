@@ -332,6 +332,76 @@ t('mlb best-of series closes when a team has enough wins', () => {
   store.setSetting('oddsKey', '');
 }
 
+{
+  const store = await import('../js/store.js');
+  const odds = await import('../js/odds.js');
+  store.setSetting('oddsKey', 'abc');
+  const out = (name, pts) => pts.map(([point, price]) => ({ name: 'Over', description: name, price, point }));
+  globalThis.fetch = async (url) => {
+    url = String(url);
+    const body = /\/events\/ev2\/odds/.test(url)
+      ? { bookmakers: [{ key: 'draftkings', title: 'DraftKings', markets: [
+        { key: 'player_points', outcomes: [{ name: 'Over', description: 'Stephen Curry', price: 1.9, point: 24.5 }, { name: 'Under', description: 'Stephen Curry', price: 1.9, point: 24.5 }] },
+        { key: 'player_points_alternate', outcomes: out('Stephen Curry', [[19.5, 1.25], [24.5, 1.9], [29.5, 3.4], [34.5, 8]]) }] }] }
+      : [{ id: 'ev2', home_team: 'Golden State Warriors', away_team: 'Memphis Grizzlies' }];
+    return { ok: true, status: 200, headers: { get: () => null }, json: async () => body };
+  };
+  const game = { league: 'nba', key: 'nba:2', id: '2', date: new Date(Date.now() + 36e5 * 30).toISOString(), home: { id: '9', abbr: 'GS', name: 'Golden State Warriors' }, away: { id: '29', abbr: 'MEM', name: 'Memphis Grizzlies' } };
+  const r = await odds.bookProps(game, ['pts']);
+  t('odds api: milestone ladder (20+, 25+, 30+, 35+) comes from the real alternate prices', () => {
+    assert.equal(r.markets.length, 1);
+    assert.deepEqual(r.markets[0].ladder.map((x) => [x.t, x.dec]), [[20, 1.25], [25, 1.9], [30, 3.4], [35, 8]]);
+    const leg = B.ladderLeg(game, r.markets[0], 30, 3.4);
+    assert.equal(leg.prop.line, 29.5); assert.equal(leg.prop.dir, 'over'); assert.equal(leg.dec, 3.4); assert.match(leg.label, /Stephen Curry 30\+ points/);
+  });
+  store.setSetting('oddsKey', '');
+  t('simulated ladders get longer as the bar goes up, and every rung is a real price', () => {
+    const lad = B.ladderOf(B.PROP_DEFS.nba[0], 23);
+    assert.ok(lad.length >= 4); for (let i = 1; i < lad.length; i++) assert.ok(lad[i].t > lad[i - 1].t && lad[i].dec > lad[i - 1].dec, 'longer odds for higher bars');
+    const sh = B.ladderOf(B.PROP_DEFS.soccer[1], 1.4); assert.equal(sh[0].t, 1); assert.ok(sh.every((x) => x.dec > 1));
+  });
+}
+
+{
+  const store = await import('../js/store.js');
+  const odds = await import('../js/odds.js');
+  const S2 = await import('../js/specials.js');
+  store.setSetting('oddsKey', 'abc');
+  globalThis.fetch = async (url) => {
+    url = String(url);
+    const o = (name, point, price, description) => ({ name, point, price, ...(description ? { description } : {}) });
+    const body = /\/events\/ev2\/odds/.test(url)
+      ? { bookmakers: [{ key: 'draftkings', title: 'DraftKings', markets: [
+        { key: 'totals', outcomes: [o('Over', 224.5, 1.91), o('Under', 224.5, 1.91)] },
+        { key: 'alternate_totals', outcomes: [o('Over', 214.5, 1.3), o('Under', 214.5, 3.4), o('Over', 234.5, 3.1)] },
+        { key: 'spreads', outcomes: [o('Golden State Warriors', -4.5, 1.9), o('Memphis Grizzlies', 4.5, 1.9)] },
+        { key: 'alternate_spreads', outcomes: [o('Golden State Warriors', -9.5, 3.2), o('Memphis Grizzlies', 9.5, 1.3)] },
+        { key: 'team_totals', outcomes: [o('Over', 114.5, 1.9, 'Golden State Warriors'), o('Under', 114.5, 1.9, 'Golden State Warriors')] }] }] }
+      : [{ id: 'ev2', home_team: 'Golden State Warriors', away_team: 'Memphis Grizzlies' }];
+    return { ok: true, status: 200, headers: { get: () => null }, json: async () => body };
+  };
+  const game = { league: 'nba', key: 'nba:3', id: '3', date: new Date(Date.now() + 36e5 * 30).toISOString(), home: { id: '9', abbr: 'GS', name: 'Golden State Warriors' }, away: { id: '29', abbr: 'MEM', name: 'Memphis Grizzlies' } };
+  const r = await odds.bookGame(game);
+  t('odds api: every total, spread and team-total line the book posts', () => {
+    assert.deepEqual(r.totals.map((x) => x.line), [214.5, 224.5, 234.5]); assert.equal(r.totals[1].over, 1.91); assert.equal(r.totals[2].under, undefined);
+    assert.deepEqual(r.spreads.map((x) => x.line), [-9.5, -4.5], 'each row is keyed by the home line; the away side lands on the same row');
+    assert.deepEqual([r.spreads[1].home, r.spreads[1].away], [1.9, 1.9]); assert.deepEqual([r.spreads[0].home, r.spreads[0].away], [3.2, 1.3]);
+    assert.equal(r.teamTotals.home[0].line, 114.5); assert.equal(r.teamTotals.away.length, 0);
+  });
+  store.setSetting('oddsKey', '');
+  t('simulated game lines: ladders of totals, spreads and team totals; team total settles', () => {
+    const g = { ...game, odds: { overUnder: 224.5, details: 'GS -4.5' } };
+    const m = S2.modelLines(g);
+    assert.ok(m.totals.length >= 5 && m.spreads.length >= 5 && m.teamTotals.home.length >= 3);
+    for (let i = 1; i < m.totals.length; i++) assert.ok(m.totals[i].over > m.totals[i - 1].over, 'a higher total is a longer over');
+    const leg = S2.teamTotalLeg(g, 'home', 'over', 114.5, 1.9);
+    const fin = (h, a) => ({ game: { state: 'post', home: { score: h }, away: { score: a } } });
+    assert.equal(S2.evalSpecial(leg, fin(120, 100)), 'won'); assert.equal(S2.evalSpecial(leg, fin(110, 100)), 'lost');
+    assert.equal(S2.evalSpecial(S2.totalLeg(g, 'under', 230.5, 1.8), fin(110, 100)), 'won');
+    assert.equal(S2.evalSpecial(S2.spreadLeg(g, 'away', 10.5, 1.3), fin(110, 100)), 'won');
+  });
+}
+
 /* ---------- game bets and first scorer ---------- */
 import * as S from '../js/specials.js';
 {

@@ -3,9 +3,9 @@
 import { h, clear, face, loading, toast } from './ui.js';
 import { toggleLeg, slipHas } from './store.js';
 import { isSoccer } from './leagues.js';
-import { moneylines, mlLeg, propLeg, american, propCatsFor, MAX_LEGS } from './bets.js';
-import { gameBets, firstLeg, hasFirst, FIRST } from './specials.js';
-import { loadPropsCat, loadFirst } from './props.js';
+import { moneylines, mlLeg, propLeg, ladderLeg, american, propCatsFor, MAX_LEGS } from './bets.js';
+import { gameBets, firstLeg, hasFirst, FIRST, modelLines, totalLeg, spreadLeg, teamTotalLeg } from './specials.js';
+import { loadPropsCat, loadFirst, loadGameLines } from './props.js';
 
 const open = (g) => g.state === 'pre' && new Date(g.date).getTime() > Date.now() && !g.void;
 
@@ -23,6 +23,9 @@ export function moneylineRow(g) {
 }
 
 const note = (t) => h('p', { class: 'muted small-note' }, t);
+/** Why a prop list is not from the books is shown in plain sight; the rest stays under Details. */
+const WARN = /^(Sportsbook|Out of odds|No odds key)/;
+const warnings = (notes) => (notes || []).filter((n) => WARN.test(n)).map((n) => h('p', { class: 'small-note warn-note', role: 'status' }, n));
 const why = (notes) => (notes && notes.length ? h('details', { class: 'small-note' }, h('summary', null, 'Details'), h('ul', null, notes.map((n) => h('li', null, n)))) : null);
 
 /** Group a market result by team and draw each row with draw(m). */
@@ -53,13 +56,14 @@ export function propsPanel(g) {
       const data = await loadPropsCat(g, cur);
       if (my !== token) return;
       clear(body);
-      const rows = byTeam(g, data, (m) => h('div', { class: 'pr-row' },
+      const rows = byTeam(g, data, (m) => h('div', { class: 'pr-item' }, h('div', { class: 'pr-row' },
         h('div', { class: 'pr-who' }, face(m, g.league, 34), h('div', null, h('div', { class: 'pr-n' }, m.short || m.name), h('small', null, [m.pos, m.label].filter(Boolean).join(' · ')))),
         h('div', { class: 'pr-line' }, String(m.line)),
-        h('div', { class: 'pr-btns' }, betButton(propLeg(g, m, 'over'), 'Over', null, !can), betButton(propLeg(g, m, 'under'), 'Under', null, !can))));
+        h('div', { class: 'pr-btns' }, betButton(propLeg(g, m, 'over'), 'Over', null, !can), betButton(propLeg(g, m, 'under'), 'Under', null, !can))),
+        m.ladder && m.ladder.length ? h('div', { class: 'pr-ladder', 'aria-label': `${m.name} ${m.label} milestones` }, m.ladder.map((r) => betButton(ladderLeg(g, m, r.t, r.dec), `${r.t}+`, null, !can))) : null));
       if (!rows.length) body.append(note('No ' + cur.label.toLowerCase() + ' props could be built for this game yet.'));
       else body.append(...rows);
-      body.append(note(`${data.source ? data.source + '. ' : ''}Settled from the final box score. A player who does not play is refunded.`), why(data.notes));
+      body.append(note(`${data.source ? data.source + '. ' : ''}Settled from the final box score. A player who does not play is refunded.`), ...warnings(data.notes), why((data.notes || []).filter((n) => !WARN.test(n))));
     } catch (e) { if (my === token) clear(body).append(note('Could not load props: ' + e.message)); }
   }
   drawChips(); load();
@@ -95,11 +99,10 @@ export function scorerPanel(g) {
 /** Neutral bets: total, spread, first team to score, overtime, turnovers, both teams to score. */
 export function gameBetsPanel(g) {
   const can = open(g);
-  const list = gameBets(g);
+  const list = gameBets(g).filter((m) => m.id !== 'total' && m.id !== 'spread');
   const wrap = h('div', { class: 'mk' });
-  if (!list.length) { wrap.append(note('No game bets for this one yet.')); return wrap; }
   const sections = [
-    ['Scoring', ['total', 'spread', 'first', 'btts']],
+    ['Scoring', ['first', 'btts']],
     ['Other', ['ot', 'to-total', 'to-away', 'to-home']],
   ];
   for (const [title, ids] of sections) {
@@ -109,7 +112,23 @@ export function gameBetsPanel(g) {
       h('div', { class: 'gb-t' }, m.title),
       h('div', { class: 'ml-row' + (m.legs.length === 3 ? ' three' : '') }, m.legs.map((l) => betButton(l, l.label.replace(/ (turnovers|total|goals)$/, ''), null, !can))))));
   }
-  wrap.append(note('Prices come from the feed\'s lines where there are any, and from a simple model otherwise. Settled from the final score, box score and play by play.'));
+  wrap.append(note('Settled from the final score, box score and play by play.'));
+  // totals, spreads and team totals: every line, real when a book is connected
+  const lines = h('div', { class: 'gl' });
+  wrap.prepend(lines);
+  const draw = (data, loading) => {
+    clear(lines);
+    const row = (label, a, b) => h('div', { class: 'gl-row' }, h('span', { class: 'gl-l' }, label), h('div', { class: 'gl-b' }, a, b));
+    const sec = (title, rows) => (rows.length ? [h('p', { class: 'mk-t' }, title), h('div', { class: 'gl-list' }, rows)] : []);
+    const ps = (l, f) => (l ? f(l) : h('span', { class: 'gl-x' }, '–'));
+    lines.append(
+      ...sec('Total', data.totals.map((r) => row(String(r.line), r.over ? betButton(totalLeg(g, 'over', r.line, r.over), `O ${r.line}`, null, !can) : h('span', { class: 'gl-x' }, '–'), r.under ? betButton(totalLeg(g, 'under', r.line, r.under), `U ${r.line}`, null, !can) : h('span', { class: 'gl-x' }, '–')))),
+      ...sec('Spread', data.spreads.map((r) => row(`${g.home.abbr} ${r.line > 0 ? '+' : ''}${r.line}`, r.away ? betButton(spreadLeg(g, 'away', -r.line, r.away), `${g.away.abbr} ${-r.line > 0 ? '+' : ''}${-r.line}`, null, !can) : h('span', { class: 'gl-x' }, '–'), r.home ? betButton(spreadLeg(g, 'home', r.line, r.home), `${g.home.abbr} ${r.line > 0 ? '+' : ''}${r.line}`, null, !can) : h('span', { class: 'gl-x' }, '–')))),
+      ...['away', 'home'].flatMap((side) => sec(`${g[side].name || g[side].abbr} total`, (data.teamTotals[side] || []).map((r) => row(String(r.line), r.over ? betButton(teamTotalLeg(g, side, 'over', r.line, r.over), `O ${r.line}`, null, !can) : h('span', { class: 'gl-x' }, '–'), r.under ? betButton(teamTotalLeg(g, side, 'under', r.line, r.under), `U ${r.line}`, null, !can) : h('span', { class: 'gl-x' }, '–'))))),
+      note(`${data.source || 'Simulated lines'}${loading ? '. Checking the sportsbooks…' : ''}`), ...warnings(data.notes));
+  };
+  draw({ ...modelLines(g), source: 'Simulated lines', notes: [] }, true);
+  loadGameLines(g).then((d) => draw({ totals: d.totals || [], spreads: d.spreads || [], teamTotals: d.teamTotals || { home: [], away: [] }, source: d.source, notes: d.notes }, false)).catch(() => draw({ ...modelLines(g), source: 'Simulated lines', notes: [] }, false));
   return wrap;
 }
 

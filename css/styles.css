@@ -822,3 +822,14 @@ html { background: var(--bg); }
 @media (max-height: 760px) { .slip-foot > .small-note:last-child { display: none; } .slip-sum dd.big { font-size: 22px; } }
 /* very short screens: the pinned part would not fit, so the whole ticket scrolls instead */
 @media (max-height: 620px) { .slip .slip-body { overflow-y: auto; } .slip-scroll { flex: none; overflow: visible; } }
+.pr-item { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+.pr-ladder { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 0 2px 2px 44px; }
+.pr-ladder::-webkit-scrollbar { display: none; }
+.pr-ladder .bet-btn { flex: 0 0 auto; min-width: 74px; }
+@media (max-width: 520px) { .pr-ladder { padding-left: 0; } }
+.warn-note { color: #f59e0b; }
+.gl-list { display: flex; flex-direction: column; gap: 6px; }
+.gl-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line); }
+.gl-l { font-weight: 700; font-variant-numeric: tabular-nums; }
+.gl-b { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.gl-x { text-align: center; opacity: .4; }

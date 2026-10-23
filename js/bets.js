@@ -48,10 +48,21 @@ export const PROP_DEFS = {
     { key: 'pts', label: 'Points', dist: 'normal', prior: 13, sd: 0.32, labels: ['PTS'], perGame: true, box: [{ g: /./, l: ['PTS'] }], min: 8, top: 3 },
     { key: 'reb', label: 'Rebounds', dist: 'normal', prior: 5, sd: 0.42, labels: ['REB'], perGame: true, box: [{ g: /./, l: ['REB'] }], min: 4, top: 2 },
     { key: 'ast', label: 'Assists', dist: 'normal', prior: 3, sd: 0.5, labels: ['AST'], perGame: true, box: [{ g: /./, l: ['AST'] }], min: 3, top: 2 },
+    { key: 'threes', label: 'Threes made', dist: 'poisson', prior: 1.5, labels: ['3PM'], perGame: true, box: [{ g: /./, l: ['3PT'] }], min: 0.8, top: 2 },
+    { key: 'stl', label: 'Steals', dist: 'poisson', prior: 0.9, labels: ['STL'], perGame: true, box: [{ g: /./, l: ['STL'] }], min: 0.8, top: 2 },
+    { key: 'blk', label: 'Blocks', dist: 'poisson', prior: 0.6, labels: ['BLK'], perGame: true, box: [{ g: /./, l: ['BLK'] }], min: 0.7, top: 2 },
+    { key: 'to', label: 'Turnovers', dist: 'poisson', prior: 1.8, labels: ['TO'], perGame: true, box: [{ g: /./, l: ['TO'] }], min: 1.5, top: 2 },
+    { key: 'pra', label: 'Pts + Reb + Ast', dist: 'normal', prior: 21, sd: 0.28, sum: ['pts', 'reb', 'ast'], box: [{ g: /./, l: ['PTS'] }, { g: /./, l: ['REB'] }, { g: /./, l: ['AST'] }], min: 15, top: 3 },
+    { key: 'pr', label: 'Pts + Reb', dist: 'normal', prior: 18, sd: 0.3, sum: ['pts', 'reb'], box: [{ g: /./, l: ['PTS'] }, { g: /./, l: ['REB'] }], min: 12, top: 2 },
+    { key: 'pa', label: 'Pts + Ast', dist: 'normal', prior: 16, sd: 0.32, sum: ['pts', 'ast'], box: [{ g: /./, l: ['PTS'] }, { g: /./, l: ['AST'] }], min: 10, top: 2 },
+    { key: 'ra', label: 'Reb + Ast', dist: 'normal', prior: 8, sd: 0.4, sum: ['reb', 'ast'], box: [{ g: /./, l: ['REB'] }, { g: /./, l: ['AST'] }], min: 6, top: 2 },
   ],
   nhl: [
     { key: 'pts', label: 'Points', dist: 'poisson', prior: 0.6, labels: ['PTS'], box: [{ g: /./, l: ['G'] }, { g: /./, l: ['A'] }], min: 0.4, top: 3, skater: true },
     { key: 'sog', label: 'Shots on goal', dist: 'poisson', prior: 2.2, labels: ['SOG', 'S'], box: [{ g: /./, l: ['S', 'SOG'] }], min: 1.5, top: 3, skater: true },
+    { key: 'goals', label: 'Goals', dist: 'poisson', prior: 0.25, labels: ['G'], box: [{ g: /./, l: ['G'] }], min: 0.12, top: 3, fixedLine: 0.5, skater: true },
+    { key: 'assists', label: 'Assists', dist: 'poisson', prior: 0.3, labels: ['A'], box: [{ g: /./, l: ['A'] }], min: 0.15, top: 3, fixedLine: 0.5, skater: true },
+    { key: 'blk', label: 'Blocked shots', dist: 'poisson', prior: 1, labels: ['BLK', 'BS'], box: [{ g: /./, l: ['BS', 'BLK'] }], min: 0.9, top: 2, skater: true },
   ],
   nfl: [
     { key: 'passyds', label: 'Passing yards', dist: 'normal', sd: 0.3, labels: ['YDS'], need: 'CMP', box: [{ g: /pass/i, l: ['YDS'] }], min: 120, top: 1 },
@@ -59,6 +70,8 @@ export const PROP_DEFS = {
     { key: 'rushyds', label: 'Rushing yards', dist: 'normal', sd: 0.45, labels: ['YDS'], need: 'CAR', box: [{ g: /rush/i, l: ['YDS'] }], min: 25, top: 2 },
     { key: 'recyds', label: 'Receiving yards', dist: 'normal', sd: 0.55, labels: ['YDS'], need: 'REC', box: [{ g: /receiv/i, l: ['YDS'] }], min: 25, top: 3 },
     { key: 'rec', label: 'Receptions', dist: 'poisson', labels: ['REC'], need: 'REC', box: [{ g: /receiv/i, l: ['REC'] }], min: 2.5, top: 3 },
+    { key: 'passcomp', label: 'Completions', dist: 'normal', sd: 0.25, labels: ['CMP'], need: 'CMP', box: [{ g: /pass/i, l: ['C/ATT'] }], min: 10, top: 1 },
+    { key: 'rushatt', label: 'Rush attempts', dist: 'normal', sd: 0.4, labels: ['CAR'], need: 'CAR', box: [{ g: /rush/i, l: ['CAR'] }], min: 6, top: 2 },
   ],
   // soccer: season rates come from ESPN's per-player stat block, results from the match's player stats
   soccer: [
@@ -71,14 +84,18 @@ export const PROP_DEFS = {
   mlb: [
     { key: 'hits', label: 'Hits', dist: 'poisson', prior: 0.9, labels: ['H'], need: 'AB', box: [{ g: /batt/i, l: ['H'] }], min: 0.7, top: 3 },
     { key: 'hr', label: 'Home runs', dist: 'poisson', labels: ['HR'], need: 'AB', box: [{ g: /batt/i, l: ['HR'] }], min: 0.12, top: 2, fixedLine: 0.5 },
+    { key: 'rbi', label: 'RBIs', dist: 'poisson', prior: 0.35, labels: ['RBI'], need: 'AB', box: [{ g: /batt/i, l: ['RBI'] }], min: 0.3, top: 2, fixedLine: 0.5 },
+    { key: 'runs', label: 'Runs', dist: 'poisson', prior: 0.45, labels: ['R'], need: 'AB', box: [{ g: /batt/i, l: ['R'] }], min: 0.3, top: 2, fixedLine: 0.5 },
+    { key: 'bk', label: 'Batter strikeouts', dist: 'poisson', prior: 0.8, labels: ['K', 'SO'], need: 'AB', box: [{ g: /batt/i, l: ['K', 'SO'] }], min: 0.6, top: 2 },
+    { key: 'pk', label: 'Pitcher strikeouts', dist: 'poisson', labels: ['K', 'SO'], box: [{ g: /pitch/i, l: ['K', 'SO'] }], min: 99, top: 1 },
   ],
 };
 /** The stat groups shown as chips in the props section. */
 export const PROP_CATS = {
-  nfl: [{ id: 'pass', label: 'Passing', stats: ['passyds', 'passtd'] }, { id: 'rush', label: 'Rushing yards', stats: ['rushyds'] }, { id: 'recy', label: 'Receiving yards', stats: ['recyds'] }, { id: 'rec', label: 'Receptions', stats: ['rec'] }],
-  nba: [{ id: 'pts', label: 'Points', stats: ['pts'] }, { id: 'reb', label: 'Rebounds', stats: ['reb'] }, { id: 'ast', label: 'Assists', stats: ['ast'] }],
-  nhl: [{ id: 'pts', label: 'Points', stats: ['pts'] }, { id: 'sog', label: 'Shots on goal', stats: ['sog'] }],
-  mlb: [{ id: 'hits', label: 'Hits', stats: ['hits'] }, { id: 'hr', label: 'Home runs', stats: ['hr'] }],
+  nfl: [{ id: 'pass', label: 'Passing', stats: ['passyds', 'passtd', 'passcomp'] }, { id: 'rush', label: 'Rushing', stats: ['rushyds', 'rushatt'] }, { id: 'recy', label: 'Receiving yards', stats: ['recyds'] }, { id: 'rec', label: 'Receptions', stats: ['rec'] }],
+  nba: [{ id: 'pts', label: 'Points', stats: ['pts'] }, { id: 'reb', label: 'Rebounds', stats: ['reb'] }, { id: 'ast', label: 'Assists', stats: ['ast'] }, { id: 'threes', label: 'Threes', stats: ['threes'] }, { id: 'combo', label: 'Combos', stats: ['pra', 'pr', 'pa', 'ra'] }, { id: 'def', label: 'Steals + blocks', stats: ['stl', 'blk'] }, { id: 'to', label: 'Turnovers', stats: ['to'] }],
+  nhl: [{ id: 'pts', label: 'Points', stats: ['pts'] }, { id: 'sog', label: 'Shots on goal', stats: ['sog'] }, { id: 'goals', label: 'Goals', stats: ['goals'] }, { id: 'assists', label: 'Assists', stats: ['assists'] }, { id: 'blk', label: 'Blocked shots', stats: ['blk'] }],
+  mlb: [{ id: 'hits', label: 'Hits', stats: ['hits'] }, { id: 'hr', label: 'Home runs', stats: ['hr'] }, { id: 'rbi', label: 'RBIs + runs', stats: ['rbi', 'runs'] }, { id: 'ks', label: 'Strikeouts', stats: ['bk', 'pk'] }],
   soccer: [{ id: 'goals', label: 'Anytime goal', stats: ['goals'] }, { id: 'shots', label: 'Shots', stats: ['sot', 'shots'] }, { id: 'assists', label: 'Assists', stats: ['assists'] }, { id: 'saves', label: 'Saves', stats: ['saves'] }],
 };
 export const propCatsFor = (league) => PROP_CATS[LEAGUES[league]?.group] || [];
@@ -105,6 +122,13 @@ export function seasonAvg(blocks, def) {
   return null;
 }
 
+/** Season average for a prop, adding the parts for combos like points + rebounds + assists. */
+export function avgFor(blocks, def, defs) {
+  if (!def.sum) return seasonAvg(blocks, def);
+  let t = 0;
+  for (const k of def.sum) { const a = seasonAvg(blocks, defs.find((d) => d.key === k)); if (a == null) return null; t += a; }
+  return t;
+}
 /** Games played in a season stat block, or null. */
 export function seasonGP(blocks) {
   for (const b of blocks || []) { const i = b.labels.map((x) => String(x).toUpperCase()).indexOf('GP'); if (i >= 0) { const v = numOf(b.values[i]); if (v != null) return v; } }
@@ -134,6 +158,18 @@ export function priceProp(def, avg) {
 
 /** ESPN calls the goalkeeper G (or GK) */
 export const isKeeper = (p) => /^(G|GK)$/i.test(p.pos);
+/** "X or more" steps for a player: [{ t, dec }], each price from the same model as the main line. Simulated; real books replace it. */
+export function ladderOf(def, avg) {
+  if (avg == null || avg < def.min) return [];
+  const sd = def.dist === 'normal' ? Math.max(1, avg * def.sd) : 0;
+  const pOver = (t) => (def.dist === 'normal' ? normalOver(avg, sd, t - 0.5) : poissonOver(avg, t - 0.5));
+  const nice = avg >= 40 ? 10 : avg >= 12 ? 5 : avg >= 5 ? 2 : 1;
+  const set = new Set();
+  if (def.dist === 'normal') for (const k of [0.5, 0.75, 1, 1.25, 1.5]) set.add(Math.max(nice, Math.round((avg * k) / nice) * nice));
+  else for (let t = 1; t <= Math.max(2, Math.ceil(avg * 2.5)) && set.size < 5; t++) set.add(t);
+  return [...set].sort((a, b) => a - b).map((t) => ({ t, dec: fromProb(pOver(t)) })).filter((x) => x.dec >= 1.05 && x.dec <= 30);
+}
+
 const FOOT_POS = { QB: ['passyds', 'passtd'], RB: ['rushyds', 'recyds', 'rec'], FB: ['rushyds'], WR: ['recyds', 'rec'], TE: ['recyds', 'rec'] };
 
 /** Which roster players are worth pulling stats for. Keeps the number of requests small. */
@@ -170,7 +206,7 @@ export function leaderProps(league, leaders, teamId, record) {
   const add = (c, key, avg) => {
     const d = def(key);
     const pr = d && priceProp(d, shrinkAvg(d, avg, gp));
-    if (pr) out.push({ teamId, playerId: c.id, name: c.who, short: c.who, pos: '', face: c.face, stat: key, label: d.label, line: pr.line, over: pr.over, under: pr.under, box: d.box });
+    if (pr) out.push({ teamId, playerId: c.id, name: c.who, short: c.who, pos: '', face: c.face, stat: key, label: d.label, line: pr.line, over: pr.over, under: pr.under, box: d.box, ladder: ladderOf(d, shrinkAvg(d, avg, gp)) });
   };
   for (const c of mine ? mine.cats : []) {
     const n = c.name, v = c.value;
@@ -204,13 +240,13 @@ export function buildProps(league, players, statsById, teamId) {
       if (grp === 'nfl' && !FOOT_POS[p.pos]) continue;
       if (grp === 'soccer' && ((def.keeper && !isKeeper(p)) || (def.outfield && isKeeper(p)))) continue;
       const blocks = statsById.get(p.id);
-      const avg = shrinkAvg(def, seasonAvg(blocks, def), seasonGP(blocks));
+      const avg = shrinkAvg(def, avgFor(blocks, def, defs), seasonGP(blocks));
       const pr = priceProp(def, avg);
       if (pr) rows.push({ p, avg, pr });
     }
     rows.sort((a, b) => b.avg - a.avg);
-    for (const { p, pr } of rows.slice(0, def.top)) {
-      out.push({ teamId, playerId: p.id, name: p.name, short: p.short, pos: p.pos, face: p.face, stat: def.key, label: def.label, line: pr.line, over: pr.over, under: pr.under, box: def.box });
+    for (const { p, avg, pr } of rows.slice(0, def.top)) {
+      out.push({ teamId, playerId: p.id, name: p.name, short: p.short, pos: p.pos, face: p.face, stat: def.key, label: def.label, line: pr.line, over: pr.over, under: pr.under, box: def.box, ladder: ladderOf(def, avg) });
     }
   }
   return out;
@@ -235,6 +271,12 @@ export function propLeg(g, market, dir) {
     prop: { playerId: market.playerId, name: market.name, label: market.label, stat: market.stat, line: market.line, dir, box: market.box.map((b) => ({ g: b.g.source, l: b.l })) },
     dec: market[dir], label: `${market.name} ${dir === 'over' ? 'Over' : 'Under'} ${market.line} ${market.label.toLowerCase()}`, result: 'pending',
   };
+}
+
+/** One rung of a ladder: "25+ points" is the same bet as over 24.5, at the ladder's own price. */
+export function ladderLeg(g, market, t, dec) {
+  const leg = propLeg(g, { ...market, line: t - 0.5, over: dec }, 'over');
+  return { ...leg, key: legKey([g.key, 'prop', market.playerId, market.stat, 'plus', t]), label: `${market.name} ${t}+ ${String(market.label).toLowerCase()}` };
 }
 
 /** Two legs that can't both be bet: same market, other side. */

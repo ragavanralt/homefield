@@ -6,7 +6,8 @@ import { propCandidates, buildProps, propDefsFor, leaderProps, propCatsFor } fro
 import { scorerMarkets, scoreRate, hasFirst } from './specials.js';
 import { nhlTeam, mlbTeam, nameKey } from './alt.js';
 import { LEAGUES } from './leagues.js';
-import { bookProps, bookFirst, hasOddsKey, outOfCredits, creditsText } from './odds.js';
+import { bookProps, bookFirst, bookGame, hasOddsKey, outOfCredits, creditsText } from './odds.js';
+import { modelLines } from './specials.js';
 
 const cache = new Map(); // key -> { t, value }
 const fresh = (k, ms = 600000) => { const h = cache.get(k); return h && Date.now() - h.t < ms ? h.value : null; };
@@ -100,6 +101,7 @@ export async function loadPropsCat(game, cat) {
       notes.push('Sportsbook: no lines posted for this yet, showing simulated lines');
     } catch (e) { notes.push('Sportsbook: ' + e.message + '. Showing simulated lines.'); }
   } else if (hasOddsKey()) notes.push('Out of odds requests for now. Showing simulated lines.');
+  else notes.push('No odds key saved on this device, so these lines are simulated. Add one in Settings for real lines.');
   const sim = await simProps(game);
   const keepStat = (arr) => arr.filter((m) => cat.stats.includes(m.stat));
   return { home: keepStat(sim.home), away: keepStat(sim.away), other: [], source: sim.source, notes: [...notes, ...sim.notes], supported: true };
@@ -132,3 +134,17 @@ export async function loadFirst(game) {
 }
 
 export { propCatsFor };
+
+/** Totals, spreads and team totals for the Game bets tab: real book lines when there is a key, our own model otherwise. */
+export async function loadGameLines(game) {
+  const notes = [];
+  if (hasOddsKey() && !outOfCredits()) {
+    try {
+      const b = await bookGame(game);
+      if (b) return { ...b, source: `${b.book} prices${creditsText()}`, notes, book: true };
+      notes.push('Sportsbook: no totals or spreads posted for this game yet, showing simulated lines');
+    } catch (e) { notes.push('Sportsbook: ' + e.message + '. Showing simulated lines.'); }
+  } else if (hasOddsKey()) notes.push('Out of odds requests for now. Showing simulated lines.');
+  else notes.push('No odds key saved on this device, so these are simulated. Add one in Settings for real lines.');
+  return { ...modelLines(game), source: 'Simulated lines', notes, book: false };
+}

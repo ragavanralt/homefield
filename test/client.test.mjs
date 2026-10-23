@@ -81,6 +81,7 @@ await t('fan data follows you to another device and merges instead of overwritin
   assert.equal(pub, 'LAL');
   // "new device": wipe local, sign in, pull
   store.update((s) => { s.teams = []; s.avatar.owned = ['short']; s.bank.coins = 1000; s.bank.xp = 0; });
+  store.getState().bank.rev = 0; // a brand new device has never changed coins, so rev starts at 0
   await soc.logout(); soc._reset();
   await soc.login('bro', broCode);
   assert.equal(store.getState().teams[0].abbr, 'LAL'); assert.equal(coins(), 1234);

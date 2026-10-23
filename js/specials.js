@@ -92,6 +92,38 @@ export function gameBets(g) {
   return out;
 }
 
+/* ---------- full ladders of totals, spreads and team totals ---------- */
+const SD = { nba: { tot: 18, mar: 12 }, nfl: { tot: 10.5, mar: 13 }, nhl: { tot: 2.3, mar: 2.3 }, mlb: { tot: 3.8, mar: 4.2 }, soccer: { tot: 1.7, mar: 1.7 } };
+const STEP = { nba: { tot: 3, sp: 2, tt: 3 }, nfl: { tot: 3, sp: 3, tt: 3 }, nhl: { tot: 1, sp: 1, tt: 1 }, mlb: { tot: 1, sp: 1, tt: 1 }, soccer: { tot: 1, sp: 1, tt: 1 } };
+const halfOf = (n) => Math.round(n * 2) / 2;
+const unitWord = (grp) => (grp === 'soccer' ? 'goals' : grp === 'mlb' ? 'runs' : 'points');
+
+/** Our own lines when no book is connected: [{ line, over, under }] totals, spread rows by home line, and each team's total. */
+export function modelLines(g) {
+  const grp = grpOf(g.league);
+  const sd = SD[grp] || SD.nba, st = STEP[grp] || STEP.nba;
+  const total = g.odds?.overUnder ? Number(g.odds.overUnder) : DEF_TOTAL[grp];
+  const sp = homeSpread(g) ?? 0, mu = -sp; // expected home margin
+  const ladder = (center, step, n, neg = false) => { const base = halfOf(center), out = []; for (let k = -n; k <= n; k++) { const l = base + k * step; if (neg || l > 0.5) out.push(l); } return [...new Set(out)]; };
+  const both = (mean, s, line) => { const p = normalOver(mean, s, line); return { line, over: fromProb(p), under: fromProb(1 - p) }; };
+  const out = { totals: [], spreads: [], teamTotals: { home: [], away: [] } };
+  if (total) {
+    out.totals = ladder(total, st.tot, 3).map((l) => both(total, sd.tot, l));
+    const mh = (total + mu) / 2, ma = (total - mu) / 2;
+    out.teamTotals.home = ladder(mh, st.tt, 2).map((l) => both(mh, sd.tot * 0.7, l));
+    out.teamTotals.away = ladder(ma, st.tt, 2).map((l) => both(ma, sd.tot * 0.7, l));
+  }
+  if (grp !== 'soccer' && homeSpread(g) != null) {
+    out.spreads = ladder(sp, st.sp, 3, true).map((l) => { const p = normalOver(mu, sd.mar, -l); return { line: l, home: fromProb(p), away: fromProb(1 - p) }; });
+  }
+  return out;
+}
+
+const fmtSp = (n) => (n > 0 ? '+' : '') + n;
+export const totalLeg = (g, dir, line, dec) => mkLeg(g, 'total', dir + line, `${dir === 'over' ? 'Over' : 'Under'} ${line} ${unitWord(grpOf(g.league))}`, dec, { t: 'total', dir, line });
+export const spreadLeg = (g, side, line, dec) => mkLeg(g, 'spread', side + line, `${g[side].abbr} ${fmtSp(line)}`, dec, { t: 'spread', side, line });
+export const teamTotalLeg = (g, side, dir, line, dec) => mkLeg(g, 'tt-' + side, dir + line, `${g[side].abbr} ${dir} ${line} ${unitWord(grpOf(g.league))}`, dec, { t: 'tt', side, dir, line });
+
 /* ---------- first scorer ---------- */
 export const FIRST = {
   nfl: { label: 'First touchdown scorer', short: 'first TD' },
@@ -173,6 +205,7 @@ export function evalSpecial(leg, data) {
   switch (sp.t) {
     case 'total': { const t = hs + as; return t === sp.line ? 'push' : (sp.dir === 'over') === (t > sp.line) ? 'won' : 'lost'; }
     case 'spread': { const mine = sp.side === 'home' ? hs : as, other = sp.side === 'home' ? as : hs; const d = mine + sp.line - other; return d === 0 ? 'push' : d > 0 ? 'won' : 'lost'; }
+    case 'tt': { const v = sp.side === 'home' ? hs : as; return v === sp.line ? 'push' : (sp.dir === 'over') === (v > sp.line) ? 'won' : 'lost'; }
     case 'ot': return wentToOT(g) === sp.yes ? 'won' : 'lost';
     case 'btts': return (hs > 0 && as > 0) === sp.yes ? 'won' : 'lost';
     case 'first': {
