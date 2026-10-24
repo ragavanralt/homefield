@@ -161,6 +161,21 @@ assert.ok($('.bet-card[data-bet="mir1"]'), 'ragavan\'s bet shows in the crew fee
 $('.bet-card[data-bet="mir1"] .mirror').click(); await sleep(200);
 assert.equal(store.getState().slip.legs.length, 1, 'only the leg that has not started is copied'); assert.equal(store.getState().slip.legs[0].key, 'g1|ml|home'); assert.equal(store.getState().slip.legs[0].result, 'pending'); ok('mirror copies the open legs onto your slip');
 store.clearSlip();
+// profiles: tap a name in the crew and see their page, with the open ticket and a mirror button
+await tab('table');
+assert.ok($('.crew-table tr[data-handle="ragavan"] a.who-link'), 'names in the table are links'); assert.match($('.crew-table tr[data-handle="ragavan"] a.who-link').getAttribute('href'), /#\/crew\/u\/ragavan/); ok('names in the crew table link to profiles');
+text = await visit('#/crew/u/ragavan', 600);
+assert.ok($('.yo-hero') && /ragavan/i.test($('.yo-hero').textContent), 'hero'); assert.ok($('#yo-open .yo-ticket[data-bet="mir1"]'), 'their open ticket'); assert.match($('#yo-open').textContent, /HOM to win/);
+for (const id of ['record', 'profit', 'streak', 'peak', 'biggest', 'loss', 'longshot', 'parlay']) assert.ok($(`.yo-tile[data-tile="${id}"]`), 'tile ' + id);
+assert.match($('.yo-tile[data-tile="peak"]').textContent, /1,000/); assert.match($('.yo-tile[data-tile="streak"]').textContent, /3/);
+assert.ok($('#yo-trophies') && $('#yo-teams') && $('#yo-style') && $('#yo-vs') && $('#yo-crew'), 'every section'); assert.ok($('#yo-crew a[href^="#/duels/vs/"]'), 'challenge button');
+ok('a crew profile shows hero, open tickets, numbers, teams, trophies and a head to head');
+$('#yo-open .mirror').click(); await sleep(200);
+assert.equal(store.getState().slip.legs.length, 1); assert.equal(store.getState().slip.legs[0].key, 'g1|ml|home'); ok('mirror works from the profile page');
+store.clearSlip();
+text = await visit('#/crew/u/nobody', 400); assert.match(text, /Not in your crew/); ok('an unknown handle says so');
+text = await visit('#/you', 300);
+assert.ok($('.yo-hero') && $('#yo-numbers') && $('#yo-links') && !$('#yo-vs'), 'your own page'); assert.ok($('#yo-links a[href="#/coins"]'), 'coin log link'); ok('the You page shows your own numbers and shortcuts');
 store.update((s) => { s.shareBets = false; });
 await soc.syncNow(); await sleep(100);
 // the wall

@@ -51,7 +51,7 @@ await soc.login('raggy', 'AAAA-BBBB-CCCC-DDDD');
 const BAD = /null|undefined|NaN|Invalid Date|\[object/;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let n = 0;
-for (const hash of ['#/crew', '#/duels', '#/duels/d9', '#/survivor', '#/cap', '#/coins']) {
+for (const hash of ['#/crew', '#/duels', '#/duels/d9', '#/survivor', '#/cap', '#/coins', '#/you', '#/crew/u/x']) {
   w.location.hash = hash; await route(); await sleep(400);
   const t = w.document.getElementById('app').textContent;
   assert.ok(!/Something broke|Could not load/.test(t), `${hash} broke: ${t.slice(0, 200)}`);

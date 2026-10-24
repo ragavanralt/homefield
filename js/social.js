@@ -1,6 +1,7 @@
 // Crew server client: sign-in, calls, coin receipts and device sync. No framework, no build.
 // The server is Supabase Postgres, reached only through functions (see supabase/schema.sql).
 import { SOCIAL } from './social-config.js';
+import { extrasOf } from './profile-stats.js';
 import { getState, update, spendCoins, addCoins, onSaved, mergeClaims } from './store.js';
 import { betStats } from './bets.js';
 import { itemById, priceOf } from './avatar.js';
@@ -204,16 +205,19 @@ const fanOf = (s) => {
 };
 /** the last few bets, trimmed for the crew to see (and mirror) */
 function recentOf(bets, n = 6) {
-  return Object.values(bets || {}).sort((x, y) => (y.ts || y.placedAt || 0) - (x.ts || x.placedAt || 0)).slice(0, n)
+  const all = Object.values(bets || {}).sort((x, y) => (y.ts || y.placedAt || 0) - (x.ts || x.placedAt || 0));
+  // open tickets first (they are what people want to see and mirror), then the newest results
+  const open = all.filter((b) => b.status === 'pending').slice(0, Math.min(4, n));
+  return [...open, ...all.filter((b) => !open.includes(b)).slice(0, Math.max(0, n - open.length))].sort((x, y) => (y.ts || y.placedAt || 0) - (x.ts || x.placedAt || 0))
     .map((b) => ({ id: b.id, ts: b.ts || b.placedAt || 0, mode: b.mode, stake: b.stake, dec: b.dec, status: b.status, payout: b.payout || 0, cashed: !!b.cashed || undefined, legs: (b.legs || []).map((l) => ({ ...l })) }));
 }
-function publicOf(s) {
+export function publicOf(s) {
   const st = betStats(s.bets || {}, s.bank);
   const t = s.teams.find((x) => `${x.league}:${x.id}` === s.avatar.team) || s.teams[0] || null;
   const out = { avatar: s.avatar, team: t ? { league: t.league, id: t.id, abbr: t.abbr, name: t.name, color: t.color, alt: t.alt } : null,
     stats: { won: st.won, lost: st.lost, accuracy: st.accuracy, total: st.total, streak: st.streak, bestStreak: st.bestStreak, coins: s.bank.coins,
       profit: Math.round(st.profit), parlays: st.parlayWins, bigParlay: st.biggestParlay, longshot: st.longshot ? st.longshot.dec : 0,
-      biggest: st.biggest ? Math.round(st.biggest.payout - st.biggest.stake) : 0, watched: Object.keys(s.watched || {}).length } };
+      biggest: st.biggest ? Math.round(st.biggest.payout - st.biggest.stake) : 0, watched: Object.keys(s.watched || {}).length, ...extrasOf(s) } };
   // recent bets ride along unless the player turned sharing off; trim them if the whole thing gets too big for the server
   if (s.shareBets !== false) {
     for (let n = 6; n >= 0; n -= 2) { out.stats.recent = recentOf(s.bets, n); if (JSON.stringify(out).length < 26000) break; }

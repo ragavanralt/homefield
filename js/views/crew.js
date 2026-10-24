@@ -4,11 +4,14 @@ import { pageHead } from '../components.js';
 import * as soc from '../social.js';
 import { renderAvatar, copyLook } from '../avatar.js';
 import { bubble, claimBar, fmt, loader, actionBtn, errText, add } from '../social-ui.js';
-import { toggleLeg, setSlip, slipHas, getState, update } from '../store.js';
+import { getState, update } from '../store.js';
+import { mirrorBet, mirrorMsg } from '../mirror.js';
 
 const pct = (a) => (a == null ? '–' : Math.round(a * 100) + '%');
 const ago = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'just now' : m < 60 ? `${m}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : `${Math.round(m / 1440)}d ago`; };
 const signed = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
+const profileHref = (m) => `#/crew/u/${encodeURIComponent(m.handle)}`;
+const whoLink = (m, ...kids) => h('a', { class: 'who-link', href: profileHref(m), title: `${m.display || m.handle}'s profile` }, ...kids);
 const link = (code) => `${location.origin}${location.pathname}#/join/${code}`;
 
 async function copy(text, msg = 'Copied') {
@@ -144,7 +147,7 @@ export async function render(root, params = {}) {
         h('thead', null, h('tr', null, h('th', null, '#'), h('th', null, 'Player'), COLS.map((c) => h('th', null, h('button', { type: 'button', class: 'th-b' + (c[0] === key ? ' on' : ''), 'data-sort': c[0], onclick: () => { key = c[0]; paint(); } }, c[1], c[0] === key ? ' ↓' : ''))))),
         h('tbody', null, rows.map((m, i) => h('tr', { class: m.me ? 'me' : '', 'data-handle': m.handle },
           h('td', null, i + 1),
-          h('td', null, h('span', { class: 'who' }, bubble(m, 'bust sm'), h('span', null, m.display, m.owner ? h('small', null, ' owner') : null))),
+          h('td', null, h('a', { class: 'who who-link', href: profileHref(m) }, bubble(m, 'bust sm'), h('span', null, m.display, m.owner ? h('small', null, ' owner') : null))),
           COLS.map((c) => h('td', { class: c[0] === key ? 'hot' : '' }, c[3](m))))))));
     };
     paint();
@@ -167,7 +170,7 @@ export async function render(root, params = {}) {
     if (!list.length) return null;
     return h('section', { class: 'card crew-awards' },
       h('h2', { class: 'card-h' }, 'Crew awards', h('small', null, 'who is winning at what')),
-      h('div', { class: 'award-grid' }, list.map(([icon, name, w, fmtV]) => h('div', { class: 'award' + (w.m.me ? ' me' : ''), 'data-award': name },
+      h('div', { class: 'award-grid' }, list.map(([icon, name, w, fmtV]) => h('a', { class: 'award who-link' + (w.m.me ? ' me' : ''), 'data-award': name, href: profileHref(w.m) },
         h('span', { class: 'award-i', 'aria-hidden': 'true' }, icon), bubble(w.m, 'bust sm'),
         h('div', null, h('small', null, name), h('b', null, w.m.me ? 'You' : w.m.display), h('small', null, fmtV(w.v)))))));
   }
@@ -198,8 +201,8 @@ export async function render(root, params = {}) {
     const net = b.status === 'won' || (b.status === 'lost' && b.cashed) ? (b.payout || 0) - b.stake : b.status === 'lost' ? -b.stake : 0;
     const mark = (l) => (l.result === 'won' ? '✓' : l.result === 'lost' ? '✗' : l.result === 'push' || l.result === 'void' ? '–' : '•');
     const row = h('article', { class: 'bet-card ' + b.status, 'data-bet': b.id },
-      h('div', { class: 'bet-h' }, bubble(m, 'bust sm'),
-        h('div', { class: 'bet-who' }, h('b', null, m.me ? 'You' : m.display), h('small', null, `${b.mode === 'parlay' ? `${(b.legs || []).length}-leg parlay` : 'Single'} · ${ago(b.ts)}`)),
+      h('div', { class: 'bet-h' }, whoLink(m, bubble(m, 'bust sm')),
+        h('div', { class: 'bet-who' }, h('b', null, whoLink(m, m.me ? 'You' : m.display)), h('small', null, `${b.mode === 'parlay' ? `${(b.legs || []).length}-leg parlay` : 'Single'} · ${ago(b.ts)}`)),
         h('div', { class: 'bet-res' }, h('span', { class: 'pill ' + b.status }, open ? 'Open' : b.cashed ? 'Cashed out' : b.status === 'won' ? 'Hit' : b.status === 'lost' ? 'Missed' : 'Refunded'),
           h('small', null, open ? `${fmt(b.stake)} → ${fmt(Math.round(b.stake * (b.dec || 1)))}` : b.status === 'void' ? `${fmt(b.stake)} back` : `${signed(net)} coins`))),
       h('ul', { class: 'bet-legs' }, (b.legs || []).map((l) => h('li', { class: l.result || 'pending' }, h('span', { class: 'lm', 'aria-hidden': 'true' }, mark(l)),
@@ -207,22 +210,11 @@ export async function render(root, params = {}) {
         l.dec ? h('em', null, `${Number(l.dec).toFixed(2)}x`) : null))),
       m.me ? null : h('div', { class: 'row wrap bet-act' },
         live.length ? h('button', { type: 'button', class: 'btn small main mirror', onclick: () => {
-          const r = mirrorBet(b);
-          toast(r.added ? `Added ${r.added} pick${r.added === 1 ? '' : 's'} to your slip${r.started ? ` (${r.started} already started)` : ''}${r.full ? ` · ${r.full} left off, your slip is full` : ''}` : r.full ? 'Your slip is full. Remove a pick first.' : r.dupes ? 'Those picks are already on your slip' : 'Those games already started');
+          toast(mirrorMsg(mirrorBet(b)));
         } }, '⇄ Mirror this bet') : h('small', { class: 'muted' }, 'Games already started'),
         h('a', { class: 'btn small', href: `#/duels/vs/${encodeURIComponent(m.handle)}` }, 'Challenge')));
     return row;
   }
-  /* put the not-yet-started legs of someone else's bet on your own slip, results cleared */
-  function mirrorBet(b) {
-    const now = Date.now();
-    const legs = (b.legs || []).filter((l) => new Date(l.date).getTime() > now);
-    let added = 0, dupes = 0, full = 0;
-    legs.forEach((l) => { if (slipHas(l.key)) dupes++; else if (toggleLeg({ ...l, result: 'pending' }).ok) added++; else full++; });
-    if (added) setSlip({ mode: b.mode === 'parlay' && (legs.length > 1 || getState().slip.legs.length > 1) ? 'parlay' : 'single' });
-    return { added, dupes, full, started: (b.legs || []).length - legs.length };
-  }
-
   /* ----- the wall ----- */
   function wall(ms) {
     const byHandle = new Map(ms.map((m) => [m.handle.toLowerCase(), m]));
@@ -238,8 +230,8 @@ export async function render(root, params = {}) {
           const m = byHandle.get(String(p.handle).toLowerCase()) || { handle: p.handle, display: p.handle };
           let cheers = p.cheers, cheered = p.cheered;
           const post = h('article', { class: 'wall-post', 'data-post': p.id });
-          const paint = () => add(clear(post), bubble(m, 'bust sm'),
-            h('div', { class: 'wall-b' }, h('div', { class: 'wall-h' }, h('b', null, m.me ? 'You' : m.display), h('small', null, ago(new Date(p.at).getTime()))), h('p', null, p.body),
+          const paint = () => add(clear(post), whoLink(m, bubble(m, 'bust sm')),
+            h('div', { class: 'wall-b' }, h('div', { class: 'wall-h' }, h('b', null, whoLink(m, m.me ? 'You' : m.display)), h('small', null, ago(new Date(p.at).getTime()))), h('p', null, p.body),
               h('div', { class: 'row wall-act' },
                 h('button', { type: 'button', class: 'btn small like' + (cheered ? ' on' : ''), onclick: async () => { try { const c = await soc.wallCheer(p.id); cheers = c.count; cheered = c.cheered; paint(); } catch (e) { toast(errText(e)); } } }, `🔥 ${cheers}`),
                 (p.mine || soc.me().owner) ? h('button', { type: 'button', class: 'btn small danger', onclick: async () => { try { await soc.wallDel(p.id); post.remove(); } catch (e) { toast(errText(e)); } } }, 'Delete') : null)));
@@ -268,7 +260,7 @@ export async function render(root, params = {}) {
       const av = m.avatar;
       add(clear(card),
         h('div', { class: 'fit-stage' }, av && av.eq ? renderAvatar(av, m.team || null, 'full') : bubble(m)),
-        h('b', { class: 'it-n' }, m.display, m.me ? h('small', null, ' you') : null),
+        h('b', { class: 'it-n' }, whoLink(m, m.display), m.me ? h('small', null, ' you') : null),
         h('div', { class: 'row wrap fit-act' },
           m.me ? h('span', { class: 'fit-hearts', 'aria-label': 'likes' }, `♥ ${likes[sel] || 0}`)
             : actionBtn(`${liked.has(sel) ? '♥' : '♡'} ${likes[sel] || 0}`, async () => {
