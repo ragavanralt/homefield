@@ -176,7 +176,7 @@ store.clearSlip();
 text = await visit('#/crew/u/nobody', 400); assert.match(text, /Not in your crew/); ok('an unknown handle says so');
 text = await visit('#/you', 300);
 assert.ok($('.yo-stage .avatar.bust') || $('.yo-stage .who-av'), 'headshot, not the full body');
-assert.equal($$('.yo-tabs [role=tab]').length, 4, 'four tabs'); assert.ok(!$('.yo-pane[data-pane="live"]').hidden && $('.yo-pane[data-pane="numbers"]').hidden, 'opens on Live');
+assert.equal($$('.yo-tabs [role=tab]').length, 5, 'five tabs'); assert.ok(!$('.yo-pane[data-pane="live"]').hidden && $('.yo-pane[data-pane="numbers"]').hidden, 'opens on Live');
 $('.yo-tabs [data-tab="numbers"]').click(); assert.ok($('.yo-pane[data-pane="live"]').hidden && !$('.yo-pane[data-pane="numbers"]').hidden, 'Numbers tab swaps the pane');
 assert.ok($('.yo-hero') && $('#yo-numbers') && $('#yo-links') && !$('#yo-vs'), 'your own page'); assert.ok($('#yo-links a[href="#/coins"]'), 'coin log link'); ok('the You page shows your own numbers and shortcuts');
 store.update((s) => { s.shareBets = false; });
