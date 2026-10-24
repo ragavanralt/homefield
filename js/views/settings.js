@@ -1,6 +1,6 @@
 // Settings: appearance, display options, your teams, backup and resets.
 import { h, clear, crest, toast, downloadText } from '../ui.js';
-import { getState, setSetting, unfollow, myTeams, exportData, importData, resetAll, resetBets, resetTeams } from '../store.js';
+import { getState, setSetting, unfollow, myTeams, exportData, importData, resetAll, resetBets, resetTeams, getLedger } from '../store.js';
 import { leagueLabel } from '../leagues.js';
 import { pageHead, hideChips, appearanceCard } from '../components.js';
 import { applyTheme } from '../themes.js';
@@ -83,6 +83,12 @@ export async function render(root) {
       teams.length ? h('ul', { class: 'team-list' }, teams.map((t) => h('li', null, crest(t, 32), h('a', { href: `#/team/${t.league}/${t.id}` }, t.name), h('small', null, leagueLabel(t.league)),
         h('button', { type: 'button', class: 'btn small', onclick: () => { unfollow(t.league, t.id); draw(); } }, 'Remove')))) : h('p', { class: 'muted' }, 'No teams yet.'),
       h('a', { class: 'btn main', href: '#/onboarding' }, 'Add or change teams')));
+
+    const week = getLedger().filter((e) => e.ts >= Date.now() - 7 * 864e5);
+    const wIn = week.reduce((n, e) => n + (e.d > 0 ? e.d : 0), 0), wOut = week.reduce((n, e) => n + (e.d < 0 ? -e.d : 0), 0);
+    host.append(h('section', { class: 'card', id: 'coin-log-card' }, h('h2', { class: 'card-h' }, 'Coin log'),
+      h('p', { class: 'muted' }, week.length ? `Last 7 days: ${wIn.toLocaleString()} coins in, ${wOut.toLocaleString()} out (${wIn - wOut >= 0 ? '+' : '−'}${Math.abs(wIn - wOut).toLocaleString()} net).` : 'Every coin in and out, and what it was for. Nothing logged yet.'),
+      h('a', { class: 'btn main', id: 'open-coin-log', href: '#/coins' }, 'Open coin log')));
 
     const file = h('input', { type: 'file', id: 'import-file', accept: 'application/json', hidden: true, onchange: async (e) => {
       const f = e.target.files[0];

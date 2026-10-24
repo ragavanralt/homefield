@@ -176,6 +176,8 @@ assert.ok(app().querySelector('.live-bet .cash'), 'cash out strip under an open 
   app().querySelector('#cl-all').click(); await sleep(30);
   assert.ok(app().querySelector('.cl-e[data-kind="stake"]') && app().querySelector('.cl-e[data-kind="cashout"]') && app().querySelector('.cl-e[data-kind="daily"]'), 'entries listed');
   assert.ok(app().querySelector('.cl-row[data-kind="stake"]') && /Where it came from/.test(app().textContent) && /Where it went/.test(app().textContent), 'summary by kind');
+  text = await visit('#/settings', { wait: 200 });
+  assert.ok(app().querySelector('#open-coin-log') && /Last 7 days/.test(app().querySelector('#coin-log-card').textContent), 'settings has the coin log card');
   ok('coin log records every coin in and out, with what it was for');
 }
 // settlement end to end: bets on finished game 1002 (final 3-2, home TB... home team wins)
