@@ -894,3 +894,11 @@ a.bk-main { display: block; color: inherit; text-decoration: none; }
 .yo-bi { font-size: 1.4rem; }
 .yo-vs th { text-align: center; color: var(--muted); font-weight: 600; } .yo-vs td { text-align: center; font-variant-numeric: tabular-nums; } .yo-vs td.hot { color: var(--good); font-weight: 800; }
 @media (max-width: 420px) { .yo-hero { grid-template-columns: 104px 1fr; } .yo-stage { width: 104px; height: 124px; } .yo-stage .avatar { width: 104px; } }
+
+/* You: headshot and tabs */
+.yo-stage { width: 112px; height: 112px; border-radius: 50%; align-items: center; border: 3px solid color-mix(in srgb, var(--t1) 60%, var(--surface)); }
+.yo-stage .avatar { width: 112px; } .yo-stage .avatar svg { display: block; width: 100%; height: auto; }
+.yo-hero { align-items: center; }
+.yo-tabs { align-self: stretch; display: flex; } .yo-tabs .seg-b { flex: 1; padding: 9px 6px; }
+.yo-pane[hidden] { display: none; }
+@media (max-width: 420px) { .yo-stage { width: 92px; height: 92px; } .yo-stage .avatar { width: 92px; } }

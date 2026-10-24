@@ -36,7 +36,7 @@ function hero(m) {
   if (m.team) applySkin(card, m.team.color, m.team.alt);
   const lvl = num(st.xp) != null ? levelFor(st.xp) : null;
   const lo = lvl ? xpForLevel(lvl) : 0, hi = lvl ? xpForLevel(lvl + 1) : 1;
-  const av = m.avatar && m.avatar.eq ? renderAvatar(m.avatar, m.me ? m.jersey : m.team || null, 'lg') : bubble(m, 'bust');
+  const av = m.avatar && m.avatar.eq ? renderAvatar(m.avatar, m.me ? m.jersey : m.team || null, 'bust') : bubble(m, 'bust');
   add(card,
     h('div', { class: 'yo-stage' }, av),
     h('div', { class: 'yo-id' },
@@ -162,8 +162,26 @@ function mineExtras() {
     soc.signedIn() ? h('p', { class: 'muted small-note' }, 'The crew sees everything on this page except your private details. Turn "Show my recent bets" off in the Crew tab to hide your tickets.') : h('p', { class: 'muted small-note' }, 'Join the crew and your friends can open this page for you.'));
 }
 
+let tab = 'live';
+/** The page in tabs: what is on the line now, the numbers, teams, trophies. Every pane is built; only one shows. */
 function page(m) {
-  return [hero(m), tickets(m), numbers(m), formStrip(m), teamsCard(m), style(m), trophies(m), m.me ? null : versus(m), m.me ? (soc.signedIn() ? null : null) : crewCard(m), m.me ? mineExtras() : null];
+  const panes = [
+    ['live', 'Live', [tickets(m), formStrip(m)]],
+    ['numbers', 'Numbers', [numbers(m), style(m), m.me ? null : versus(m), m.me ? null : crewCard(m)]],
+    ['teams', 'Teams', [teamsCard(m)]],
+    ['trophies', 'Trophies', [trophies(m)]],
+  ];
+  if (!panes.some(([id]) => id === tab)) tab = 'live';
+  const bar = h('div', { class: 'seg yo-tabs', role: 'tablist' });
+  const body = h('div', { class: 'stack yo-panes' });
+  const paint = () => {
+    clear(bar);
+    add(bar, panes.map(([id, label]) => h('button', { type: 'button', role: 'tab', class: 'seg-b' + (tab === id ? ' on' : ''), 'aria-selected': tab === id ? 'true' : 'false', 'data-tab': id, onclick: () => { tab = id; paint(); } }, label)));
+    for (const el of body.children) el.hidden = el.dataset.pane !== tab;
+  };
+  for (const [id, , kids] of panes) { const pane = h('div', { class: 'stack yo-pane', 'data-pane': id }); add(pane, kids); body.append(pane); }
+  paint();
+  return [hero(m), bar, body, m.me ? mineExtras() : null];
 }
 
 export async function render(root, params = {}) {
