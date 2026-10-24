@@ -20,6 +20,7 @@ const fresh = () => ({
   settings: { logos: true, spoilerFree: false, theme: 'auto', bgDark: 'noir', bgLight: 'ivory', accent: 'gold', teamMode: true, hidden: [], oddsKey: '', papiKey: '', papiFirst: false },
   bank: { coins: START_COINS, xp: 0, streak: 0, bestStreak: 0, peak: START_COINS, lastDaily: '', dailyStreak: 0, rescued: '' },
   bets: {},
+  ledger: [],
   slip: { legs: [], mode: 'single', stake: 50 },
   notices: [],
   watched: {},
@@ -52,12 +53,21 @@ export const getState = () => state;
 let saveHook = null;
 /** Called after every change is saved. The crew sync uses it to back changes up in the background. */
 export const onSaved = (fn) => { saveHook = fn; };
-export function update(fn) {
+export function update(fn, tag) {
   const coins0 = state.bank && state.bank.coins, rev0 = (state.bank && state.bank.rev) || 0;
   fn(state);
   // every coin change bumps rev, so a device sync can tell which copy of the bank is newer
-  if (state.bank && state.bank.coins !== coins0) state.bank.rev = Math.max(rev0, state.bank.rev || 0) + 1;
+  if (state.bank && state.bank.coins !== coins0) { state.bank.rev = Math.max(rev0, state.bank.rev || 0) + 1; logCoins(state.bank.coins - coins0, tag); }
   save(); if (saveHook) { try { saveHook(); } catch (e) { /* never block a save */ } } return state; }
+
+/** The coin log: every coin that moved, which way, what for, and what you had after. Kept on this device, newest 600. */
+export const LEDGER_MAX = 600;
+function logCoins(d, tag) {
+  if (!Array.isArray(state.ledger)) state.ledger = [];
+  state.ledger.push({ ts: Date.now(), d, bal: state.bank.coins, k: (tag && tag.k) || 'other', note: (tag && tag.note) || '' });
+  if (state.ledger.length > LEDGER_MAX) state.ledger.splice(0, state.ledger.length - LEDGER_MAX);
+}
+export const getLedger = () => (Array.isArray(state.ledger) ? state.ledger : []);
 
 export const myTeams = () => state.teams;
 export const isFollowing = (league, id) => state.teams.some((t) => t.league === league && t.id === String(id));
@@ -138,6 +148,7 @@ export function placeSlip(now = Date.now()) {
   const total = stake * count;
   if (total > state.bank.coins) return { ok: false, error: `You only have ${state.bank.coins} coins.` };
   const made = [];
+  const what = mode === 'parlay' ? `${legs.length}-leg parlay` : legs.length === 1 ? legs[0].label : `${legs.length} single bets`;
   update((s) => {
     const base = Date.now();
     if (mode === 'parlay') made.push({ id: 'b' + base.toString(36), ts: base, mode: 'parlay', stake, dec: parlayDec(legs), legs: legs.map((l) => ({ ...l })), status: 'pending', payout: 0 });
@@ -145,7 +156,7 @@ export function placeSlip(now = Date.now()) {
     made.forEach((b) => { s.bets[b.id] = b; });
     s.bank.coins -= total;
     s.slip.legs = [];
-  });
+  }, { k: 'stake', note: what });
   track('bets_placed', made.length);
   if (mode === 'parlay') track('parlays_placed');
   ping();
@@ -154,6 +165,8 @@ export function placeSlip(now = Date.now()) {
 
 /** Record leg results and, if the bet is decided, pay out. */
 export function resolveBet(id, results, decision) {
+  const was = state.bets[id];
+  const title = was ? (was.mode === 'parlay' ? `${was.legs.length}-leg parlay` : was.legs[0].label) : '';
   update((s) => {
     const b = s.bets[id];
     if (!b || b.status !== 'pending') return;
@@ -166,7 +179,7 @@ export function resolveBet(id, results, decision) {
     else if (decision.status === 'lost') s.bank.streak = 0;
     s.bank.xp += decision.status === 'void' ? 0 : xpFor(b, decision.status === 'won');
     s.notices.push({ id, status: decision.status, payout: decision.payout, stake: b.stake, title: b.mode === 'parlay' ? `${b.legs.length}-leg parlay` : b.legs[0].label });
-  });
+  }, { k: decision && decision.status === 'void' ? 'refund' : 'win', note: title });
   if (decision && decision.status === 'won') track('bets_won');
   ping();
 }
@@ -174,6 +187,8 @@ export function resolveBet(id, results, decision) {
  *  It counts as a win when it returns at least the stake, otherwise a loss. Its legs keep resolving afterwards so you can see what would have happened. */
 export function cashOutBet(id, amount) {
   let ok = false;
+  const was = state.bets[id];
+  const title = was ? (was.mode === 'parlay' ? `${was.legs.length}-leg parlay` : was.legs[0].label) : '';
   update((s) => {
     const b = s.bets[id];
     if (!b || b.status !== 'pending' || !Number.isFinite(amount) || amount < 1) return;
@@ -183,7 +198,7 @@ export function cashOutBet(id, amount) {
     s.bank.peak = Math.max(s.bank.peak, s.bank.coins);
     s.bank.xp += Math.round(b.stake / 10) + (pay >= b.stake ? 10 : 2);
     ok = true;
-  });
+  }, { k: 'cashout', note: title });
   if (ok) ping();
   return ok;
 }
@@ -202,7 +217,7 @@ export function claimDaily() {
   const y = new Date(); y.setDate(y.getDate() - 1);
   const streakDays = b.lastDaily === localDay(y) ? b.dailyStreak + 1 : 1;
   const bonus = 150 + 50 * Math.min(streakDays, 7);
-  update((s) => { s.bank.coins += bonus; s.bank.lastDaily = today; s.bank.dailyStreak = streakDays; s.bank.peak = Math.max(s.bank.peak, s.bank.coins); });
+  update((s) => { s.bank.coins += bonus; s.bank.lastDaily = today; s.bank.dailyStreak = streakDays; s.bank.peak = Math.max(s.bank.peak, s.bank.coins); }, { k: 'daily', note: `Day ${streakDays} in a row` });
   track('daily_claimed');
   ping();
   return { ok: true, bonus, streakDays };
@@ -211,7 +226,7 @@ export const dailyReady = () => state.bank.lastDaily !== localDay();
 export const canRescue = () => state.bank.coins < MIN_STAKE && !openBets().length && state.bank.rescued !== localDay();
 export function rescue() {
   if (!canRescue()) return false;
-  update((s) => { s.bank.coins += 200; s.bank.rescued = localDay(); s.bank.rescues = (s.bank.rescues || 0) + 1; if (!s.avatar.owned.includes('ghost')) s.avatar.owned.push('ghost'); });
+  update((s) => { s.bank.coins += 200; s.bank.rescued = localDay(); s.bank.rescues = (s.bank.rescues || 0) + 1; if (!s.avatar.owned.includes('ghost')) s.avatar.owned.push('ghost'); }, { k: 'rescue', note: 'Ran out of coins' });
   ping(); return true;
 }
 
@@ -268,7 +283,7 @@ export function claimQuest(which, quest, now = new Date()) {
     }
     s.bank.coins += out.coins;
     s.bank.peak = Math.max(s.bank.peak, s.bank.coins);
-  });
+  }, { k: 'quest', note: `${which === 'daily' ? 'Daily' : 'Weekly'} quest${quest.title ? ': ' + quest.title : ''}` });
   ping();
   return out;
 }
@@ -278,7 +293,7 @@ export function buyItem(id, price) {
   const st = state;
   if (st.avatar.owned.includes(id)) return { ok: false, why: 'owned' };
   if (st.bank.coins < price) return { ok: false, why: 'coins' };
-  update((s) => { s.bank.coins -= price; s.avatar.owned.push(id); s.avatar.spent = (s.avatar.spent || 0) + price; });
+  update((s) => { s.bank.coins -= price; s.avatar.owned.push(id); s.avatar.spent = (s.avatar.spent || 0) + price; }, { k: 'shop', note: id });
   track('items_bought');
   ping(); return { ok: true };
 }
@@ -310,7 +325,7 @@ export function importData(text) {
 }
 export function resetBets() {
   const f = fresh();
-  update((s) => { s.bank = f.bank; s.bets = {}; s.slip = f.slip; s.notices = []; s.lastMode = f.lastMode; /* avatar and owned items are kept */ });
+  update((s) => { s.bank = f.bank; s.bets = {}; s.slip = f.slip; s.notices = []; s.lastMode = f.lastMode; /* avatar and owned items are kept */ }, { k: 'reset', note: 'Bets reset' });
   ping();
 }
 export function resetTeams() { update((s) => { s.teams = []; }); }
@@ -318,16 +333,16 @@ export function resetAll() { state = fresh(); save(); ping(); }
 
 /* ---------- coins moved by the crew games (duels, survivor, cap night) ---------- */
 /** Take coins out of the bankroll. Returns false (and changes nothing) if there are not enough. */
-export function spendCoins(n) {
+export function spendCoins(n, tag) {
   n = Math.floor(n);
   if (!(n > 0) || state.bank.coins < n) return false;
-  update((s) => { s.bank.coins -= n; });
+  update((s) => { s.bank.coins -= n; }, tag);
   ping();
   return true;
 }
-export function addCoins(n) {
+export function addCoins(n, tag) {
   n = Math.floor(n);
   if (!(n > 0)) return;
-  update((s) => { s.bank.coins += n; s.bank.peak = Math.max(s.bank.peak, s.bank.coins); });
+  update((s) => { s.bank.coins += n; s.bank.peak = Math.max(s.bank.peak, s.bank.coins); }, tag);
   ping();
 }

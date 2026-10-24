@@ -21,7 +21,7 @@ export function bankStrip() {
     syncUnlocks();
     clear(el).append(
       h('a', { class: 'bk-av', href: '#/profile', title: 'Your fan' }, renderAvatar(undefined, undefined, 'sm bust'), h('small', null, 'Your fan')),
-      h('div', { class: 'bk-main' }, h('small', null, 'Bankroll'), h('div', { class: 'bk-coins' }, h('i', { class: 'coin' }), fmt(bank.coins))),
+      h('a', { class: 'bk-main', href: '#/coins', title: 'Coin log' }, h('small', null, 'Bankroll'), h('div', { class: 'bk-coins' }, h('i', { class: 'coin' }), fmt(bank.coins)), h('small', { class: 'muted' }, 'Coin log ›')),
       h('div', { class: 'bk-lvl' }, h('div', { class: 'bk-rank' }, `Level ${lvl} · ${rankFor(lvl)}`), h('div', { class: 'xp' }, h('i', { style: { width: pct + '%' } })), h('small', null, `${fmt(bank.xp)} / ${fmt(hi)} XP`)),
       h('div', { class: 'bk-streak' + (bank.streak >= 2 ? ' hot' : '') }, h('small', null, 'Hot streak'), h('div', { class: 'bk-big' }, bank.streak ? `🔥 ${bank.streak}` : '0'), h('small', null, boost ? `+${Math.round(boost * 100)}% on wins` : 'Win bets to build a boost')),
       h('div', { class: 'bk-rec' }, h('small', null, 'Record'), h('div', { class: 'bk-big' }, `${st.won}-${st.lost}`), h('small', null, `${st.profit >= 0 ? '+' : ''}${fmt(st.profit)} coins overall`)),

@@ -164,6 +164,20 @@ assert.ok(app().querySelector('.live-bet .cash'), 'cash out strip under an open 
   assert.ok(/Cashed out -/.test(card.textContent) || /Cashed out −/.test(card.textContent) || /Cashed out/.test(card.textContent), 'card says cashed out'); assert.ok(!card.querySelector('.cash'), 'no cash out strip on a settled bet');
   ok('taking a cash out pays the offer and closes the bet');
 }
+{
+  const led = store.getLedger();
+  const kinds = new Set(led.map((e) => e.k));
+  for (const k of ['stake', 'daily', 'cashout']) assert.ok(kinds.has(k), 'ledger has ' + k);
+  assert.equal(1000 + led.reduce((n, e) => n + e.d, 0), store.getBank().coins, 'every coin that moved is in the log');
+  assert.equal(led[led.length - 1].bal, store.getBank().coins, 'the last entry shows the balance now');
+  const co = led.filter((e) => e.k === 'cashout').pop();
+  assert.ok(co.d > 0 && /parlay|Single|[A-Z]/.test(co.note), 'cash out is logged with what it was for');
+  text = await visit('#/coins', { wait: 200 });
+  app().querySelector('#cl-all').click(); await sleep(30);
+  assert.ok(app().querySelector('.cl-e[data-kind="stake"]') && app().querySelector('.cl-e[data-kind="cashout"]') && app().querySelector('.cl-e[data-kind="daily"]'), 'entries listed');
+  assert.ok(app().querySelector('.cl-row[data-kind="stake"]') && /Where it came from/.test(app().textContent) && /Where it went/.test(app().textContent), 'summary by kind');
+  ok('coin log records every coin in and out, with what it was for');
+}
 // settlement end to end: bets on finished game 1002 (final 3-2, home TB... home team wins)
 {
   const { settleAll } = await import('../js/settle.js');

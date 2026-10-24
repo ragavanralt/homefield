@@ -878,8 +878,8 @@ t('cash out: NBA leads are worth what real leads are worth', () => {
   const tied = q('nba', home, pgame('nba', 65, 65, 3, '6:00', '3rd 6:00')).pWin;
   assert.ok(Math.abs(tied - 0.5) < 0.05, 'level game is a coin flip ' + tied);
   assert.ok(q('nba', home, pgame('nba', 100, 80, 4, '2:00', '4th 2:00')).pWin > 0.99, 'up 20 with 2 left is over');
-  const down3 = q('nba', home, pgame('nba', 98, 101, 4, '1:00', '4th 1:00')).pWin;
-  assert.ok(down3 > 0.05 && down3 < 0.2, 'down 3 with a minute left ' + down3);
+  const down3 = q('nba', home, pgame('nba', 98, 101, 4, '1:30', '4th 1:30')).pWin;
+  assert.ok(down3 > 0.08 && down3 < 0.25, 'down 3 with a minute and a half left ' + down3);
 });
 t('cash out: a fresh game prices back to the chance it was sold at', () => {
   for (const [lg, p] of [['nba', 0.6], ['nfl', 0.35], ['nhl', 0.55], ['mlb', 0.62], ['eng.1', 0.4]]) {
@@ -914,12 +914,25 @@ t('cash out: a player prop follows his stat line and the clock', () => {
   const half = pgame('nba', 55, 50, 3, '12:00', 'Halftime');
   const hot = q('nba', prop(), half, box(20)).pWin, ok = q('nba', prop(), half, box(12)).pWin, cold = q('nba', prop(), half, box(4)).pWin;
   assert.ok(hot > 0.8 && ok > 0.25 && ok < 0.6 && cold < 0.15, `hot ${hot} par ${ok} cold ${cold}`);
-  const late = q('nba', prop(), pgame('nba', 100, 95, 4, '1:00', '4th 1:00'), box(22)).pWin;
-  assert.ok(late < 0.1, 'needs 3 more with a minute left: ' + late);
+  const late = q('nba', prop(), pgame('nba', 100, 95, 4, '1:30', '4th 1:30'), box(22)).pWin;
+  assert.ok(late < 0.2 && late > 0.03, 'needs 3 more with a minute and a half left: ' + late);
   const under = q('nba', prop({ prop: { ...prop().prop, dir: 'under' } }), half, box(20)).pWin;
   assert.ok(under < 0.25, 'under with 20 at half ' + under);
   const dnp = q('nba', prop(), pgame('nba', 90, 80, 4, '6:00', '4th 6:00'), { box: { players: [] } });
   assert.ok(dnp.ok && dnp.pWin > 0.5, 'a player with no box score line is likely refunded, which keeps the bet alive ' + dnp.pWin);
+});
+t('cash out: paused in the last minute, with the clock and in overtime, so a dead leg cannot be cashed on', () => {
+  const home = mlLeg('nba', 'home', 0.5);
+  for (const [g, why] of [[pgame('nba', 100, 99, 4, '0:50', '4th 0:50'), 'a minute left'], [pgame('nba', 100, 100, 4, '0:00', 'End of 4th'), 'no time left'], [pgame('nba', 110, 108, 5, '3:00', 'OT'), 'overtime'],
+    [pgame('nhl', 2, 1, 3, '0:30', '3rd 0:30'), 'hockey'], [pgame('eng.1', 1, 0, 2, "88'", "88'"), 'soccer'], [pgame('mlb', 3, 2, 9, '', 'Bottom 9th'), 'ninth inning']]) {
+    const lg = g.league, r = CM.quoteBet(betOf([wonLeg, mlLeg(lg, 'home', 0.5)]), stOf(lg, g));
+    assert.equal(r.ok, false, why); assert.ok(r.paused, why + ' says why');
+  }
+  assert.ok(q('nba', home, pgame('nba', 100, 99, 4, '1:30', '4th 1:30')).ok, 'still open with a minute and a half');
+  // the case that started this: one leg short of a miracle, a second left, a close game elsewhere
+  const dead = mkLeg('nba', { key: 'p', kind: 'prop', dec: 3, prop: { playerId: 'p1', name: 'S P', label: 'Assists', stat: 'ast', line: 3.5, dir: 'over', box: [{ g: '.', l: ['AST'] }] } });
+  const r = CM.quoteBet(betOf([wonLeg, dead]), stOf('nba', pgame('nba', 100, 99, 4, '0:00', 'End of 4th'), { box: { players: [{ groups: [{ name: 's', labels: ['AST'], rows: [{ id: 'p1', name: 'S P', stats: ['3'] }] }] }] } }));
+  assert.equal(r.ok, false);
 });
 t('cash out: a blowout slows the starters', () => {
   const prop = mkLeg('nba', { key: 'p', kind: 'prop', dec: 1 / (0.5 * B.VIG), prop: { playerId: 'p1', name: 'A B', label: 'Points', stat: 'pts', line: 24.5, dir: 'over', box: [{ g: '.', l: ['PTS'] }] } });

@@ -110,7 +110,7 @@ export const newOp = () => 'o' + Array.from(crypto.getRandomValues(new Uint8Arra
 
 /** Spend `amount` locally, run `fn(op)`, and give the coins back if the server definitely said no. */
 export async function withStake(amount, kind, fn) {
-  if (!spendCoins(amount)) throw new SocialError('no_coins', `You need ${amount} coins for that.`);
+  if (!spendCoins(amount, { k: 'game', note: kind })) throw new SocialError('no_coins', `You need ${amount} coins for that.`);
   const op = newOp();
   S.pending.push({ op, amount, kind, at: Date.now() }); save();
   try {
@@ -120,7 +120,7 @@ export async function withStake(amount, kind, fn) {
   } catch (e) {
     if (e.code === 'offline') throw new SocialError('offline', 'Could not reach the server. Your coins are held and will sort themselves out when you are back online.');
     S.pending = S.pending.filter((p) => p.op !== op); save();
-    addCoins(amount);
+    addCoins(amount, { k: 'game-back', note: `${kind}: the server said no` });
     throw e;
   }
 }
@@ -131,7 +131,7 @@ export async function reconcile() {
   const r = await call('hf_op_status', { p_ops: old.map((p) => p.op) });
   const known = new Set(r.known || []);
   let back = 0;
-  for (const p of old) { if (!known.has(p.op)) { addCoins(p.amount); back += p.amount; } }
+  for (const p of old) { if (!known.has(p.op)) { addCoins(p.amount, { k: 'game-back', note: `${p.kind}: stake returned` }); back += p.amount; } }
   S.pending = S.pending.filter((p) => !old.includes(p)); save();
   return back;
 }
@@ -141,7 +141,7 @@ export async function claim() {
   const r = await call('hf_claim');
   if (r && r.total > 0 && !S.credited.includes(r.claim_id)) {
     S.credited.push(r.claim_id); S.credited = S.credited.slice(-30); save();
-    addCoins(r.total);
+    addCoins(r.total, { k: 'game-win', note: 'Duel, survivor and cap night payouts' });
   }
   return r;
 }
@@ -232,7 +232,7 @@ export function syncNow() {
     if (remote.data && remote.data.teams) {
       const merged = mergeFan(fanOf(st), remote.data);
       applying = true;
-      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.watched = merged.watched || s.watched; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; });
+      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.watched = merged.watched || s.watched; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; }, { k: 'sync', note: 'Brought in from your other device' });
         mergeClaims(merged.claims);
       } finally { applying = false; }
     }

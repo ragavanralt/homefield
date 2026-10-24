@@ -21,6 +21,7 @@ const ROUTES = [
   { re: /^\/quests$/, view: () => import('./views/quests.js'), nav: 'quests', params: () => ({}) },
   { re: /^\/crew$/, view: () => import('./views/crew.js'), nav: 'crew', params: () => ({}) },
   { re: /^\/join\/([^/]+)$/, view: () => import('./views/crew.js'), nav: 'crew', params: (m) => ({ code: decodeURIComponent(m[1]) }) },
+  { re: /^\/coins$/, view: () => import('./views/coins.js'), nav: 'coins', params: () => ({}) },
   { re: /^\/mypicks$/, view: () => import('./views/mypicks.js'), nav: 'mypicks', params: () => ({}) },
   { re: /^\/daily$/, view: () => import('./views/daily.js'), nav: 'daily', params: () => ({}) },
   { re: /^\/duels$/, view: () => import('./views/duels.js'), nav: 'duels', params: () => ({}) },
@@ -49,9 +50,9 @@ const SECTIONS = [
   { id: 'sports', label: 'Sports', href: () => `#/league/${lastLeague()}`, subs: TABS.map((t) => ({ id: t.id, label: t.label, href: `#/league/${t.id}` })) },
   { id: 'picks', label: "Pick'em", href: () => '#/picks', get subs() { return [{ id: 'picks', label: "Pick'em", href: '#/picks' }, { id: 'mypicks', label: 'Live picks', href: '#/mypicks' }, ...(socialOn() ? [{ id: 'daily', label: 'Daily 5', href: '#/daily' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] : [])]; } },
   { id: 'quests', label: 'Quests', href: () => '#/quests', subs: [{ id: 'quests', label: 'Quests', href: '#/quests' }, { id: 'season', label: 'Season', href: '#/season' }] },
-  { id: 'fan', label: 'Fan', href: () => '#/profile', get subs() { return [{ id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }, ...(socialOn() ? [{ id: 'crew', label: 'Crew', href: '#/crew' }] : [])]; } },
+  { id: 'fan', label: 'Fan', href: () => '#/profile', get subs() { return [{ id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }, { id: 'coins', label: 'Coin log', href: '#/coins' }, ...(socialOn() ? [{ id: 'crew', label: 'Crew', href: '#/crew' }] : [])]; } },
 ];
-const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : navId === 'season' ? 'quests' : navId === 'profile' || navId === 'shop' || navId === 'crew' ? 'fan' : navId === 'duels' || navId === 'daily' || navId === 'mypicks' || navId === 'survivor' || navId === 'cap' ? 'picks' : navId);
+const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : navId === 'season' ? 'quests' : navId === 'profile' || navId === 'shop' || navId === 'crew' || navId === 'coins' ? 'fan' : navId === 'duels' || navId === 'daily' || navId === 'mypicks' || navId === 'survivor' || navId === 'cap' ? 'picks' : navId);
 
 let cleanup = null;
 let token = 0;

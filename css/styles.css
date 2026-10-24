@@ -842,3 +842,20 @@ html { background: var(--bg); }
 .cash-ask { display: flex; flex-direction: column; gap: 8px; }
 .cash-ask .row { display: flex; gap: 8px; flex-wrap: wrap; }
 .cash-ask .row .btn { flex: 1 1 140px; }
+
+/* coin log */
+a.bk-main { display: block; color: inherit; text-decoration: none; }
+.cl-sum { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+@media (min-width: 640px) { .cl-sum { grid-template-columns: repeat(4, 1fr); } }
+.cl-n { display: flex; flex-direction: column; gap: 2px; padding: 12px; }
+.cl-n b { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.cl-n.in b, .cl-n b.ok { color: var(--good); } .cl-n.out b, .cl-n b.no { color: var(--hot); }
+.cl-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 720px) { .cl-grid { grid-template-columns: 1fr 1fr; } }
+.cl-row { margin: 10px 0; } .cl-top { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.cl-bar { height: 6px; border-radius: 4px; background: var(--surface-2); overflow: hidden; margin-top: 4px; }
+.cl-bar i { display: block; height: 100%; border-radius: 4px; } .cl-bar.in i { background: var(--good); } .cl-bar.out i { background: var(--hot); }
+.cl-list { list-style: none; margin: 0; padding: 0; }
+.cl-e { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+.cl-w, .cl-a { display: flex; flex-direction: column; gap: 1px; } .cl-a { text-align: right; font-variant-numeric: tabular-nums; }
+.cl-e.in .cl-a b { color: var(--good); } .cl-e.out .cl-a b { color: var(--hot); }

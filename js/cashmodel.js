@@ -115,6 +115,15 @@ export function priorsFor(group, legs) {
   return { mT, mM: avg(ms, S.edge) };
 }
 
+/** The last stretch of a game, when the result is mostly known and the feed can be a play behind. Cash out is paused for it, like at a book. */
+const LATE = { nba: 60 / 2880, nfl: 60 / 3600, nhl: 60 / 3600, soccer: 3 / 90, mlb: 0.12 }; // last minute; last 3 minutes of soccer; the 9th inning on
+export function isLate(game) {
+  if (!game || game.state !== 'in') return false;
+  const group = groupOf(game.league);
+  if (!(group in LATE)) return false;
+  return 1 - gameProgress(game) <= LATE[group] + 1e-9; // overtime and extra innings read as fully played, so they pause too
+}
+
 /** Where a game is: score, how much is left, and whether it is in overtime. */
 export function gameState(game) {
   const group = groupOf(game.league);
@@ -124,7 +133,7 @@ export function gameState(game) {
   const prog = gameProgress(game);
   const inOT = !!S && ['nba', 'nfl', 'nhl'].includes(group) && (game.period || 0) > S.reg;
   // past the end of regulation the clock reads 100% done; leave a little game to play
-  const tau = game.state === 'post' ? 0 : clamp(1 - prog, inOT || prog >= 0.999 ? 0.06 : 0.015, 1);
+  const tau = game.state === 'post' ? 0 : clamp(1 - prog, inOT || prog >= 0.999 ? 0.06 : 0.004, 1);
   return { hs, as, tau, prog, ot: inOT, state: game.state };
 }
 
@@ -266,7 +275,7 @@ export function quoteBet(bet, states, now = Date.now(), streak = 0) {
       else if (r === 'pending') return { ok: false, reason: 'Settling now.', wait: true };
       continue;
     }
-    if (g && g.state === 'in') anyLive = true;
+    if (g && g.state === 'in') { anyLive = true; if (isLate(g)) return { ok: false, paused: true, reason: 'Cash out is paused in the last minute of a game. It opens again once the game is final and the bet settles.' }; }
     sims.push({ l, data, g });
     if (!byGame.has(l.gameKey)) byGame.set(l.gameKey, []);
     byGame.get(l.gameKey).push(l);
