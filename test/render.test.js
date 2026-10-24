@@ -206,8 +206,8 @@ assert.ok(app().querySelector('.live-bet .cash'), 'cash out strip under an open 
   assert.equal(store.getState().bets.t3.legs[1].result, 'won'); assert.equal(store.getState().bets.t3.status, 'lost'); assert.equal(store.getState().bank.coins, coins3); ok('a lost parlay still shows how its other legs went');
 }
 await visit('#/season', { wait: 100 }); assert.equal(w.location.hash, '#/you', 'the old season link lands on You');
-text = await visit('#/you', { wait: 300 }); assert.ok(/Recent results/.test(text) && /Games watched/.test(text) && /Trophy case/.test(text), 'season content lives on You'); assert.ok(!app().querySelector('#subnav a[href="#/season"]') && w.document.querySelector('#subnav a[href="#/coins"]'), 'no Season tab, Coin log sits under You'); ok('season folded into the You page');
-assert.deepEqual([...w.document.querySelectorAll('#tabbar a')].map((a) => a.dataset.sec).filter((x) => x !== 'crew'), ['home', 'sports', 'bets', 'quests', 'you'], 'bottom bar sections (Crew shows only when the server is set up)'); ok('bottom bar sections');
+text = await visit('#/you', { wait: 300 }); assert.ok(/Recent results/.test(text) && /Games watched/.test(text) && /Trophy case/.test(text), 'season content lives on You'); assert.ok(!app().querySelector('#subnav a[href="#/season"]') && !w.document.querySelector('#subnav a[href="#/coins"]'), 'no Season tab, and the coin log stays in Settings'); ok('season folded into the You page');
+assert.deepEqual([...w.document.querySelectorAll('#tabbar a')].map((a) => a.dataset.sec).filter((x) => x !== 'crew'), ['home', 'sports', 'bets', 'you'], 'bottom bar sections (Crew shows only when the server is set up)'); ok('bottom bar sections');
 text = await visit('#/settings'); assert.ok(/Spoiler/.test(text)); ok('settings page');
 w.document.getElementById('set-spoil').click(); await sleep(20);
 assert.equal(store.getState().settings.spoilerFree, true); ok('spoiler toggle');

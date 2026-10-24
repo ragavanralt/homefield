@@ -22,7 +22,7 @@ const ROUTES = [
   { re: /^\/crew\/u\/([^/]+)$/, view: () => import('./views/you.js'), nav: 'crew', params: (m) => ({ handle: decodeURIComponent(m[1]) }) },
   { re: /^\/crew$/, view: () => import('./views/crew.js'), nav: 'crew', params: () => ({}) },
   { re: /^\/join\/([^/]+)$/, view: () => import('./views/crew.js'), nav: 'crew', params: (m) => ({ code: decodeURIComponent(m[1]) }) },
-  { re: /^\/coins$/, view: () => import('./views/coins.js'), nav: 'coins', params: () => ({}) },
+  { re: /^\/coins$/, view: () => import('./views/coins.js'), nav: 'settings', params: () => ({}) },
   { re: /^\/mypicks$/, view: () => import('./views/mypicks.js'), nav: 'mypicks', params: () => ({}) },
   { re: /^\/daily$/, view: () => import('./views/daily.js'), nav: 'daily', params: () => ({}) },
   { re: /^\/duels$/, view: () => import('./views/duels.js'), nav: 'duels', params: () => ({}) },
@@ -51,12 +51,11 @@ const SECTIONS = [
   { id: 'home', label: 'Home', href: () => '#/', subs: [] },
   { id: 'sports', label: 'Sports', href: () => `#/league/${lastLeague()}`, subs: TABS.map((t) => ({ id: t.id, label: t.label, href: `#/league/${t.id}` })) },
   // Bets: building a slip and watching what is riding
-  { id: 'bets', label: 'Bets', href: () => '#/picks', subs: [{ id: 'picks', label: "Pick'em", href: '#/picks' }, { id: 'mypicks', label: 'Live picks', href: '#/mypicks' }] },
-  { id: 'quests', label: 'Quests', href: () => '#/quests', subs: [] },
-  // Crew: your friends and every game you play against them (only when the server is set up)
-  { id: 'crew', label: 'Crew', href: () => '#/crew', show: () => socialOn(), subs: [{ id: 'crew', label: 'Crew', href: '#/crew' }, { id: 'daily', label: 'Daily 5', href: '#/daily' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] },
-  // You: your page, your look, the shop and where your coins went
-  { id: 'you', label: 'You', href: () => '#/you', subs: [{ id: 'you', label: 'You', href: '#/you' }, { id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }, { id: 'coins', label: 'Coin log', href: '#/coins' }] },
+  { id: 'bets', label: 'Bets', href: () => '#/picks', get subs() { return [{ id: 'picks', label: "Pick'em", href: '#/picks' }, { id: 'mypicks', label: 'Live picks', href: '#/mypicks' }, ...(socialOn() ? [{ id: 'daily', label: 'Daily 5', href: '#/daily' }] : [])]; } },
+  // Crew: your friends and the games you play against them (only when the server is set up)
+  { id: 'crew', label: 'Crew', href: () => '#/crew', show: () => socialOn(), subs: [{ id: 'crew', label: 'Crew', href: '#/crew' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] },
+  // You: your page, quests, your look and the shop. The coin log lives in Settings.
+  { id: 'you', label: 'You', href: () => '#/you', subs: [{ id: 'you', label: 'You', href: '#/you' }, { id: 'quests', label: 'Quests', href: '#/quests' }, { id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }] },
 ];
 const shown = () => SECTIONS.filter((S) => !S.show || S.show());
 const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : (SECTIONS.find((S) => S.subs.some((x) => x.id === navId)) || {}).id || navId);
