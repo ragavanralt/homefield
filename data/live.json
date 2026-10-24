@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-10-23",
+  "updated": "2026-10-24",
   "daily": {
-    "date": "2026-10-23",
+    "date": "2026-10-24",
     "quests": [
       {
-        "id": "d2026-10-23-1",
-        "metric": "daily_claimed",
+        "id": "d2026-10-24-1",
+        "metric": "outfit_changed",
         "target": 1,
-        "coins": 50,
-        "title": "Claim your daily bonus"
+        "coins": 40,
+        "title": "Change something in your fit"
       },
       {
-        "id": "d2026-10-23-2",
-        "metric": "parlays_placed",
+        "id": "d2026-10-24-2",
+        "metric": "games_marked",
         "target": 1,
-        "coins": 120,
-        "title": "Build a parlay"
+        "coins": 60,
+        "title": "Mark a game as watched"
       },
       {
-        "id": "d2026-10-23-3",
+        "id": "d2026-10-24-3",
         "metric": "bets_won",
         "target": 2,
         "coins": 300,
@@ -27,8 +27,8 @@
       }
     ],
     "deal": {
-      "itemId": "fullleg",
-      "pct": 25
+      "itemId": "leather",
+      "pct": 20
     }
   },
   "weekly": {
