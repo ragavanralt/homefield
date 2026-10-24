@@ -1053,4 +1053,19 @@ t('cash out: cashed bets are not bragging rights', () => {
   });
 }
 
+/* ---------- sync: watched games, adds and removals ---------- */
+{
+  const { mergeFan } = await import('../js/social.js');
+  t('sync: watched games from both devices combine, and a removal on one device sticks unless re-marked later', () => {
+    const base = { teams: [], bank: { coins: 1, rev: 1 }, avatar: {}, bets: {} };
+    const w = (ts) => ({ ts, league: 'nba', home: 'A', away: 'B' });
+    const m1 = mergeFan({ ...base, watched: { g1: w(10) } }, { ...base, watched: { g2: w(20) } });
+    assert.deepEqual(Object.keys(m1.watched).sort(), ['g1', 'g2']);
+    const m2 = mergeFan({ ...base, watched: { g1: w(10) } }, { ...base, watched: { g1: w(10), g2: w(20) }, unwatched: { g2: 30 } });
+    assert.deepEqual(Object.keys(m2.watched), ['g1'], 'removed on the other device');
+    const m3 = mergeFan({ ...base, watched: { g2: w(40) } }, { ...base, watched: {}, unwatched: { g2: 30 } });
+    assert.deepEqual(Object.keys(m3.watched), ['g2'], 'marked again after the removal');
+  });
+}
+
 console.log(`\n${passed} checks passed`);

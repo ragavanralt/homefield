@@ -1,6 +1,6 @@
 // Network first for the app files so updates show up; falls back to cache offline.
 // Live data (ESPN, Worker) is never cached here.
-const CACHE = 'homefield-v108';
+const CACHE = 'homefield-v109';
 self.addEventListener('install', (e) => { self.skipWaiting(); });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));

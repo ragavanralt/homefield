@@ -163,6 +163,11 @@ export function mergeFan(local, remote) {
   // games watched: everything either device saw, keeping the later time
   out.watched = { ...(remote.watched || {}) };
   for (const [k, v] of Object.entries(local.watched || {})) if (!out.watched[k] || (v.ts || 0) >= (out.watched[k].ts || 0)) out.watched[k] = v;
+  // a game taken off the list on one device stays off, unless it was marked again afterwards
+  const gone = { ...(remote.unwatched || {}) };
+  for (const [k, v] of Object.entries(local.unwatched || {})) gone[k] = Math.max(v, gone[k] || 0);
+  for (const [k, ts] of Object.entries(gone)) if (out.watched[k] && (out.watched[k].ts || 0) <= ts) delete out.watched[k];
+  out.unwatched = gone;
   const lb = local.bank || {}, rb = remote.bank || {};
   // rev goes up with every coin change, so the higher one has seen more (a quest claim earns coins but no xp).
   // Copies saved before rev existed fall back to xp: same xp means nothing was earned in between, so the lower balance already paid for something.
@@ -202,7 +207,7 @@ const fanOf = (s) => {
   const bets = Object.fromEntries(Object.entries(s.bets || {}).sort((x, y) => (y[1].placedAt || 0) - (x[1].placedAt || 0)).slice(0, 400));
   const q = s.quests || {};
   const watched = Object.fromEntries(Object.entries(s.watched || {}).sort((x, y) => (y[1].ts || 0) - (x[1].ts || 0)).slice(0, 300));
-  return { teams: s.teams, avatar: s.avatar, bank: s.bank, bets, watched, claims: { day: q.day || '', week: q.week || '', days: (q.daily && q.daily.claimed) || [], weeks: (q.weekly && q.weekly.claimed) || [] } };
+  return { teams: s.teams, avatar: s.avatar, bank: s.bank, bets, watched, unwatched: s.unwatched || {}, claims: { day: q.day || '', week: q.week || '', days: (q.daily && q.daily.claimed) || [], weeks: (q.weekly && q.weekly.claimed) || [] } };
 };
 /** the last few bets, trimmed for the crew to see (and mirror) */
 function recentOf(bets, n = 6) {
@@ -237,7 +242,7 @@ export function syncNow() {
     if (remote.data && remote.data.teams) {
       const merged = mergeFan(fanOf(st), remote.data);
       applying = true;
-      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.watched = merged.watched || s.watched; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; }, { k: 'sync', note: 'Brought in from your other device' });
+      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.watched = merged.watched || s.watched; s.unwatched = merged.unwatched || s.unwatched || {}; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; }, { k: 'sync', note: 'Brought in from your other device' });
         mergeClaims(merged.claims);
       } finally { applying = false; }
     }

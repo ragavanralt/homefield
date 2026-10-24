@@ -301,8 +301,8 @@ export function grantItem(id) { if (state.avatar.owned.includes(id)) return fals
 export function setAvatar(fn) { update((s) => fn(s.avatar)); ping(); }
 
 export const markWatched = (g) => update((s) => {
-  if (s.watched[g.key]) delete s.watched[g.key];
-  else track('games_marked', 1, g.key), s.watched[g.key] = { ts: Date.now(), league: g.league, date: g.date, home: g.home.abbr, away: g.away.abbr, homeScore: g.home.score, awayScore: g.away.score };
+  if (s.watched[g.key]) { delete s.watched[g.key]; s.unwatched = { ...(s.unwatched || {}), [g.key]: Date.now() }; const k = Object.keys(s.unwatched); if (k.length > 200) for (const x of k.sort((a, b) => s.unwatched[a] - s.unwatched[b]).slice(0, k.length - 200)) delete s.unwatched[x]; } // the removal is remembered so another device cannot bring the game back
+  else track('games_marked', 1, g.key), s.unwatched && delete s.unwatched[g.key], s.watched[g.key] = { ts: Date.now(), league: g.league, date: g.date, home: g.home.abbr, away: g.away.abbr, homeScore: g.home.score, awayScore: g.away.score };
 });
 export const isWatched = (key) => !!state.watched[key];
 
