@@ -9,6 +9,7 @@ import { levelFor, xpForLevel, rankFor, badges, fmtX, american } from '../bets.j
 import { leagueLabel } from '../leagues.js';
 import { mirrorBet, mirrorMsg } from '../mirror.js';
 import { betCard } from '../bankroll.js';
+import { fmtDay } from '../util.js';
 import { add, bubble, fmt, loader, errText } from '../social-ui.js';
 
 const pct = (a) => (a == null ? '–' : Math.round(a * 100) + '%');
@@ -63,16 +64,40 @@ function tickets(m) {
   return box;
 }
 /** someone else's open ticket, with a Mirror button */
-function ticket(m, b) {
+function ticket(m, b, settled) {
   const now = Date.now();
   const live = (b.legs || []).filter((l) => new Date(l.date).getTime() > now);
   const mark = (l) => (l.result === 'won' ? '✓' : l.result === 'lost' ? '✗' : l.result === 'push' || l.result === 'void' ? '–' : '•');
   return h('article', { class: 'bet-card pending yo-ticket', 'data-bet': b.id },
-    h('div', { class: 'bet-h' }, h('div', { class: 'bet-who' }, h('b', null, b.mode === 'parlay' ? `${(b.legs || []).length}-leg parlay` : 'Single'), h('small', null, `${fmt(b.stake)} → ${fmt(Math.round(b.stake * (b.dec || 1)))} · ${fmtX(b.dec || 1)} (${american(b.dec || 1)})`)), h('span', { class: 'pill pending' }, 'Open')),
+    h('div', { class: 'bet-h' }, h('div', { class: 'bet-who' }, h('b', null, b.mode === 'parlay' ? `${(b.legs || []).length}-leg parlay` : 'Single'), h('small', null, `${fmt(b.stake)} → ${fmt(Math.round(b.stake * (b.dec || 1)))} · ${fmtX(b.dec || 1)} (${american(b.dec || 1)})`)), h('span', { class: 'pill ' + (settled ? b.status : 'pending') }, settled ? (b.cashed ? `Cashed out ${b.payout - b.stake >= 0 ? '+' : '−'}${fmt(Math.abs(b.payout - b.stake))}` : b.status === 'won' ? `Won +${fmt(b.payout - b.stake)}` : b.status === 'lost' ? `Lost ${fmt(b.stake)}` : 'Push') : 'Open')),
     h('ul', { class: 'bet-legs' }, (b.legs || []).map((l) => h('li', { class: l.result || 'pending' }, h('span', { class: 'lm', 'aria-hidden': 'true' }, mark(l)),
       h('span', null, l.label || 'Pick', l.away && l.home ? h('small', null, ` ${l.away.abbr} @ ${l.home.abbr}`) : null), l.dec ? h('em', null, `${Number(l.dec).toFixed(2)}x`) : null))),
-    h('div', { class: 'row wrap bet-act' },
+    settled ? null : h('div', { class: 'row wrap bet-act' },
       live.length ? h('button', { type: 'button', class: 'btn small main mirror', onclick: () => toast(mirrorMsg(mirrorBet(b))) }, '⇄ Mirror this bet') : h('small', { class: 'muted' }, 'Games already started')));
+}
+
+
+/** Settled bets and games watched, newest first */
+function history(m) {
+  const st = m.stats || {};
+  let done, watched;
+  if (m.me) {
+    const s = getState();
+    done = Object.values(s.bets).filter((b) => b.status !== 'pending').sort((a, b) => (b.settledTs || b.ts || 0) - (a.settledTs || a.ts || 0)).slice(0, 12);
+    watched = Object.entries(s.watched || {}).sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0)).slice(0, 30).map(([k, w]) => [k, w.away, w.home, w.awayScore ?? null, w.homeScore ?? null, w.ts, w.date]);
+  } else {
+    done = (st.recent || []).filter((b) => b.status !== 'pending');
+    watched = Array.isArray(st.wl) ? st.wl : [];
+  }
+  const total = m.me ? Object.keys(getState().watched || {}).length : num(st.watched) || watched.length;
+  const res = h('section', { class: 'card yo-results', id: 'yo-results' }, h('h2', { class: 'card-h' }, 'Recent results'),
+    done.length ? (m.me ? h('div', { class: 'betgrid' }, done.map(betCard)) : h('div', { class: 'feed-list' }, done.map((b) => ticket(m, b, true)))) : h('p', { class: 'muted' }, m.me ? 'Nothing settled yet.' : st.recent ? 'Nothing settled yet.' : 'Their results are private.'));
+  const gw = h('section', { class: 'card yo-watched', id: 'yo-watched' }, h('h2', { class: 'card-h' }, 'Games watched', h('small', null, total ? String(total) : '')),
+    watched.length ? h('div', { class: 'pk-list' }, watched.map(([key, away, home, as, hs, ts, date]) => {
+      const [lg, id] = String(key).split(':');
+      return h('a', { class: 'pk', href: `#/game/${lg}/${id}` }, h('span', { class: 'pk-l' }, leagueLabel(lg)), h('span', { class: 'pk-m' }, `${away} ${as ?? ''} – ${hs ?? ''} ${home}`), h('span', { class: 'pk-p' }, date ? fmtDay(date) : ts ? fmtDay(ts) : ''));
+    })) : h('p', { class: 'muted' }, m.me ? 'Open a game and tap Mark watched. It shows up here.' : 'No games marked as watched yet.'));
+  return [res, gw];
 }
 
 function numbers(m) {
@@ -168,6 +193,7 @@ function page(m) {
   const panes = [
     ['live', 'Live', [tickets(m), formStrip(m)]],
     ['numbers', 'Numbers', [numbers(m), style(m), m.me ? null : versus(m), m.me ? null : crewCard(m)]],
+    ['history', 'History', history(m)],
     ['teams', 'Teams', [teamsCard(m)]],
     ['trophies', 'Trophies', [trophies(m)]],
   ];

@@ -38,13 +38,15 @@ export function extrasOf(s) {
   if (!count.size) for (const w of Object.values(s.watched || {})) { bump(w.league, w.home); bump(w.league, w.away); }
   const watchedTeams = [...count].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => { const i = k.indexOf(':'); return [k.slice(0, i), k.slice(i + 1), n]; });
 
+  // the last few games marked as watched, small enough to ride along: [key, away, home, awayScore, homeScore, ts]
+  const wl = Object.entries(s.watched || {}).sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0)).slice(0, 12).map(([k, w]) => [k, w.away || '', w.home || '', w.awayScore ?? null, w.homeScore ?? null, w.ts || 0]);
   const cashed = bets.filter((b) => b.cashed);
   const stakes = bets.map((b) => b.stake || 0);
   const firstTs = bets.reduce((m, b) => Math.min(m, b.ts || b.placedAt || Infinity), Infinity);
   return {
     pk: bank.peak || 0, bl, xp: bank.xp || 0, staked: Math.round(st.staked || 0),
     form: done.slice(-10).map((b) => (b.status === 'won' ? 'W' : 'L')).join(''),
-    mix, lg: leagues, mk: fav ? fav[0] : '', wt: watchedTeams,
+    mix, lg: leagues, mk: fav ? fav[0] : '', wt: watchedTeams, wl,
     co: cashed.length, cn: Math.round(cashed.reduce((n, b) => n + (b.payout || 0) - (b.stake || 0), 0)),
     bd: badges(st, bank).filter((x) => x.got).map((x) => x.id),
     since: Number.isFinite(firstTs) ? firstTs : 0,

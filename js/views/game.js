@@ -63,7 +63,7 @@ export async function render(root, { league, id }) {
       );
     }
     if (g.state !== 'pre') {
-      const wb = h('button', { type: 'button', class: 'btn on-skin small', 'aria-pressed': isWatched(g.key) ? 'true' : 'false', onclick: () => { markWatched(g); wb.setAttribute('aria-pressed', isWatched(g.key) ? 'true' : 'false'); wb.textContent = isWatched(g.key) ? 'Watched ✓' : 'Mark watched'; toast(isWatched(g.key) ? 'Added to your season' : 'Removed from your season'); } }, isWatched(g.key) ? 'Watched ✓' : 'Mark watched');
+      const wb = h('button', { type: 'button', class: 'btn on-skin small', 'aria-pressed': isWatched(g.key) ? 'true' : 'false', onclick: () => { markWatched(g); wb.setAttribute('aria-pressed', isWatched(g.key) ? 'true' : 'false'); wb.textContent = isWatched(g.key) ? 'Watched ✓' : 'Mark watched'; toast(isWatched(g.key) ? 'Added to your watched games' : 'Removed from your watched games'); } }, isWatched(g.key) ? 'Watched ✓' : 'Mark watched');
       actions.append(wb);
     }
 

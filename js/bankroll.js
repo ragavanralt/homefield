@@ -1,4 +1,4 @@
-// Bankroll strip (coins, level, streak, daily bonus) and bet cards. Shared by Pick'em and Season.
+// Bankroll strip (coins, level, streak, daily bonus) and bet cards. Shared by Pick'em and the You page.
 import { h, clear, toast } from './ui.js';
 import { getState, getBank, claimDaily, dailyReady, canRescue, rescue, onSlipChange } from './store.js';
 import { levelFor, xpForLevel, rankFor, streakBoost, betStats, american, fmtX } from './bets.js';

@@ -15,7 +15,6 @@ const ROUTES = [
   { re: /^\/team\/([^/]+)\/([^/]+)$/, view: () => import('./views/team.js'), nav: 'home', params: (m) => ({ league: decodeURIComponent(m[1]), id: decodeURIComponent(m[2]) }) },
   { re: /^\/game\/([^/]+)\/([^/]+)$/, view: () => import('./views/game.js'), nav: 'home', params: (m) => ({ league: decodeURIComponent(m[1]), id: decodeURIComponent(m[2]) }) },
   { re: /^\/picks$/, view: () => import('./views/picks.js'), nav: 'picks', params: () => ({}) },
-  { re: /^\/season$/, view: () => import('./views/season.js'), nav: 'season', params: () => ({}) },
   { re: /^\/profile$/, view: () => import('./views/profile.js'), nav: 'profile', params: () => ({ mode: 'fan' }) },
   { re: /^\/shop$/, view: () => import('./views/profile.js'), nav: 'shop', params: () => ({ mode: 'shop' }) },
   { re: /^\/quests$/, view: () => import('./views/quests.js'), nav: 'quests', params: () => ({}) },
@@ -23,7 +22,7 @@ const ROUTES = [
   { re: /^\/crew\/u\/([^/]+)$/, view: () => import('./views/you.js'), nav: 'crew', params: (m) => ({ handle: decodeURIComponent(m[1]) }) },
   { re: /^\/crew$/, view: () => import('./views/crew.js'), nav: 'crew', params: () => ({}) },
   { re: /^\/join\/([^/]+)$/, view: () => import('./views/crew.js'), nav: 'crew', params: (m) => ({ code: decodeURIComponent(m[1]) }) },
-  { re: /^\/coins$/, view: () => import('./views/coins.js'), nav: 'settings', params: () => ({}) },
+  { re: /^\/coins$/, view: () => import('./views/coins.js'), nav: 'coins', params: () => ({}) },
   { re: /^\/mypicks$/, view: () => import('./views/mypicks.js'), nav: 'mypicks', params: () => ({}) },
   { re: /^\/daily$/, view: () => import('./views/daily.js'), nav: 'daily', params: () => ({}) },
   { re: /^\/duels$/, view: () => import('./views/duels.js'), nav: 'duels', params: () => ({}) },
@@ -41,20 +40,26 @@ const ROUTES = [
 const ICON = {
   home: '<path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/>',
   sports: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3.2 3 3.2 15 0 18M12 3c-3.2 3-3.2 15 0 18"/>',
-  picks: '<path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="m9 12 2 2 4-4"/>',
+  bets: '<path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="m9 12 2 2 4-4"/>',
   quests: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/>',
-  fan: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/>',
+  you: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/>',
+  crew: '<circle cx="9" cy="9" r="3.2"/><circle cx="17" cy="10" r="2.6"/><path d="M3 20c.6-3.8 3-5.6 6-5.6s5.4 1.8 6 5.6M15.5 14.6c3 0 4.9 1.6 5.5 5"/>',
 };
 const LAST_KEY = 'homefield:lastLeague';
 const lastLeague = () => { try { const v = localStorage.getItem(LAST_KEY); if (TABS.some((t) => t.id === v)) return v; } catch (e) { /* storage may be off */ } return TABS[0].id; };
 const SECTIONS = [
   { id: 'home', label: 'Home', href: () => '#/', subs: [] },
   { id: 'sports', label: 'Sports', href: () => `#/league/${lastLeague()}`, subs: TABS.map((t) => ({ id: t.id, label: t.label, href: `#/league/${t.id}` })) },
-  { id: 'picks', label: "Pick'em", href: () => '#/picks', get subs() { return [{ id: 'picks', label: "Pick'em", href: '#/picks' }, { id: 'mypicks', label: 'Live picks', href: '#/mypicks' }, ...(socialOn() ? [{ id: 'daily', label: 'Daily 5', href: '#/daily' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] : [])]; } },
-  { id: 'quests', label: 'Quests', href: () => '#/quests', subs: [{ id: 'quests', label: 'Quests', href: '#/quests' }, { id: 'season', label: 'Season', href: '#/season' }] },
-  { id: 'fan', label: 'Fan', href: () => '#/you', get subs() { return [{ id: 'you', label: 'You', href: '#/you' }, { id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }, ...(socialOn() ? [{ id: 'crew', label: 'Crew', href: '#/crew' }] : [])]; } },
+  // Bets: building a slip and watching what is riding
+  { id: 'bets', label: 'Bets', href: () => '#/picks', subs: [{ id: 'picks', label: "Pick'em", href: '#/picks' }, { id: 'mypicks', label: 'Live picks', href: '#/mypicks' }] },
+  { id: 'quests', label: 'Quests', href: () => '#/quests', subs: [] },
+  // Crew: your friends and every game you play against them (only when the server is set up)
+  { id: 'crew', label: 'Crew', href: () => '#/crew', show: () => socialOn(), subs: [{ id: 'crew', label: 'Crew', href: '#/crew' }, { id: 'daily', label: 'Daily 5', href: '#/daily' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] },
+  // You: your page, your look, the shop and where your coins went
+  { id: 'you', label: 'You', href: () => '#/you', subs: [{ id: 'you', label: 'You', href: '#/you' }, { id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }, { id: 'coins', label: 'Coin log', href: '#/coins' }] },
 ];
-const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : navId === 'season' ? 'quests' : navId === 'you' || navId === 'profile' || navId === 'shop' || navId === 'crew' ? 'fan' : navId === 'duels' || navId === 'daily' || navId === 'mypicks' || navId === 'survivor' || navId === 'cap' ? 'picks' : navId);
+const shown = () => SECTIONS.filter((S) => !S.show || S.show());
+const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : (SECTIONS.find((S) => S.subs.some((x) => x.id === navId)) || {}).id || navId);
 
 let cleanup = null;
 let token = 0;
@@ -75,6 +80,7 @@ export async function route() {
     return;
   }
 
+  if (path === '/season') { location.replace('#/you'); return; } // the season page folded into You
   let found = null;
   for (const r of ROUTES) { const m = path.match(r.re); if (m) { found = { r, m }; break; } }
   if (!found) { location.hash = '#/'; return; }
@@ -119,9 +125,9 @@ function drawNav(nav, active) {
     icon(S.id),
     h('span', { class: 'lb' }, S.label));
   clear(nav); nav.hidden = hide;
-  SECTIONS.forEach((S) => nav.append(item(S, 'nav-i')));
+  shown().forEach((S) => nav.append(item(S, 'nav-i')));
   const bar = document.getElementById('tabbar');
-  if (bar) { clear(bar); bar.hidden = hide; SECTIONS.forEach((S) => bar.append(item(S, 'tb-i'))); }
+  if (bar) { clear(bar); bar.hidden = hide; shown().forEach((S) => bar.append(item(S, 'tb-i'))); }
   const gear = document.getElementById('gear');
   if (gear) { gear.hidden = hide; gear.classList.toggle('on', active === 'settings'); }
   const sub = document.getElementById('subnav');

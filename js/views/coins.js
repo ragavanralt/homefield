@@ -33,7 +33,7 @@ export function tally(entries) {
 export const csvOf = (entries) => ['when,kind,what,coins,balance', ...entries.map((e) => [new Date(e.ts).toISOString(), KINDS[e.k] || e.k, `"${String(noteOf(e)).replace(/"/g, '""')}"`, e.d, e.bal].join(','))].join('\n');
 
 export async function render(root) {
-  root.append(h('a', { class: 'back-link', href: '#/settings' }, '‹ Settings'), pageHead('Coin log', 'Every coin in and out, and what it was for.'));
+  root.append(pageHead('Coin log', 'Every coin in and out, and what it was for.'));
   let range = 'week';
   const top = h('div', { class: 'stack' });
   root.append(top);

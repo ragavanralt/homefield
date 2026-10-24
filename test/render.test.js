@@ -205,7 +205,9 @@ assert.ok(app().querySelector('.live-bet .cash'), 'cash out strip under an open 
   await settleAll();
   assert.equal(store.getState().bets.t3.legs[1].result, 'won'); assert.equal(store.getState().bets.t3.status, 'lost'); assert.equal(store.getState().bank.coins, coins3); ok('a lost parlay still shows how its other legs went');
 }
-text = await visit('#/season', { wait: 300 }); assert.ok(/Badges/.test(text) && /Bankroll/.test(text)); ok('season page');
+await visit('#/season', { wait: 100 }); assert.equal(w.location.hash, '#/you', 'the old season link lands on You');
+text = await visit('#/you', { wait: 300 }); assert.ok(/Recent results/.test(text) && /Games watched/.test(text) && /Trophy case/.test(text), 'season content lives on You'); assert.ok(!app().querySelector('#subnav a[href="#/season"]') && w.document.querySelector('#subnav a[href="#/coins"]'), 'no Season tab, Coin log sits under You'); ok('season folded into the You page');
+assert.deepEqual([...w.document.querySelectorAll('#tabbar a')].map((a) => a.dataset.sec).filter((x) => x !== 'crew'), ['home', 'sports', 'bets', 'quests', 'you'], 'bottom bar sections (Crew shows only when the server is set up)'); ok('bottom bar sections');
 text = await visit('#/settings'); assert.ok(/Spoiler/.test(text)); ok('settings page');
 w.document.getElementById('set-spoil').click(); await sleep(20);
 assert.equal(store.getState().settings.spoilerFree, true); ok('spoiler toggle');
@@ -222,7 +224,7 @@ assert.ok(w.document.getElementById('st-picture')); ok('standings has playoff pi
 store.toggleHidden('nba');
 text = await visit('#/league/nhl', { wait: 250 }); assert.ok(!/\b3\b.*\b2\b/.test('') ); ok('league in spoiler mode');
 store.setSetting('spoilerFree', false);
-text = await visit('#/season', { wait: 300 }); assert.ok(app().querySelector('.bk-av svg'), 'avatar on season'); ok('avatar shows on season');
+text = await visit('#/picks', { wait: 300 }); assert.ok(app().querySelector('.bk-av svg'), 'avatar on the bankroll strip'); ok('avatar shows on the bankroll strip');
 text = await visit('#/profile', { wait: 200 });
 assert.ok(app().querySelector('.pf-me svg') && /Your closet/.test(text) && !app().querySelector('.buy'), 'profile'); ok('fan page draws the character and closet, no shop');
 text = await visit('#/shop', { wait: 200 });
