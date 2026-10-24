@@ -91,7 +91,7 @@ export async function render(root, params = {}) {
         actionBtn('New recovery code', async () => { if (!confirm('Make a new recovery code? The old one stops working.')) return; shownCode = (await soc.newCode()).code; draw(); }, 'btn small'),
         actionBtn('Sign out', async () => { await soc.logout(); draw(); }, 'btn small danger')),
       h('label', { class: 'share-row' },
-        h('input', { type: 'checkbox', id: 'share-bets', checked: getState().shareBets !== false ? '' : null, onchange: (e) => { update((st) => { st.shareBets = e.target.checked; }); toast(e.target.checked ? 'The crew can see your recent bets' : 'Your bets are hidden from the crew'); } }),
+        h('input', { type: 'checkbox', id: 'share-bets', checked: getState().shareBets !== false ? '' : null, onchange: (e) => { update((st) => { st.shareBets = e.target.checked; st.prefsAt = Date.now(); }); toast(e.target.checked ? 'The crew can see your recent bets' : 'Your bets are hidden from the crew'); } }),
         h('span', null, 'Show my recent bets to the crew (they can mirror them)')));
   }
 

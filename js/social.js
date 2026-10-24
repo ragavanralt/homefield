@@ -3,7 +3,7 @@
 import { dailyBonus } from './economy.js';
 import { SOCIAL } from './social-config.js';
 import { extrasOf } from './profile-stats.js';
-import { getState, update, spendCoins, addCoins, onSaved, mergeClaims } from './store.js';
+import { getState, update, spendCoins, addCoins, onSaved, mergeClaims, SYNCED_SETTINGS } from './store.js';
 import { betStats } from './bets.js';
 import { itemById, priceOf } from './avatar.js';
 
@@ -188,6 +188,15 @@ export function mergeFan(local, remote) {
   const cost = unpaid.reduce((n, id) => { const it = itemById(id); return n + (it && !it.ach ? priceOf(it) || 0 : 0); }, 0);
   if (cost) out.bank.coins = Math.max(0, (out.bank.coins || 0) - cost);
   out.bank.rescued = [lb.rescued || '', rb.rescued || ''].sort().pop();
+  // records only ever go up, whichever device set them
+  out.bank.peak = Math.max(out.bank.peak || 0, lb.peak || 0, rb.peak || 0);
+  out.bank.bestStreak = Math.max(out.bank.bestStreak || 0, lb.bestStreak || 0, rb.bestStreak || 0);
+  // looks and spoiler settings: whichever device changed them last
+  out.prefs = (remote.prefs && (remote.prefs.at || 0) > ((local.prefs && local.prefs.at) || 0)) ? remote.prefs : (local.prefs || remote.prefs || null);
+  // the coin log: everything either device recorded, oldest first
+  const seenL = new Set(), allL = [];
+  for (const e of [...(remote.ledger || []), ...(local.ledger || [])]) { const k = `${e.ts}|${e.k}|${e.d}`; if (!seenL.has(k)) { seenL.add(k); allL.push(e); } }
+  out.ledger = allL.sort((x, y) => x.ts - y.ts).slice(-600);
   out.claims = mergeClaimSets(local.claims, remote.claims);
   const la = local.avatar || {}, ra = remote.avatar || {};
   out.avatar = { ...(useLocal ? ra : la), ...(useLocal ? la : ra), owned: [...new Set([...(la.owned || []), ...(ra.owned || [])])], gone: mergeGone(la.gone, ra.gone) };
@@ -198,17 +207,24 @@ export function mergeFan(local, remote) {
 function mergeClaimSets(a, b) {
   if (!a || !b) return a || b || null;
   const pick = (x, y, key) => (x[key] === y[key] ? [...new Set([...(x[key + 's'] || []), ...(y[key + 's'] || [])])] : (x[key] > y[key] ? x : y)[key + 's'] || []);
-  return { day: a.day > b.day ? a.day : b.day, week: a.week > b.week ? a.week : b.week, days: pick(a, b, 'day'), weeks: pick(a, b, 'week') };
+  const day = a.day > b.day ? a.day : b.day, week = a.week > b.week ? a.week : b.week;
+  // progress only carries over when both copies are on the same day or week; then the bigger count wins and "once" keys are shared
+  const prog = (key, nk, ok, cur) => { const sides = [a, b].filter((x) => x[key] === cur); const n = {}; for (const x of sides) for (const [m, v] of Object.entries(x[nk] || {})) n[m] = Math.max(n[m] || 0, v); return [n, [...new Set(sides.flatMap((x) => x[ok] || []))]]; };
+  const [dn, dO] = prog('day', 'dn', 'do', day), [wn, wO] = prog('week', 'wn', 'wo', week);
+  return { day, week, days: pick(a, b, 'day'), weeks: pick(a, b, 'week'), dn, do: dO, wn, wo: wO };
 }
 /** ids of saved fits that were deleted on either copy; they stay deleted */
 const mergeGone = (a = [], b = []) => [...new Set([...a, ...b])].slice(-60);
 function mergeFits(a = [], b = []) { const m = new Map(); for (const f of [...b, ...a]) m.set(f.id, f); return [...m.values()]; }
 
+const prefsOf = (s) => ({ at: s.prefsAt || 0, shareBets: s.shareBets !== false, ...Object.fromEntries(SYNCED_SETTINGS.map((k) => [k, (s.settings || {})[k]])) });
 const fanOf = (s) => {
   const bets = Object.fromEntries(Object.entries(s.bets || {}).sort((x, y) => (y[1].placedAt || 0) - (x[1].placedAt || 0)).slice(0, 400));
   const q = s.quests || {};
   const watched = Object.fromEntries(Object.entries(s.watched || {}).sort((x, y) => (y[1].ts || 0) - (x[1].ts || 0)).slice(0, 300));
-  return { teams: s.teams, avatar: s.avatar, bank: s.bank, bets, watched, unwatched: s.unwatched || {}, claims: { day: q.day || '', week: q.week || '', days: (q.daily && q.daily.claimed) || [], weeks: (q.weekly && q.weekly.claimed) || [] } };
+  return { teams: s.teams, avatar: s.avatar, bank: s.bank, bets, watched, unwatched: s.unwatched || {}, claims: { day: q.day || '', week: q.week || '', days: (q.daily && q.daily.claimed) || [], weeks: (q.weekly && q.weekly.claimed) || [],
+      dn: (q.daily && q.daily.n) || {}, do: Object.keys((q.daily && q.daily.once) || {}), wn: (q.weekly && q.weekly.n) || {}, wo: Object.keys((q.weekly && q.weekly.once) || {}) },
+    prefs: prefsOf(s), ledger: (s.ledger || []).slice(-250) };
 };
 /** the last few bets, trimmed for the crew to see (and mirror) */
 function recentOf(bets, n = 6) {
@@ -243,7 +259,9 @@ export function syncNow() {
     if (remote.data && remote.data.teams) {
       const merged = mergeFan(fanOf(st), remote.data);
       applying = true;
-      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.watched = merged.watched || s.watched; s.unwatched = merged.unwatched || s.unwatched || {}; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; }, { k: 'sync', note: 'Brought in from your other device' });
+      try { update((s) => { s.teams = merged.teams; s.bets = merged.bets; s.watched = merged.watched || s.watched; s.unwatched = merged.unwatched || s.unwatched || {};
+        if (merged.prefs && (merged.prefs.at || 0) >= (s.prefsAt || 0) && merged.prefs.at) { for (const k of SYNCED_SETTINGS) if (merged.prefs[k] !== undefined) s.settings[k] = merged.prefs[k]; s.shareBets = merged.prefs.shareBets; s.prefsAt = merged.prefs.at; }
+        if (merged.ledger) s.ledger = merged.ledger; s.bank = { ...s.bank, ...merged.bank }; s.avatar = { ...s.avatar, ...merged.avatar }; if (!s.onboarded && s.teams.length) s.onboarded = true; }, { k: 'sync', note: 'Brought in from your other device', quiet: Array.isArray(remote.data.ledger) });
         mergeClaims(merged.claims);
       } finally { applying = false; }
     }

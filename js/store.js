@@ -64,6 +64,7 @@ export function update(fn, tag) {
 /** The coin log: every coin that moved, which way, what for, and what you had after. Kept on this device, newest 600. */
 export const LEDGER_MAX = 600;
 function logCoins(d, tag) {
+  if (tag && tag.quiet) return; // the other device already logged what moved the coins
   if (!Array.isArray(state.ledger)) state.ledger = [];
   state.ledger.push({ ts: Date.now(), d, bal: state.bank.coins, k: (tag && tag.k) || 'other', note: (tag && tag.note) || '' });
   if (state.ledger.length > LEDGER_MAX) state.ledger.splice(0, state.ledger.length - LEDGER_MAX);
@@ -101,8 +102,10 @@ export function myTeamIn(g) {
 }
 
 export const leagueHidden = (lg) => (state.settings.hidden || []).includes(lg);
-export const toggleHidden = (lg) => update((s) => { const a = s.settings.hidden || []; s.settings.hidden = a.includes(lg) ? a.filter((x) => x !== lg) : [...a, lg]; });
-export const setSetting = (k, v) => update((s) => { s.settings[k] = v; });
+/** Looks and spoiler settings follow you between devices (newest change wins). Theme and the odds keys stay on each device. */
+export const SYNCED_SETTINGS = ['accent', 'bgDark', 'bgLight', 'logos', 'teamMode', 'hidden', 'spoilerFree'];
+export const toggleHidden = (lg) => update((s) => { const a = s.settings.hidden || []; s.settings.hidden = a.includes(lg) ? a.filter((x) => x !== lg) : [...a, lg]; s.prefsAt = Date.now(); });
+export const setSetting = (k, v) => update((s) => { s.settings[k] = v; if (SYNCED_SETTINGS.includes(k)) s.prefsAt = Date.now(); });
 export const setOnboarded = (v = true) => update((s) => { s.onboarded = v; });
 
 /* ---------- the betting game ---------- */
@@ -251,13 +254,21 @@ export function track(metric, n = 1, key = null, now = new Date()) {
   }
   save();
 }
+/** Progress made on another device: the bigger count wins, and things counted once (a game opened) are counted across both. */
+function foldProgress(p, n, once) {
+  for (const [m, v] of Object.entries(n || {})) p.n[m] = Math.max(p.n[m] || 0, v);
+  for (const k of once || []) p.once[k] = 1;
+  const per = {};
+  for (const k of Object.keys(p.once)) { const m = k.split('|')[0]; per[m] = (per[m] || 0) + 1; }
+  for (const [m, v] of Object.entries(per)) p.n[m] = Math.max(p.n[m] || 0, v);
+}
 /** Fold in quest claims made on another device, so a quest or the daily bonus pays out once. */
 export function mergeClaims(c) {
   if (!c) return;
   update((s) => {
     const q = rollQuests(s);
-    if (c.day === q.day) q.daily.claimed = [...new Set([...q.daily.claimed, ...(c.days || [])])];
-    if (c.week === q.week) q.weekly.claimed = [...new Set([...q.weekly.claimed, ...(c.weeks || [])])];
+    if (c.day === q.day) { q.daily.claimed = [...new Set([...q.daily.claimed, ...(c.days || [])])]; foldProgress(q.daily, c.dn, c.do); }
+    if (c.week === q.week) { q.weekly.claimed = [...new Set([...q.weekly.claimed, ...(c.weeks || [])])]; foldProgress(q.weekly, c.wn, c.wo); }
   });
 }
 /** This period's counters, without changing anything. which is 'daily' or 'weekly'. */

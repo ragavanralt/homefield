@@ -1071,4 +1071,26 @@ t('cash out: cashed bets are not bragging rights', () => {
   });
 }
 
+/* ---------- sync: everything that should follow you between devices ---------- */
+{
+  const { mergeFan } = await import('../js/social.js');
+  const base = { teams: [], bets: {}, watched: {}, avatar: {}, bank: { coins: 100, rev: 1 } };
+  t('sync: quest progress from both devices combines, and only on the same day', () => {
+    const a = { ...base, claims: { day: 'D1', week: 'W1', days: [], weeks: [], dn: { bets_placed: 2, games_opened: 1 }, do: ['games_opened|g1'], wn: { bets_placed: 4 }, wo: [] } };
+    const b = { ...base, claims: { day: 'D1', week: 'W1', days: ['x'], weeks: [], dn: { bets_placed: 1, games_opened: 1 }, do: ['games_opened|g2'], wn: { bets_placed: 6 }, wo: [] } };
+    const c = mergeFan(a, b).claims;
+    assert.equal(c.dn.bets_placed, 2); assert.equal(c.wn.bets_placed, 6); assert.deepEqual(c.do.sort(), ['games_opened|g1', 'games_opened|g2']); assert.deepEqual(c.days, ['x']);
+    const old = { ...base, claims: { day: 'D0', week: 'W1', days: [], weeks: [], dn: { bets_placed: 9 }, do: [], wn: {}, wo: [] } };
+    assert.equal(mergeFan(a, old).claims.dn.bets_placed, 2, 'yesterday does not count today');
+  });
+  t('sync: looks follow the newest change, records only go up, and the coin log merges', () => {
+    const a = { ...base, prefs: { at: 5, accent: 'gold', logos: true }, bank: { coins: 10, rev: 2, peak: 900, bestStreak: 3 }, ledger: [{ ts: 1, d: 5, k: 'daily', bal: 5 }, { ts: 3, d: 5, k: 'quest', bal: 10 }] };
+    const b = { ...base, prefs: { at: 9, accent: 'blue', logos: false }, bank: { coins: 20, rev: 1, peak: 400, bestStreak: 8 }, ledger: [{ ts: 1, d: 5, k: 'daily', bal: 5 }, { ts: 2, d: 7, k: 'win', bal: 12 }] };
+    const m = mergeFan(a, b);
+    assert.equal(m.prefs.accent, 'blue'); assert.equal(mergeFan(b, a).prefs.accent, 'blue');
+    assert.equal(m.bank.peak, 900); assert.equal(m.bank.bestStreak, 8);
+    assert.deepEqual(m.ledger.map((e) => e.ts), [1, 2, 3], 'merged once, oldest first');
+  });
+}
+
 console.log(`\n${passed} checks passed`);

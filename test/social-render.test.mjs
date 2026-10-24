@@ -179,6 +179,10 @@ assert.ok($('.yo-stage .avatar.bust') || $('.yo-stage .who-av'), 'headshot, not 
 assert.equal($$('.yo-tabs [role=tab]').length, 5, 'five tabs'); assert.ok(!$('.yo-pane[data-pane="live"]').hidden && $('.yo-pane[data-pane="numbers"]').hidden, 'opens on Live');
 $('.yo-tabs [data-tab="numbers"]').click(); assert.ok($('.yo-pane[data-pane="live"]').hidden && !$('.yo-pane[data-pane="numbers"]').hidden, 'Numbers tab swaps the pane');
 assert.ok($('.yo-hero') && $('#yo-numbers') && $('#yo-links') && !$('#yo-vs'), 'your own page'); assert.ok($('#yo-links a[href="#/coins"]'), 'coin log link'); ok('the You page shows your own numbers and shortcuts');
+store.update((s) => { s.watched['nba:401'] = { ts: Date.now(), league: 'nba', date: new Date().toISOString(), home: 'LAL', away: 'LAC', homeScore: 110, awayScore: 104 }; });
+text = await visit('#/you', 300); $('.yo-tabs [data-tab="history"]').click();
+assert.ok($('#yo-watched a[href="#/game/nba/401"]') && /LAC 104 – 110 LAL/.test($('#yo-watched').textContent) && !$('.yo-pane[data-pane="history"]').hidden, 'your watched games are on the You page'); ok('games you marked as watched show on the You page');
+store.update((s) => { delete s.watched['nba:401']; });
 store.update((s) => { s.shareBets = false; });
 await soc.syncNow(); await sleep(100);
 // the wall
