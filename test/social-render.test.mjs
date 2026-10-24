@@ -62,7 +62,7 @@ let n = 0; const ok = (m) => { n++; console.log('  ok  ' + m); };
 
 let text = await visit('#/duels');
 assert.match(text, /Join the crew first/); ok('duels asks you to join the crew first');
-assert.equal(w.document.querySelector('#subnav a[href="#/duels"]') != null, true); assert.ok(w.document.querySelector('#tabbar a[data-sec="crew"]'), 'Crew gets its own tab'); ok("Crew section holds Duels and the other games when the server is configured");
+assert.equal(w.document.querySelector('#subnav a[href="#/duels"]') != null, true); assert.ok(w.document.querySelector('#tabbar a[data-sec="crew"]'), 'Crew has its own tab'); ok('Crew tab holds Duels and the other games when the server is configured');
 
 text = await visit(`#/join/${invite}`);
 assert.equal($('#f-invite').value, invite); ok('invite link fills in the code');

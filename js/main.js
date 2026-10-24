@@ -50,7 +50,7 @@ const lastLeague = () => { try { const v = localStorage.getItem(LAST_KEY); if (T
 const SECTIONS = [
   { id: 'home', label: 'Home', href: () => '#/', subs: [] },
   { id: 'sports', label: 'Sports', href: () => `#/league/${lastLeague()}`, subs: TABS.map((t) => ({ id: t.id, label: t.label, href: `#/league/${t.id}` })) },
-  // Bets: building a slip and watching what is riding
+  // Bets: building a slip, what is riding, and the Daily 5
   { id: 'bets', label: 'Bets', href: () => '#/picks', get subs() { return [{ id: 'picks', label: "Pick'em", href: '#/picks' }, { id: 'mypicks', label: 'Live picks', href: '#/mypicks' }, ...(socialOn() ? [{ id: 'daily', label: 'Daily 5', href: '#/daily' }] : [])]; } },
   // Crew: your friends and the games you play against them (only when the server is set up)
   { id: 'crew', label: 'Crew', href: () => '#/crew', show: () => socialOn(), subs: [{ id: 'crew', label: 'Crew', href: '#/crew' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] },

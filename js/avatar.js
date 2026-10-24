@@ -48,7 +48,7 @@ export const TIERS = { free: { label: 'Free' }, common: { label: 'Common' }, rar
 // from the base price, so they keep the same items. How it was chosen, with a play of about 890 coins a day (daily bonus ~480,
 // daily quests ~260, weekly quests ~150): a common item takes about a day, a rare about 3, an epic about 3 weeks and a
 // legendary about 2 months. A casual player (~400 a day) takes about 2.3 times as long.
-export const PRICE_MULT = 4;
+export const PRICE_MULT = 2;
 const tierOf = (price, ach) => (ach ? 'earned' : price === 0 ? 'free' : price < 400 ? 'common' : price < 2000 ? 'rare' : price < 8000 ? 'epic' : 'legend');
 const I = (id, slot, name, sec, base, extra = {}) => ({ id, slot, name, sec, price: base ? Math.round((base * PRICE_MULT) / 10) * 10 : 0, base, tier: tierOf(base, extra.ach), ...extra });
 const T = { team: true };

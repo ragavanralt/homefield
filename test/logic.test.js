@@ -561,7 +561,7 @@ import * as S from '../js/specials.js';
     assert.ok(gen.validQuests(a.daily.quests) && gen.validQuests(a.weekly.quests));
     assert.equal(new Set(a.daily.quests.map((x) => x.metric)).size, 3);
     assert.ok(a.weekly.quests.filter((x) => x.item).length === 1 && av.itemById(a.weekly.quests[2].item));
-    assert.ok(a.weekly.quests.every((x) => x.coins >= 250) && a.daily.quests.every((x) => x.coins <= 300));
+    assert.ok(a.weekly.quests.every((x) => x.coins >= 70) && a.daily.quests.every((x) => x.coins <= 100));
     assert.equal(a.weekly.featured.length, 6);
   });
   t('gen: deal is a real item, changes every day, and a broken file is rejected', () => {
@@ -603,7 +603,7 @@ import * as S from '../js/specials.js';
     assert.equal(st.questCount('weekly', 'bets_placed', nextFri), 0); // new week
     st.track('bets_placed', 3, null, nextFri);
     const again = st.claimQuest('weekly', { ...wq, id: 'wt2' }, nextFri);
-    assert.ok(again.swapped && st.getBank().coins === c1 + 400 + 500); // already owned: extra coins instead
+    assert.ok(again.swapped && st.getBank().coins === c1 + 400 + 200); // already owned: extra coins instead
   });
   t('quests: keyed counts only once; real actions are counted', () => {
     st.resetAll();
@@ -998,6 +998,7 @@ t('cash out: cashed bets are not bragging rights', () => {
 {
   const { ITEMS, PRICE_MULT, dealFor, itemById } = await import('../js/avatar.js');
   const { genWeekly, genDaily } = await import('../js/live-gen.js');
+  const { dailyBonus } = await import('../js/economy.js');
   t('prices: every buyable item is its base price times one multiplier, so equal prices stay equal', () => {
     assert.ok(PRICE_MULT >= 1);
     const buy = ITEMS.filter((i) => i.price > 0 && !i.ach);
@@ -1018,7 +1019,7 @@ t('cash out: cashed bets are not bragging rights', () => {
       const wk = genWeekly(start);
       const prize = wk.quests.find((q) => q.item);
       assert.ok(prize, 'a prize every week');
-      const it = itemById(prize.item); assert.ok(it.price >= 1000 && it.price <= 3000, `${it.id} ${it.price}`);
+      const it = itemById(prize.item); assert.ok(it.price >= 400 && it.price <= 1200, `${it.id} ${it.price}`);
       for (const id of wk.featured) assert.ok(itemById(id).base >= 150 && itemById(id).base <= 4000);
       const deal = dealFor(start); assert.ok(itemById(deal.itemId).base <= 2500, 'sale items are cheap-tier items, by base price');
     }
@@ -1029,15 +1030,17 @@ t('cash out: cashed bets are not bragging rights', () => {
     let q = 0, bonus = 0, streak = 0;
     for (let i = 0; i < 28; i++) {
       const day = addDay('2026-10-23', i);
-      streak = Math.min(streak + 1, 7); bonus += 150 + 50 * streak;
+      streak = Math.min(streak + 1, 7); bonus += dailyBonus(streak);
       const dq = genDaily(day).quests; q += dq[0].coins + dq[1].coins + 0.5 * dq[2].coins;
       if (i % 7 === 0) { const w = genWeekly(day).quests; q += w[0].coins + w[1].coins + 0.5 * w[2].coins; }
     }
     const perDay = (bonus + q) / 28;
-    assert.ok(perDay > 650 && perDay < 1000, 'income per day ' + perDay);
+    assert.ok(perDay > 180 && perDay < 280, 'income per day ' + perDay);
+    assert.ok(bonus / 28 < perDay * 0.6, 'the daily bonus is under 60% of what play without betting pays');
+    assert.equal(dailyBonus(1), 42); assert.equal(dailyBonus(7), 114); assert.equal(dailyBonus(30), 114);
     const med = (a) => a.sort((x, y) => x - y)[Math.floor(a.length / 2)];
     const tier = (name) => med(ITEMS.filter((i) => i.tier === name && i.price > 0).map((i) => i.price));
-    assert.ok(tier('common') / perDay < 1.5 && tier('rare') / perDay > 2 && tier('rare') / perDay < 6 && tier('epic') / perDay > 14 && tier('epic') / perDay < 30 && tier('legend') / perDay > 45 && tier('legend') / perDay < 90, 'days to afford a typical item in each tier');
+    assert.ok(tier('common') / perDay < 3 && tier('rare') / perDay > 4 && tier('rare') / perDay < 9 && tier('epic') / perDay > 25 && tier('epic') / perDay < 55 && tier('legend') / perDay > 90 && tier('legend') / perDay < 160, 'days to afford a typical item in each tier');
   });
 }
 

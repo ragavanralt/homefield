@@ -8,21 +8,21 @@
         "id": "d2026-10-24-1",
         "metric": "outfit_changed",
         "target": 1,
-        "coins": 40,
+        "coins": 10,
         "title": "Change something in your fit"
       },
       {
         "id": "d2026-10-24-2",
         "metric": "games_marked",
         "target": 1,
-        "coins": 60,
+        "coins": 20,
         "title": "Mark a game as watched"
       },
       {
         "id": "d2026-10-24-3",
         "metric": "bets_won",
         "target": 2,
-        "coins": 300,
+        "coins": 90,
         "title": "Win 2 bets"
       }
     ],
@@ -39,32 +39,32 @@
         "id": "w2026-10-23-1",
         "metric": "games_marked",
         "target": 5,
-        "coins": 350,
+        "coins": 105,
         "title": "Mark 5 games as watched"
       },
       {
         "id": "w2026-10-23-2",
         "metric": "outfit_changed",
         "target": 5,
-        "coins": 250,
+        "coins": 75,
         "title": "Change your fit 5 times"
       },
       {
         "id": "w2026-10-23-3",
         "metric": "bets_won",
         "target": 5,
-        "coins": 700,
+        "coins": 210,
         "title": "Win 5 bets",
-        "item": "camp5"
+        "item": "bowtie"
       }
     ],
     "featured": [
-      "teamwall",
-      "varsity",
-      "puffer",
-      "crewsweat",
-      "wink",
-      "balloon"
+      "rt_tear",
+      "grin",
+      "city",
+      "patent",
+      "workjacket",
+      "denim"
     ],
     "note": ""
   }

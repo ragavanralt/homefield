@@ -1,5 +1,6 @@
 // Crew server client: sign-in, calls, coin receipts and device sync. No framework, no build.
 // The server is Supabase Postgres, reached only through functions (see supabase/schema.sql).
+import { dailyBonus } from './economy.js';
 import { SOCIAL } from './social-config.js';
 import { extrasOf } from './profile-stats.js';
 import { getState, update, spendCoins, addCoins, onSaved, mergeClaims } from './store.js';
@@ -177,7 +178,7 @@ export function mergeFan(local, remote) {
   // Once-a-day things are claimed once across all your devices: the later claim day wins, and so do quest claims.
   const chosen = useLocal ? lb : rb, later = (rb.lastDaily || '') > (lb.lastDaily || '') ? rb : lb;
   if ((later.lastDaily || '') > (chosen.lastDaily || '')) {
-    out.bank.coins = (out.bank.coins || 0) + 150 + 50 * Math.min(later.dailyStreak || 1, 7); // their bonus was real, don't lose it
+    out.bank.coins = (out.bank.coins || 0) + dailyBonus(later.dailyStreak || 1); // their bonus was real, don't lose it
     out.bank.peak = Math.max(out.bank.peak || 0, out.bank.coins);
   }
   if (later.lastDaily) { out.bank.lastDaily = later.lastDaily; out.bank.dailyStreak = later.dailyStreak || 0; }

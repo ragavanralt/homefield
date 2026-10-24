@@ -2,6 +2,7 @@
 // same date always gives the same result. scripts/refresh.mjs writes this to data/live.json each
 // morning; the app builds the same thing itself if that file is missing or out of date.
 import { ITEMS, dealFor } from './avatar.js';
+import { questCoins } from './economy.js';
 import { addDay, parseDay, seeded, weekKey } from './period.js';
 
 export const METRICS = {
@@ -10,7 +11,7 @@ export const METRICS = {
   parlays_placed: 'build parlays', bets_won: 'win bets', items_bought: 'buy things in the shop',
 };
 
-const q = (metric, target, coins, title) => ({ metric, target, coins, title });
+const q = (metric, target, coins, title) => ({ metric, target, coins: questCoins(coins), title });
 // Each day: one easy habit, one thing to play, one stretch.
 const DAILY = {
   easy: [q('daily_claimed', 1, 50, 'Claim your daily bonus'), q('shop_visits', 1, 40, 'Check out the shop'), q('outfit_changed', 1, 40, 'Change something in your fit'), q('games_opened', 3, 60, 'Open 3 different games')],
@@ -52,8 +53,8 @@ export function genWeekly(start) {
   });
   const buyable = ITEMS.filter((i) => i.price > 0 && !i.ach);
   const shuffle = (a) => a.map((x) => [rnd(), x]).sort((m, n) => m[0] - n[0]).map((x) => x[1]);
-  // the weekly prize item is worth about one to three days of play (1,000 to 3,000 coins at today's prices)
-  const prize = shuffle(buyable.filter((i) => i.price >= 1000 && i.price <= 3000))[0];
+  // the weekly prize item is a nice extra, not a paycheck (400 to 1,200 coins at today's prices)
+  const prize = shuffle(buyable.filter((i) => i.price >= 400 && i.price <= 1200))[0];
   if (prize) quests[2].item = prize.id;
   const taken = new Set([prize && prize.id]);
   const featured = shuffle(buyable.filter((i) => (i.base ?? i.price) >= 150 && (i.base ?? i.price) <= 4000 && !taken.has(i.id))).slice(0, 6).map((i) => i.id);

@@ -1,6 +1,7 @@
 // Everything the app remembers lives on this device in localStorage. No accounts.
 import { isSoccer } from './leagues.js';
 import { dayKey, weekKey } from './period.js';
+import { dailyBonus } from './economy.js';
 import { START_COINS, MIN_STAKE, MAX_LEGS, conflicts, parlayDec, xpFor } from './bets.js';
 
 const KEY = 'homefield:v1';
@@ -216,7 +217,7 @@ export function claimDaily() {
   if (b.lastDaily === today) return { ok: false };
   const y = new Date(); y.setDate(y.getDate() - 1);
   const streakDays = b.lastDaily === localDay(y) ? b.dailyStreak + 1 : 1;
-  const bonus = 150 + 50 * Math.min(streakDays, 7);
+  const bonus = dailyBonus(streakDays);
   update((s) => { s.bank.coins += bonus; s.bank.lastDaily = today; s.bank.dailyStreak = streakDays; s.bank.peak = Math.max(s.bank.peak, s.bank.coins); }, { k: 'daily', note: `Day ${streakDays} in a row` });
   track('daily_claimed');
   ping();
@@ -278,7 +279,7 @@ export function claimQuest(which, quest, now = new Date()) {
     const p = rollQuests(s, now)[which];
     p.claimed.push(quest.id);
     if (quest.item) {
-      if (s.avatar.owned.includes(quest.item)) { out.coins += 500; out.swapped = true; } // already own the prize: coins instead
+      if (s.avatar.owned.includes(quest.item)) { out.coins += 200; out.swapped = true; } // already own the prize: coins instead
       else { s.avatar.owned.push(quest.item); out.item = quest.item; }
     }
     s.bank.coins += out.coins;
