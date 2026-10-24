@@ -150,7 +150,8 @@ export async function claim() {
 /* ---------- device sync ----------
    Your fan (avatar, teams, coins, bets) is saved to the server so a second device can pick it up after sign-in.
    If both devices changed, teams, bets and owned items are merged; coins come from the side with more XP. */
-const betScore = (b) => (b && b.status && b.status !== 'pending' ? 2 : 1);
+// A cash out is a decision you made on purpose, so it beats a settle another device worked out by itself from the box score.
+const betScore = (b) => (b && b.cashed ? 3 : b && b.status && b.status !== 'pending' ? 2 : 1);
 export function mergeFan(local, remote) {
   if (!remote) return local;
   const out = { ...local };

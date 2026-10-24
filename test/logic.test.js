@@ -1041,4 +1041,16 @@ t('cash out: cashed bets are not bragging rights', () => {
   });
 }
 
+/* ---------- sync: a cash out on one device beats a plain settle on another ---------- */
+{
+  const { mergeFan } = await import('../js/social.js');
+  t('sync: a bet cashed out on one device stays cashed out when the other device settled it as lost (either direction)', () => {
+    const base = { teams: [], bank: { coins: 100, rev: 1 }, avatar: {}, watched: {} };
+    const cashed = { id: 'b1', status: 'won', payout: 120, stake: 50, cashed: true, legs: [] };
+    const lost = { id: 'b1', status: 'lost', payout: 0, stake: 50, legs: [] };
+    assert.equal(mergeFan({ ...base, bets: { b1: lost } }, { ...base, bets: { b1: cashed } }).bets.b1.cashed, true);
+    assert.equal(mergeFan({ ...base, bets: { b1: cashed } }, { ...base, bets: { b1: lost } }).bets.b1.cashed, true);
+  });
+}
+
 console.log(`\n${passed} checks passed`);
