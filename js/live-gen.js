@@ -52,10 +52,11 @@ export function genWeekly(start) {
   });
   const buyable = ITEMS.filter((i) => i.price > 0 && !i.ach);
   const shuffle = (a) => a.map((x) => [rnd(), x]).sort((m, n) => m[0] - n[0]).map((x) => x[1]);
-  const prize = shuffle(buyable.filter((i) => i.price >= 300 && i.price <= 1500))[0];
+  // the weekly prize item is worth about one to three days of play (1,000 to 3,000 coins at today's prices)
+  const prize = shuffle(buyable.filter((i) => i.price >= 1000 && i.price <= 3000))[0];
   if (prize) quests[2].item = prize.id;
   const taken = new Set([prize && prize.id]);
-  const featured = shuffle(buyable.filter((i) => i.price >= 150 && i.price <= 4000 && !taken.has(i.id))).slice(0, 6).map((i) => i.id);
+  const featured = shuffle(buyable.filter((i) => (i.base ?? i.price) >= 150 && (i.base ?? i.price) <= 4000 && !taken.has(i.id))).slice(0, 6).map((i) => i.id);
   return { week: start, endsBefore: addDay(start, 7), quests, featured, note: '' };
 }
 

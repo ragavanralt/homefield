@@ -603,7 +603,7 @@ import * as S from '../js/specials.js';
     assert.equal(st.questCount('weekly', 'bets_placed', nextFri), 0); // new week
     st.track('bets_placed', 3, null, nextFri);
     const again = st.claimQuest('weekly', { ...wq, id: 'wt2' }, nextFri);
-    assert.ok(again.swapped && st.getBank().coins === c1 + 400 + 250); // already owned: extra coins instead
+    assert.ok(again.swapped && st.getBank().coins === c1 + 400 + 500); // already owned: extra coins instead
   });
   t('quests: keyed counts only once; real actions are counted', () => {
     st.resetAll();
@@ -993,5 +993,52 @@ t('cash out: cashed bets are not bragging rights', () => {
   assert.equal(st.won, 1); assert.equal(st.parlayWins, 0); assert.equal(st.biggest, null);
   assert.equal(hit.parlayWins, 1); assert.equal(st.profit, 300);
 });
+
+/* ---------- economy: one multiplier on every price ---------- */
+{
+  const { ITEMS, PRICE_MULT, dealFor, itemById } = await import('../js/avatar.js');
+  const { genWeekly, genDaily } = await import('../js/live-gen.js');
+  t('prices: every buyable item is its base price times one multiplier, so equal prices stay equal', () => {
+    assert.ok(PRICE_MULT >= 1);
+    const buy = ITEMS.filter((i) => i.price > 0 && !i.ach);
+    assert.ok(buy.length > 200);
+    for (const i of buy) assert.equal(i.price, Math.round((i.base * PRICE_MULT) / 10) * 10, i.id);
+    const byBase = new Map();
+    for (const i of buy) { const p = byBase.get(i.base); if (p != null) assert.equal(p, i.price, 'same base, same price'); else byBase.set(i.base, i.price); }
+    assert.ok(ITEMS.filter((i) => !i.base).every((i) => i.price === 0), 'free and earned items stay free');
+  });
+  t('prices: tiers follow the base price, so the shop sorts the same as before', () => {
+    for (const i of ITEMS.filter((x) => x.price > 0 && !x.ach)) assert.equal(i.tier, i.base < 400 ? 'common' : i.base < 2000 ? 'rare' : i.base < 8000 ? 'epic' : 'legend', i.id);
+    assert.equal(Math.max(...ITEMS.map((i) => i.price)), 35000 * PRICE_MULT);
+  });
+  t('prices: weekly prizes are worth one to three days of play and the daily deal comes from the same pool as before', () => {
+    const d0 = new Date(Date.UTC(2026, 9, 23));
+    for (let w = 0; w < 30; w++) {
+      const start = new Date(d0.getTime() + w * 7 * 864e5).toISOString().slice(0, 10);
+      const wk = genWeekly(start);
+      const prize = wk.quests.find((q) => q.item);
+      assert.ok(prize, 'a prize every week');
+      const it = itemById(prize.item); assert.ok(it.price >= 1000 && it.price <= 3000, `${it.id} ${it.price}`);
+      for (const id of wk.featured) assert.ok(itemById(id).base >= 150 && itemById(id).base <= 4000);
+      const deal = dealFor(start); assert.ok(itemById(deal.itemId).base <= 2500, 'sale items are cheap-tier items, by base price');
+    }
+  });
+  t('economy: a day of play pays about what the prices are built around', () => {
+    // 28 days of the real quest generator for someone who does all the easy and play quests and half the stretch ones
+    const addDay = (d, n) => new Date(Date.parse(d + 'T12:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+    let q = 0, bonus = 0, streak = 0;
+    for (let i = 0; i < 28; i++) {
+      const day = addDay('2026-10-23', i);
+      streak = Math.min(streak + 1, 7); bonus += 150 + 50 * streak;
+      const dq = genDaily(day).quests; q += dq[0].coins + dq[1].coins + 0.5 * dq[2].coins;
+      if (i % 7 === 0) { const w = genWeekly(day).quests; q += w[0].coins + w[1].coins + 0.5 * w[2].coins; }
+    }
+    const perDay = (bonus + q) / 28;
+    assert.ok(perDay > 650 && perDay < 1000, 'income per day ' + perDay);
+    const med = (a) => a.sort((x, y) => x - y)[Math.floor(a.length / 2)];
+    const tier = (name) => med(ITEMS.filter((i) => i.tier === name && i.price > 0).map((i) => i.price));
+    assert.ok(tier('common') / perDay < 1.5 && tier('rare') / perDay > 2 && tier('rare') / perDay < 6 && tier('epic') / perDay > 14 && tier('epic') / perDay < 30 && tier('legend') / perDay > 45 && tier('legend') / perDay < 90, 'days to afford a typical item in each tier');
+  });
+}
 
 console.log(`\n${passed} checks passed`);

@@ -278,7 +278,7 @@ export function claimQuest(which, quest, now = new Date()) {
     const p = rollQuests(s, now)[which];
     p.claimed.push(quest.id);
     if (quest.item) {
-      if (s.avatar.owned.includes(quest.item)) { out.coins += 250; out.swapped = true; }
+      if (s.avatar.owned.includes(quest.item)) { out.coins += 500; out.swapped = true; } // already own the prize: coins instead
       else { s.avatar.owned.push(quest.item); out.item = quest.item; }
     }
     s.bank.coins += out.coins;

@@ -369,6 +369,6 @@ export function badges(st, bank) {
     { id: 'long', name: 'Longshot', blurb: 'Win a bet paying 4x or more', got: !!st.longshot && st.longshot.dec >= 4 },
     { id: 'props', name: 'Prop master', blurb: 'Win 5 props or game bets', got: st.propWins >= 5 },
     { id: 'heat', name: 'On fire', blurb: 'Win 5 bets in a row', got: st.bestStreak >= 5 },
-    { id: 'rich', name: 'High roller', blurb: 'Reach 5,000 coins', got: bank.peak >= 5000 },
+    { id: 'rich', name: 'High roller', blurb: 'Reach 20,000 coins', got: bank.peak >= 20000 },
   ];
 }

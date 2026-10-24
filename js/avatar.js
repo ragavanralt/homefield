@@ -41,9 +41,16 @@ export const ALWAYS_ON = ['hair', 'top', 'bottom', 'shoes'];
 export const TIERS = { free: { label: 'Free' }, common: { label: 'Common' }, rare: { label: 'Rare' }, epic: { label: 'Epic' }, legend: { label: 'Legendary' }, earned: { label: 'Earned' } };
 
 // team: the item picks up the colours of the team you chose for your character.
-// ach: cannot be bought; it unlocks by doing something. Prices run from free to 35,000 coins.
+// ach: cannot be bought; it unlocks by doing something. Prices run from free to 140,000 coins.
+//
+// PRICE_MULT scales every price at once, so items that cost the same still cost the same. Item prices below are the BASE prices
+// (what they were when a day of play paid about a quarter of what it does now). Tiers and the sale and prize pools are worked out
+// from the base price, so they keep the same items. How it was chosen, with a play of about 890 coins a day (daily bonus ~480,
+// daily quests ~260, weekly quests ~150): a common item takes about a day, a rare about 3, an epic about 3 weeks and a
+// legendary about 2 months. A casual player (~400 a day) takes about 2.3 times as long.
+export const PRICE_MULT = 4;
 const tierOf = (price, ach) => (ach ? 'earned' : price === 0 ? 'free' : price < 400 ? 'common' : price < 2000 ? 'rare' : price < 8000 ? 'epic' : 'legend');
-const I = (id, slot, name, sec, price, extra = {}) => ({ id, slot, name, sec, price, tier: tierOf(price, extra.ach), ...extra });
+const I = (id, slot, name, sec, base, extra = {}) => ({ id, slot, name, sec, price: base ? Math.round((base * PRICE_MULT) / 10) * 10 : 0, base, tier: tierOf(base, extra.ach), ...extra });
 const T = { team: true };
 export const ITEMS = [
   // ---- Look: expressions, hair, face, beards, ears
@@ -320,7 +327,7 @@ export function syncUnlocks() {
  *  never the same item two days running. data/live.json can override it (see setDealOverride). */
 const DEAL_PCTS = [15, 20, 20, 25, 30];
 export function dealFor(day) {
-  const pool = ITEMS.filter((i) => i.price > 0 && i.price <= 2500 && !i.ach);
+  const pool = ITEMS.filter((i) => i.price > 0 && (i.base ?? i.price) <= 2500 && !i.ach); // by base price: the same items as before the price rise
   const pick = (d) => pool[Math.floor(seeded('deal:' + d)() * pool.length)];
   const [y, m, d] = day.split('-').map(Number);
   const prev = new Date(y, m - 1, d - 1, 12);
