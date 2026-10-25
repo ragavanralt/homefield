@@ -1093,4 +1093,28 @@ t('cash out: cashed bets are not bragging rights', () => {
   });
 }
 
+/* ---------- a player who was ruled out: refunded, not lost ---------- */
+{
+  const lg = (stat, dir, line) => B.propLeg(nflPre, { playerId: '321', name: 'Kawhi Leonard', label: stat, stat, line, over: 2, under: 2, box: [{ g: '.', l: [stat.toUpperCase()] }] }, dir);
+  const fin2 = { game: fin(30, 20) };
+  const rowsOf = (row) => ({ ...fin2, box: { players: [{ teamId: '7', groups: [{ name: 'starters', labels: ['MIN', 'STL'], rows: [row] }] }] } });
+  t('ruled out: a did-not-play row with zeros voids the leg, even for an over that would have lost', () => {
+    assert.equal(B.evalLeg(lg('stl', 'over', 1.5), rowsOf({ id: '321', name: 'Kawhi Leonard', dnp: true, stats: ['0', '0'] })), 'void');
+    assert.equal(B.evalLeg(lg('stl', 'under', 1.5), rowsOf({ id: '321', name: 'Kawhi Leonard', dnp: true, stats: ['0', '0'] })), 'void');
+  });
+  t('ruled out: zero minutes after the final counts as not playing, but real minutes with zero steals still lose', () => {
+    assert.equal(B.evalLeg(lg('stl', 'over', 1.5), rowsOf({ id: '321', name: 'Kawhi Leonard', stats: ['0', '0'] })), 'void');
+    assert.equal(B.evalLeg(lg('stl', 'over', 1.5), rowsOf({ id: '321', name: 'Kawhi Leonard', stats: ['00:00', '0'] })), 'void');
+    assert.equal(B.evalLeg(lg('stl', 'over', 1.5), rowsOf({ id: '321', name: 'Kawhi Leonard', stats: ['4', '0'] })), 'lost');
+    assert.equal(B.evalLeg(lg('stl', 'over', 1.5), rowsOf({ id: '321', name: 'Kawhi Leonard', stats: ['30', '2'] })), 'won');
+  });
+  t('ruled out: the live bar says so and the cash out prices the leg as a refund', async () => {
+    const { playerNow, playerOut } = await import('../js/boxread.js');
+    const box = { players: [{ groups: [{ name: 'starters', labels: ['MIN', 'STL'], rows: [{ id: '321', name: 'Kawhi Leonard', dnp: true, stats: ['0', '0'] }] }] }] };
+    const meta = { playerId: '321', name: 'Kawhi Leonard', box: [{ g: '.', l: ['STL'] }] };
+    assert.equal(playerOut(box, meta), true); assert.equal(playerNow(box, meta), null);
+    assert.equal(playerOut({ players: [] }, meta), false);
+  });
+}
+
 console.log(`\n${passed} checks passed`);

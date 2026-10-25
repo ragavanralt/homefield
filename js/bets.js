@@ -2,6 +2,7 @@
 import { LEAGUES, hasDraw } from './leagues.js';
 import { preGameProbs } from './winprob.js';
 import { clamp } from './util.js';
+import { unplayed } from './boxread.js';
 import { evalSpecial } from './specials.js';
 
 export const START_COINS = 1000;
@@ -309,7 +310,7 @@ export function evalLeg(leg, data) {
         const idx = spec.l.map((x) => L.indexOf(x)).find((i) => i >= 0);
         if (idx == null || idx < 0) continue;
         const row = grp.rows.find((r) => r.id === leg.prop.playerId) || grp.rows.find((r) => leg.prop.name && nk(r.name) === nk(leg.prop.name));
-        if (!row) continue;
+        if (!row || unplayed(row, grp.labels, true)) continue; // inactive, ruled out, or zero minutes: the bet is refunded
         const v = numOf(row.stats[idx]);
         if (v != null) { total += v; found = true; }
       }

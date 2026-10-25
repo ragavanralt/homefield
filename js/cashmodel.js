@@ -13,7 +13,7 @@ import { LEAGUES, hasDraw } from './leagues.js';
 import { gameProgress } from './winprob.js';
 import { VIG, propDefsFor, poissonOver, normalOver, streakBoost, evalLeg } from './bets.js';
 import { evalSpecial } from './specials.js';
-import { playerNow } from './boxread.js';
+import { playerNow, playerOut } from './boxread.js';
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const CUT = 0.04; // what the offer takes off fair value
@@ -225,6 +225,7 @@ function propOutcomes(l, data, st, group, rng, n) {
   const mu0 = meanFor(dist, cv, line, over ? p0 : 1 - p0); // what we expected of him over the whole game
   const nowRaw = st.state === 'pre' ? 0 : playerNow(data && data.box, { box: l.prop.box, playerId: l.prop.playerId, name: l.prop.name });
   const now = nowRaw == null ? 0 : nowRaw;
+  if (st.state !== 'pre' && playerOut(data && data.box, { box: l.prop.box, playerId: l.prop.playerId, name: l.prop.name })) { out.fill(2); return out; } // ruled out: this leg will be refunded
   // a player with nothing in the box score deep into the game most likely is not playing (the bet is then refunded)
   const dnp = nowRaw == null && st.state === 'in' && st.prog > 0.4 ? 0.65 : 0;
   // learn from the game so far: 0 points at half means fewer minutes than we thought, 25 means more

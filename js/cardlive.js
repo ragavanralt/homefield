@@ -3,7 +3,7 @@ import { getSummary } from './espn.js';
 import { h, clear, toast } from './ui.js';
 import * as soc from './social.js';
 
-import { playerNow } from './boxread.js';
+import { playerNow, playerOut } from './boxread.js';
 export { playerNow };
 
 /** Live read on one card: { state, detail, now, score }. now is the number the line is measured against. */
@@ -16,7 +16,7 @@ export async function cardLive(c) {
   out.score = `${g.away.abbr} ${as} – ${g.home.abbr} ${hs}`;
   if (c.kind === 'total') out.now = hs + as;
   else if (c.kind === 'team_total') out.now = (c.meta && c.meta.team) === g.home.abbr ? hs : as;
-  else if (c.kind === 'player') out.now = playerNow(s.box, c.meta);
+  else if (c.kind === 'player') { out.now = playerNow(s.box, c.meta); out.out = playerOut(s.box, c.meta); }
   else if (c.kind === 'winner' || c.kind === 'spread' || c.kind === 'score') out.now = hs - as; // home margin
   return out;
 }
@@ -47,6 +47,7 @@ export function progress(c, live) {
     return { pct: null, text: `${live.score}${live.detail ? ` · ${live.detail}` : ''}`, lead: cover === 0 ? 'On the number' : cover > 0 ? `${c.a} covering by ${fix(cover)}` : `${c.a} needs ${fix(-cover)} more`, side: cover > 0 ? 'a' : 'b' };
   }
   if (c.kind === 'score') return { pct: null, text: live.score, lead: live.detail || '', side: null };
+  if (c.kind === 'player' && live.out) return { pct: null, side: null, text: `${live.detail || 'Live'}`, lead: 'Not playing. Refunded if he sits out' };
   const now = live.now == null ? 0 : live.now, line = Number(c.line) || 0;
   const over = now > line;
   const need = Math.floor(line - now) + 1; // the over needs this many more
