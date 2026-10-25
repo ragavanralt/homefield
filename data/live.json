@@ -1,34 +1,34 @@
 {
   "v": 1,
-  "updated": "2026-10-24",
+  "updated": "2026-10-25",
   "daily": {
-    "date": "2026-10-24",
+    "date": "2026-10-25",
     "quests": [
       {
-        "id": "d2026-10-24-1",
-        "metric": "outfit_changed",
+        "id": "d2026-10-25-1",
+        "metric": "shop_visits",
         "target": 1,
         "coins": 10,
-        "title": "Change something in your fit"
+        "title": "Check out the shop"
       },
       {
-        "id": "d2026-10-24-2",
-        "metric": "games_marked",
-        "target": 1,
-        "coins": 20,
-        "title": "Mark a game as watched"
+        "id": "d2026-10-25-2",
+        "metric": "bets_placed",
+        "target": 3,
+        "coins": 40,
+        "title": "Place 3 bets"
       },
       {
-        "id": "d2026-10-24-3",
+        "id": "d2026-10-25-3",
         "metric": "bets_won",
-        "target": 2,
-        "coins": 90,
-        "title": "Win 2 bets"
+        "target": 1,
+        "coins": 45,
+        "title": "Win a bet"
       }
     ],
     "deal": {
-      "itemId": "leather",
-      "pct": 20
+      "itemId": "beanie",
+      "pct": 15
     }
   },
   "weekly": {
