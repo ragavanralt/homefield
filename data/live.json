@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-10-25",
+  "updated": "2026-10-26",
   "daily": {
-    "date": "2026-10-25",
+    "date": "2026-10-26",
     "quests": [
       {
-        "id": "d2026-10-25-1",
-        "metric": "shop_visits",
-        "target": 1,
-        "coins": 10,
-        "title": "Check out the shop"
-      },
-      {
-        "id": "d2026-10-25-2",
-        "metric": "bets_placed",
+        "id": "d2026-10-26-1",
+        "metric": "games_opened",
         "target": 3,
-        "coins": 40,
-        "title": "Place 3 bets"
+        "coins": 20,
+        "title": "Open 3 different games"
       },
       {
-        "id": "d2026-10-25-3",
+        "id": "d2026-10-26-2",
+        "metric": "bets_placed",
+        "target": 1,
+        "coins": 20,
+        "title": "Place a bet"
+      },
+      {
+        "id": "d2026-10-26-3",
         "metric": "bets_won",
         "target": 1,
         "coins": 45,
@@ -27,8 +27,8 @@
       }
     ],
     "deal": {
-      "itemId": "beanie",
-      "pct": 15
+      "itemId": "rink",
+      "pct": 25
     }
   },
   "weekly": {
