@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-10-26",
+  "updated": "2026-10-27",
   "daily": {
-    "date": "2026-10-26",
+    "date": "2026-10-27",
     "quests": [
       {
-        "id": "d2026-10-26-1",
-        "metric": "games_opened",
-        "target": 3,
-        "coins": 20,
-        "title": "Open 3 different games"
+        "id": "d2026-10-27-1",
+        "metric": "daily_claimed",
+        "target": 1,
+        "coins": 15,
+        "title": "Claim your daily bonus"
       },
       {
-        "id": "d2026-10-26-2",
+        "id": "d2026-10-27-2",
         "metric": "bets_placed",
         "target": 1,
         "coins": 20,
         "title": "Place a bet"
       },
       {
-        "id": "d2026-10-26-3",
+        "id": "d2026-10-27-3",
         "metric": "bets_won",
         "target": 1,
         "coins": 45,
@@ -27,8 +27,8 @@
       }
     ],
     "deal": {
-      "itemId": "rink",
-      "pct": 25
+      "itemId": "pearlstuds",
+      "pct": 30
     }
   },
   "weekly": {
