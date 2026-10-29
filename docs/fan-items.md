@@ -2,7 +2,7 @@
 
 Updated Oct 29, 2026. Generated from js/avatar.js.
 
-Total: 366 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
+Total: 378 items. Prices are in coins. "Team" means the item takes the colours of the team you follow (up to three of them, from js/team-colors.js). "Earned" items can't be bought. Retros copy the colours, cuts and numbers of famous kits but draw no real logos.
 
 ## Character basics (free)
 
@@ -21,13 +21,13 @@ Total: 366 items. Prices are in coins. "Team" means the item takes the colours o
 | Face | 12 |
 | Facial hair | 4 |
 | Ears | 8 |
-| Top | 87 |
-| Jacket | 51 |
+| Top | 93 |
+| Jacket | 52 |
 | Neckwear | 8 |
 | Chain | 12 |
 | Wrist | 9 |
 | Arm sleeve | 8 |
-| Pants | 56 |
+| Pants | 61 |
 | Leg sleeve | 9 |
 | Shoes | 24 |
 | Back | 5 |
@@ -76,7 +76,7 @@ Gear in the colours of the team you follow.
 | Golden scarf | goldscarf | Neckwear | - | earned | Earned: Win 5 bets in a row |  |
 | Trophy cape | trophycape | Back | - | earned | Earned: Hit a parlay |  |
 
-## Casual (22)
+## Casual (23)
 
 Sport-brand style sleeves and calf bands in fixed colours, plus easy knits. Original marks, no real logos.
 
@@ -104,6 +104,7 @@ Sport-brand style sleeves and calf bands in fixed colours, plus easy knits. Orig
 | Retro track jacket | retrotrack | Jacket | 1400 | rare |  | Navy, Green, Burgundy, Black |
 | Side-stripe track pants | sidestripe | Pants | 900 | rare |  | Black, Navy, Grey |
 | Bike shorts | bikeshorts | Pants | 500 | common |  | Black, Navy, Grey, Pink |
+| Crewneck with chest stitch | collarcrew | Top | 1400 | rare |  | Navy, Grey, Cream, Forest, Burgundy |
 
 ## Retros (62)
 
@@ -254,7 +255,7 @@ Plain basics. Cheap, no logos.
 | Plain beanie | plainbeanie | Hat | 120 | common |  | Black, Grey, Navy, Cream, Orange, Brown |
 | Sweat shorts | sweatshorts | Pants | 200 | common |  | Grey, Black, Navy, Cream |
 
-## Streetwear (91)
+## Streetwear (101)
 
 The everyday fits, from baggy jeans to puffers.
 
@@ -351,6 +352,16 @@ The everyday fits, from baggy jeans to puffers.
 | Bermuda shorts | bermuda | Pants | 700 | common |  | Khaki, Black, Olive, Navy |
 | Parachute cargos | cargoparachute | Pants | 1800 | rare |  | Olive, Black, Stone, Navy |
 | Baggy jorts | baggyjorts | Pants | 900 | rare |  | Mid wash, Light wash, Black |
+| Pleated tapered jeans | pleatedtaper | Pants | 2200 | rare |  | Mid wash, Black, Light wash, Ecru |
+| Contrast-stitch baggy jeans | stitchjeans | Pants | 1800 | rare |  | Charcoal, Black, Indigo |
+| Faded baggy jeans | faded | Pants | 1600 | rare |  | Faded blue, Grey, Light wash |
+| Lounge set pants | loungepants | Pants | 1300 | rare |  | Stone, Charcoal, Navy, Sage |
+| Lounge set hoodie | loungehood | Top | 1500 | rare |  | Stone, Charcoal, Navy, Sage |
+| Trail fleece hoodie | trailfleece | Top | 2200 | rare |  | Moss, Black, Sand, Navy |
+| Oversized boxy tee | boxy70 | Top | 900 | rare |  | Cream, Black, Grey, Olive, Navy |
+| Heavyweight tee | heavytee | Top | 800 | rare |  | Black, White, Brown, Grey, Forest |
+| Boxy long sleeve | boxylong | Top | 1000 | rare |  | Stone, Black, White, Navy |
+| Reversible boa fleece | boafleece | Jacket | 3600 | rare |  | Cream, Tan, Black, Grey |
 
 ## Formal (34)
 
@@ -393,7 +404,7 @@ Shirts, suits, coats and good shoes.
 | Linen pants | linen | Pants | 1200 | rare |  | Sand, White, Olive, Sky |
 | Pleated shorts | pleatshorts | Pants | 1000 | rare |  | Sage, Khaki, Navy, Cream |
 
-## Designer (43)
+## Designer (44)
 
 Labels and heavy jewellery. Priced like the real thing.
 
@@ -442,6 +453,7 @@ Labels and heavy jewellery. Priced like the real thing.
 | Layered chains | layered | Chain | 7000 | epic |  |  |
 | Rope chain | ropechain | Chain | 8400 | epic |  |  |
 | Tennis bracelet | tennisbracelet | Wrist | 5600 | epic |  |  |
+| Purple flower jeans | flowerjeans | Pants | 6400 | epic |  | Indigo, Black, Light wash |
 
 ## Backgrounds (13)
 

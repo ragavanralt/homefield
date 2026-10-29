@@ -208,6 +208,10 @@ export const ITEMS = [
   I('stackedjeans', 'bottom', 'Stacked jeans', 'street', 650), I('ripped', 'bottom', 'Ripped jeans', 'street', 500), I('painter', 'bottom', 'Painter pants', 'street', 600), I('linen', 'bottom', 'Linen pants', 'formal', 600),
   I('bermuda', 'bottom', 'Bermuda shorts', 'street', 350), I('bikeshorts', 'bottom', 'Bike shorts', 'casual', 250), I('sweatshorts', 'bottom', 'Sweat shorts', 'blank', 100), I('pleatshorts', 'bottom', 'Pleated shorts', 'formal', 500),
   I('cargoparachute', 'bottom', 'Parachute cargos', 'street', 900), I('baggyjorts', 'bottom', 'Baggy jorts', 'street', 450),
+  // ---- October 2026 drop, part 3: the haul looks
+  I('flowerjeans', 'bottom', 'Purple flower jeans', 'brand', 3200), I('pleatedtaper', 'bottom', 'Pleated tapered jeans', 'street', 1100), I('stitchjeans', 'bottom', 'Contrast-stitch baggy jeans', 'street', 900), I('faded', 'bottom', 'Faded baggy jeans', 'street', 800),
+  I('loungepants', 'bottom', 'Lounge set pants', 'street', 650), I('loungehood', 'top', 'Lounge set hoodie', 'street', 750), I('trailfleece', 'top', 'Trail fleece hoodie', 'street', 1100), I('collarcrew', 'top', 'Crewneck with chest stitch', 'casual', 700),
+  I('boxy70', 'top', 'Oversized boxy tee', 'street', 450), I('heavytee', 'top', 'Heavyweight tee', 'street', 400), I('boxylong', 'top', 'Boxy long sleeve', 'street', 500), I('boafleece', 'outer', 'Reversible boa fleece', 'street', 1800),
   I('sunsetroof', 'bg', 'Rooftop sunset', 'bg', 800),
 
   // ---- Earned
@@ -218,6 +222,19 @@ export const itemById = (id) => ITEMS.find((i) => i.id === id);
 // and the listed shade colours (cuffs, collars, pockets) follow it, darker or lighter by the amount.
 const W = '#ECEBE7', BK = '#1C1C21', HG = '#8E9196', NV = '#1F2A44', OL = '#4F5A3A', CR = '#E9E4D8';
 const COLS = {
+  flowerjeans: [['Indigo', '#2E3A5C'], ['Black', '#2A2B30'], ['Light wash', '#7FA0C9']],
+  pleatedtaper: [['Mid wash', '#5D7CA8'], ['Black', '#2A2B30'], ['Light wash', '#8FB0D8'], ['Ecru', '#E4DCC8']],
+  stitchjeans: [['Charcoal', '#46464C'], ['Black', '#26272B'], ['Indigo', '#2E3A5C']],
+  faded: [['Faded blue', '#9DB4D0'], ['Grey', '#A8ADB4'], ['Light wash', '#BFD0E4']],
+  loungepants: [['Stone', '#B9B3A6'], ['Charcoal', '#46474D'], ['Navy', NV], ['Sage', '#8FA88A']],
+  loungehood: [['Stone', '#B9B3A6'], ['Charcoal', '#46474D'], ['Navy', NV], ['Sage', '#8FA88A']],
+  trailfleece: [['Moss', '#5B6B4F'], ['Black', BK], ['Sand', '#C9B99A'], ['Navy', NV]],
+  collarcrew: [['Navy', '#26364F'], ['Grey', HG], ['Cream', CR], ['Forest', '#2F4F3A'], ['Burgundy', '#6B1E2A']],
+  boxy70: [['Cream', '#E9E4D8'], ['Black', BK], ['Grey', HG], ['Olive', OL], ['Navy', NV]],
+  heavytee: [['Black', '#26272B'], ['White', W], ['Brown', '#4A3426'], ['Grey', HG], ['Forest', '#2F4F3A']],
+  boxylong: [['Stone', '#CFC8BA'], ['Black', BK], ['White', W], ['Navy', NV]],
+  boafleece: [['Cream', '#E9E1CE'], ['Tan', '#C9A66B'], ['Black', BK], ['Grey', HG]],
+
   babytee: [['Pink', '#E7C6D1'], ['White', W], ['Black', BK], ['Lilac', '#B9A7D8'], ['Butter', '#EBDC9B']],
   rugby: [['Navy', '#1F3558'], ['Green', '#2F5D3A'], ['Burgundy', '#6B1E2A']],
   breton: [['White', '#F2EFE8'], ['Cream', CR]],
