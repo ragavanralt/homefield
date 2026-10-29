@@ -1169,3 +1169,6 @@ ART.top.cableknit = top({ def: '#D8CDB4', sleeve: 'long', grow: 7, sgrow: 7, hem
 } });
 // North London '04: red body, white sleeves, navy and gold trim; no real crest or sponsor
 ART.top.rt_lon04 = kit({ main: '#D81E2B', sleeve: W2, collar: '#1C2A55', cuff: '#1C2A55', cuff2: '#C9A23A', badge: { shape: 'shield', ring: '#C9A23A', field: ['#D81E2B', '#F4F1EA'], n: 2, symbol: 'star', symbolCol: '#C9A23A' }, neck: 'v' });
+
+// Shared with the October 2026 drop (js/fan-items-oct26.js), which builds new pieces out of the same parts.
+export { top, outer, pants, shoes, hoodie, capOf, lapels, shirtCollar, ribCollar, buttons, zip, pockets2, drape, hemLine, knee, cargoPocket, pocketsJ, jeanDetail, shortsDetail, onWrist, wrapScarf, chain, lenses, EYES, held, rightHand, hood, pocket, hem, capDome, capBill, openGap, edges, GOLD, GOLD2, GOLDHI, SILVER, SILVER2, INK, both, mirror, colOf, bodyShade, swoosh, word, neckline };
