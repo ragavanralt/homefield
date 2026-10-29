@@ -28,7 +28,8 @@ globalThis.fetch = async (url) => {
   const m = url.match(/sports\/([a-z]+\/[a-z0-9.]+)\/(scoreboard|summary|teams|standings)(?:\/(\d+)\/schedule)?/) || url.match(/sports\/([a-z]+\/[a-z0-9.]+)\/teams\/(\d+)\/schedule/);
   const std = url.match(/apis\/v2\/sports\/([a-z]+\/[a-z0-9.]+)\/standings/);
   let body = {};
-  if (std) body = F.standings(byPath[std[1]]);
+  if (url.includes('statsapi.mlb.com')) body = {}; // the league's own feed: nothing extra here
+  else if (std) body = F.standings(byPath[std[1]]);
   else if (url.includes('/athletes/')) { const mm = url.match(/sports\/([a-z]+\/[a-z0-9.]+)\/athletes\/(\d+)/); body = F.overview(byPath[mm[1]], mm[2]); }
   else if (url.includes('/roster')) { const mm = url.match(/sports\/([a-z]+\/[a-z0-9.]+)\/teams\/(\d+)\/roster/); body = F.roster(byPath[mm[1]], mm[2]); }
   else if (url.includes('/schedule')) { const mm = url.match(/sports\/([a-z]+\/[a-z0-9.]+)\/teams\/(\d+)\/schedule/); body = F.schedule(byPath[mm[1]], mm[2]); }

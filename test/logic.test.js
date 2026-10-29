@@ -1117,4 +1117,16 @@ t('cash out: cashed bets are not bragging rights', () => {
   });
 }
 
+// ESPN's MLB board can sit on "Scheduled" after a game ends; the league's own feed fixes it
+{
+  const { patchMlb } = await import('../js/espn.js');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ dates: [{ games: [{ gameDate: new Date(Date.now() - 5 * 3600000).toISOString(), status: { abstractGameState: 'Final', detailedState: 'Final' }, linescore: { currentInning: 9 }, teams: { away: { score: 4, team: { name: 'Milwaukee Brewers' } }, home: { score: 1, team: { name: 'Tampa Bay Rays' } } } }] }] }), text: async () => '' });
+  try {
+    const g = [{ league: 'mlb', state: 'pre', date: new Date(Date.now() - 5 * 3600000).toISOString(), away: { name: 'Milwaukee Brewers', score: 0 }, home: { name: 'Tampa Bay Rays', score: 0 } }];
+    await patchMlb(g);
+    t('mlb: a stale "scheduled" game takes the final score from the league feed', () => { assert.equal(g[0].state, 'post'); assert.equal(g[0].away.score, 4); assert.equal(g[0].home.score, 1); assert.equal(g[0].completed, true); });
+  } finally { globalThis.fetch = realFetch; }
+}
+
 console.log(`\n${passed} checks passed`);

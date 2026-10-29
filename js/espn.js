@@ -5,6 +5,7 @@ import { LEAGUES, isSoccer } from './leagues.js';
 import { num } from './util.js';
 import { staticTeams } from './teams-static.js';
 import { refreshFollowed } from './store.js';
+import { mlbOfficial } from './alt.js';
 
 /* ---------- fetch with a small cache ---------- */
 const cache = new Map();
@@ -414,16 +415,39 @@ export function normStandings(j) {
 }
 
 /* ---------- fetchers ---------- */
+/** ESPN's MLB board sometimes sits on "Scheduled" long after a game ends. Ask the league's own feed and fix those games. */
+export async function patchMlb(games) {
+  const stale = games.filter((g) => g.league === 'mlb' && g.state !== 'post' && !g.void && g.date && Date.parse(g.date) < Date.now() - (g.state === 'pre' ? 25 * 60000 : 4 * 3600000));
+  if (!stale.length) return games;
+  try {
+    const ts = stale.map((g) => Date.parse(g.date));
+    const off = await mlbOfficial(new Date(Math.min(...ts) - 864e5), new Date(Math.max(...ts) + 864e5));
+    const plain = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    for (const g of stale) {
+      const k = `${plain(g.away.name)}|${plain(g.home.name)}`, t = Date.parse(g.date);
+      const o = off.filter((x) => x.key === k && Math.abs(x.at - t) < 6 * 3600000).sort((a, b) => Math.abs(a.at - t) - Math.abs(b.at - t))[0];
+      if (!o || o.state === 'pre' || /postpon|cancel|suspend/i.test(o.detailed)) continue;
+      if (o.state === g.state && g.home.score === o.home && g.away.score === o.away) continue;
+      g.state = o.state; g.completed = o.state === 'post'; g.home.score = o.home; g.away.score = o.away;
+      if (o.detail) { g.detail = o.detail; g.shortDetail = o.detail; }
+    }
+  } catch (e) { /* the league feed is a bonus; ESPN's copy stands */ }
+  return games;
+}
+
 export async function getScoreboard(league, ymdStr, ttl = 15000) {
   const j = await getJSON(scoreboardUrl(league, ymdStr), ttl);
   const games = (j.events || []).map((e) => normEvent(e, league));
+  if (league === 'mlb') await patchMlb(games);
   games.forEach((g) => { rememberGame(g); refreshFollowed(g); });
   return games;
 }
 
 export async function getSummary(league, id, ttl = 12000) {
   const j = await getJSON(summaryUrl(league, id), ttl);
-  return normSummary(j, league, id);
+  const r = normSummary(j, league, id);
+  if (league === 'mlb' && r.game) await patchMlb([r.game]);
+  return r;
 }
 
 const mapTeams = (league, raw) => raw.map((x) => x.team || x).filter((t) => t && t.id).map((t) => ({

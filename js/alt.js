@@ -89,3 +89,15 @@ export async function mlbPostseasonGames(from, to) {
   }
   return out;
 }
+
+/** The league's own scores for MLB games around these dates, keyed "away|home" (plain names). Used when ESPN's board is behind. */
+export async function mlbOfficial(from, to) {
+  const d = (x) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  const j = await get(`${MLB_API}/api/v1/schedule?sportId=1&startDate=${d(from)}&endDate=${d(to)}&hydrate=linescore,team`, 30000);
+  const out = [];
+  for (const day of j.dates || []) for (const g of day.games || []) {
+    const ls = g.linescore || {}, st = g.status || {};
+    out.push({ key: `${plain(g.teams?.away?.team?.name)}|${plain(g.teams?.home?.team?.name)}`, at: Date.parse(g.gameDate) || 0, state: st.abstractGameState === 'Final' ? 'post' : st.abstractGameState === 'Live' ? 'in' : 'pre', detailed: st.detailedState || '', away: g.teams?.away?.score ?? 0, home: g.teams?.home?.score ?? 0, detail: st.abstractGameState === 'Live' ? `${ls.inningState || ''} ${ls.currentInningOrdinal || ''}`.trim() : st.abstractGameState === 'Final' ? (ls.currentInning > 9 ? `Final/${ls.currentInning}` : 'Final') : '' });
+  }
+  return out;
+}
