@@ -227,6 +227,7 @@ store.toggleHidden('nba');
 text = await visit('#/league/nhl', { wait: 250 }); assert.ok(!/\b3\b.*\b2\b/.test('') ); ok('league in spoiler mode');
 store.setSetting('spoilerFree', false);
 text = await visit('#/picks', { wait: 300 }); assert.ok(app().querySelector('.bk-av svg'), 'avatar on the bankroll strip'); ok('avatar shows on the bankroll strip');
+{ const A = await import('../js/avatar.js'); const bad = []; for (const it of A.ITEMS) { const n = Math.max(1, (it.colors || []).length); for (let ci = 0; ci < n; ci++) { let svg = ''; try { svg = A.previewSvg(it, undefined, undefined, ci); } catch (e) { bad.push(it.id + ' throws'); break; } if (/\bnull\b|undefined|NaN|Infinity/.test(svg)) { bad.push(it.id); break; } } } assert.deepEqual(bad, [], 'items draw clean svg: ' + bad.join(',')); ok('every shop item draws without null or NaN in its art'); }
 text = await visit('#/profile', { wait: 200 });
 assert.ok(app().querySelector('.pf-me svg') && /Your closet/.test(text) && !app().querySelector('.buy'), 'profile'); ok('fan page draws the character and closet, no shop');
 text = await visit('#/shop', { wait: 200 });

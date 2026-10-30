@@ -629,12 +629,18 @@ export const NBA_CUP_GROUPS = {
   'West Group C': ['San Antonio Spurs', 'Los Angeles Lakers', 'Portland Trail Blazers', 'Golden State Warriors', 'Sacramento Kings'],
 };
 
-/** Every NBA Cup game of this season (group play and knockouts), from one range lookup. */
+/** Every NBA Cup game played so far this season, one day at a time (the feed's date ranges are unreliable). */
 export async function getCupGames(now = new Date()) {
   const y = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-  const url = `${base('nba')}/scoreboard?dates=${y}1020-${y}1231&limit=1000`;
-  const j = await getJSON(url, 120000);
-  return (j.events || []).map((e) => normEvent(e, 'nba')).filter((g) => g.cup);
+  const days = [];
+  for (let d = new Date(y, 9, 20); d <= now && days.length < 75; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) days.push(d);
+  const ymdOf = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  const today = ymdOf(now), out = new Map();
+  for (let i = 0; i < days.length; i += 8) {
+    const res = await Promise.all(days.slice(i, i + 8).map((d) => getJSON(scoreboardUrl('nba', ymdOf(d)), ymdOf(d) === today ? 120000 : 3600000).catch(() => null)));
+    for (const j of res) for (const e of (j && j.events) || []) { const g = normEvent(e, 'nba'); if (g.cup) out.set(g.id, g); }
+  }
+  return [...out.values()];
 }
 
 /** Group tables worked out from the finished group-play games. Returns [{ name, rows: [{ team, w, l, pf, pa, pd, gp }] }]. */

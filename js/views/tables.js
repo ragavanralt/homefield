@@ -45,18 +45,16 @@ function pictureCard(league, p) {
 async function renderCup(body) {
   const games = await getCupGames();
   clear(body);
-  if (!games.length) { body.append(emptyState('No NBA Cup games yet', 'Group play fills in here once the Cup games are on the schedule.')); return; }
+  if (!games.length) { body.append(emptyState('No NBA Cup games yet', 'Group tables fill in as Cup games are played.')); return; }
   const mine = (r) => getState().teams.some((t) => t.league === 'nba' && (t.id === r.team.id || (r.team.name && t.name === r.team.name)));
   const sgn = (n) => (n > 0 ? '+' + n : String(n));
   body.append(h('p', { class: 'muted pad' }, 'Each group winner and the best second-place team in each conference move on to the quarterfinals. Counts the group-play games only, ranked by wins, then point differential.'));
   cupTables(games).forEach((gr) => body.append(h('section', { class: 'blk' }, h('h2', { class: 'blk-h' }, gr.name),
     h('div', { class: 'tbl-scroll' }, h('table', { class: 'tbl' },
       h('thead', null, h('tr', null, h('th', null, '#'), h('th', { class: 'l' }, 'Team'), ['GP', 'W', 'L', 'PD', 'PF'].map((c) => h('th', null, c)))),
-      h('tbody', null, gr.rows.map((r, i) => h('tr', { class: (mine(r) ? 'mine ' : '') + (i === 0 ? 'z-in' : '') }, h('td', null, i + 1),
+      h('tbody', null, gr.rows.map((r, i) => h('tr', { class: (mine(r) ? 'mine ' : '') + (i === 0 && r.gp > 0 ? 'z-in' : '') }, h('td', null, i + 1),
         h('td', { class: 'l team-cell' }, r.team.logo ? crest(r.team, 22) : null, h('span', null, r.team.name)),
         [r.gp, r.w, r.l, sgn(r.pd), r.pf].map((v) => h('td', null, String(v)))))))))));
-  const next = games.filter((g) => g.state !== 'post' && !/group/i.test(g.cupRound)).sort((a, b) => new Date(a.date) - new Date(b.date))[0];
-  if (next) body.append(h('p', { class: 'muted pad' }, `Next knockout game: ${next.away.name} at ${next.home.name} (${next.cupRound}).`));
 }
 
 /** mode: 'picture' | 'tables' | 'cup' */
