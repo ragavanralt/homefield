@@ -924,3 +924,5 @@ a.bk-main { display: block; color: inherit; text-decoration: none; }
 .gh-look { justify-content: center; margin: 4px 0 0; }
 .gh-look .look-tag { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.45); color: #fff; }
 .gh-look .look-sub { color: rgba(255,255,255,.85); }
+.fx-tag { margin-left: 6px; padding: 1px 7px; font-size: 10px; white-space: nowrap; }
+.fx-special { border-color: color-mix(in srgb, var(--t1, var(--hot)) 55%, var(--line)); }

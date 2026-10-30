@@ -6,6 +6,7 @@ import { h, clear, crest, errorBox, loading, emptyState, poll, isHidden } from '
 import { CONFIG } from '../config.js';
 import { getState, myTeams, myTeamIn, leagueHidden, setSetting } from '../store.js';
 import { LEAGUES, isSoccer, leagueLabel } from '../leagues.js';
+import { lookOf } from '../gamelook.js';
 import { getScoreboard, getTeamSchedule, rememberGame } from '../espn.js';
 import { gameCard, pageHead } from '../components.js';
 import { watchScore } from '../winprob.js';
@@ -145,10 +146,11 @@ export async function render(root) {
       res = `${a > b ? 'W' : a < b ? 'L' : 'D'} ${a}-${b}`;
     } else if (g.state === 'post') res = 'Final';
     const when = g.state === 'pre' ? (sameDay(new Date(g.date), new Date()) ? `Today ${fmtTime(g.date)}` : `${fmtDay(g.date)} · ${fmtTime(g.date)}`) : fmtDay(g.date);
-    return h('a', { class: 'fx', href: `#/game/${g.league}/${g.id}`, onclick: () => rememberGame(g) },
+    const look = lookOf(g);
+    return h('a', { class: 'fx' + (look ? ' fx-special' : ''), href: `#/game/${g.league}/${g.id}`, onclick: () => rememberGame(g) },
       label ? h('small', { class: 'fx-l' }, label) : null,
       h('span', { class: 'fx-d' }, when),
-      h('span', { class: 'fx-o' }, h('small', null, home ? 'vs' : '@'), crest(opp, 20), h('span', null, opp.short || opp.name || opp.abbr)),
+      h('span', { class: 'fx-o' }, h('small', null, home ? 'vs' : '@'), crest(opp, 20), h('span', null, opp.short || opp.name || opp.abbr), look ? h('span', { class: 'look-tag fx-tag', title: look.sub || look.label }, look.label.replace(' Playoffs', ' PO').replace('Champions League', 'UCL').replace('Europa League', 'UEL').replace('MLB Postseason', 'MLB PO').replace('MLS Cup Playoffs', 'MLS PO')) : null),
       h('span', { class: 'fx-r ' + cls }, res));
   }
 
