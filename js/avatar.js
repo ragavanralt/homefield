@@ -214,6 +214,12 @@ export const ITEMS = [
   I('boxy70', 'top', 'Oversized boxy tee', 'street', 450), I('heavytee', 'top', 'Heavyweight tee', 'street', 400), I('boxylong', 'top', 'Boxy long sleeve', 'street', 500), I('boafleece', 'outer', 'Reversible boa fleece', 'street', 1800),
   I('sunsetroof', 'bg', 'Rooftop sunset', 'bg', 800),
 
+  // ---- Weekly drop, 2026-10-30
+  I('spacebuns', 'hair', 'Space buns', 'look', 200), I('cornrows', 'hair', 'Cornrows', 'look', 450), I('shag', 'hair', 'Shag cut', 'look', 250),
+  I('rubystuds', 'ear', 'Ruby studs', 'look', 400), I('stardrops', 'ear', 'Star drops', 'look', 700), I('bighoops', 'ear', 'Big gold hoops', 'look', 1100),
+  I('boardwalk', 'bg', 'Seaside boardwalk', 'bg', 1000),
+  I('lon04away', 'top', "North London '04 away kit", 'retro', 5500),
+
   // ---- Earned
   I('ghost', 'top', 'Ghost sheet', 'team', 0, { ach: 'Get rescued with free coins once' }), I('goldscarf', 'scarf', 'Golden scarf', 'team', 0, { ach: 'Win 5 bets in a row' }), I('trophycape', 'back', 'Trophy cape', 'team', 0, { ach: 'Hit a parlay' }),
 ];

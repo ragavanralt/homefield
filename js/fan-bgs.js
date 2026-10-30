@@ -172,3 +172,19 @@ ART.bg.sunsetroof = bg((P) => {
   P.add(rect(X0, 246, W, 5, '#6A5870'));
   for (let i = 0; i < 12; i++) P.add(rect(-190 + i * 50, 264, 24, 2, '#FFD08A', ' opacity="0.18"'));
 });
+
+// seaside boardwalk: pale morning sky, calm sea, a plank deck and a railing
+ART.bg.boardwalk = bg((P) => {
+  sky(P, [[0, '#7FC4E8'], [0.5, '#BFE3F2'], [0.62, '#F6E8C8'], [1, '#F6E8C8']]);
+  glow(P, 150, 80, 60, 40, '#FFF6D0', 0.8);
+  P.add(rect(X0, 168, W, 56, '#3C8FB8'));
+  P.add(rect(X0, 168, W, 4, '#A8DCF0'));
+  for (let i = 0; i < 14; i++) P.add(rect(-190 + i * 44, 180 + (i % 4) * 10, 22, 2, '#CDEFFA', ' opacity="0.6"'));
+  P.add(rect(X0, 224, W, 26, '#8A6A4A'));
+  P.add(rect(X0, 218, W, 5, '#5A4430'));
+  for (let i = 0; i < 25; i++) P.add(rect(-196 + i * 26, 198, 4, 26, '#F2EFE8'));
+  P.add(rect(X0, 196, W, 4, '#F2EFE8'));
+  floor(P, '#B58E5E', '#6A4E32', 250);
+  for (let i = 0; i < 16; i++) P.add(rect(-200, 256 + i * 6, W, 1, '#4A3622', ' opacity="0.35"'));
+  for (let i = 0; i < 10; i++) P.add(rect(-190 + i * 62, 250, 1.5, 100, '#4A3622', ' opacity="0.3"'));
+});

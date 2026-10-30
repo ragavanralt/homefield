@@ -13,3 +13,14 @@ Gap-tooth grin, Bowl cut, Pigtails, High-top fade, Silver hoops, Pearl studs, Go
 66 pieces built from what is trending now, with original designs only (no real brands, logos or names). Shoes: Terrace trainers, Skate lows, Retro runners, Combat boots, Hiking boots, Ballet flats, Chelsea boots, Desert boots. Hats: Nylon bucket, Boonie, Trapper, Slouch beanie, Head bandana, Flat cap, Sun visor. Face and ears: Rectangle glasses, Square shades, Freckles, Gold huggies, Cross drops, Chain drops. Neck and wrist: Dog tags, Cross chain, Layered chains, Rope chain, Bead necklace, Knit scarf, Plaid scarf, Neck bandana, Digital watch, Bracelet stack, Leather cuff, Tennis bracelet. In hand: Skateboard, Iced coffee, Canvas tote. Tops: Baby tee, Rugby shirt, Striped long sleeve, Quarter-zip, Mock-neck knit, Sweater vest, Tie-dye tee, Oversized football tee, Argyle sweater, Fair isle knit, Cropped zip hoodie, Waffle henley. Jackets: Coach, Wool shacket, Puffer vest, Trench, Retro track, Windbreaker, Harrington, Corduroy, Quilted barn, Pea coat, Baseball, Long denim coat, Sherpa. Pants: Wide trousers, Pinstripe, Baggy cords, Side-stripe track pants, Stacked jeans, Ripped jeans, Painter pants, Linen pants, Bermuda, Bike shorts, Sweat shorts, Pleated shorts, Parachute cargos, Baggy jorts.
 
 Added the same day, part 3, looks from Ragavan's haul as original designs (no marks): Purple flower jeans, Pleated tapered jeans, Contrast-stitch baggy jeans, Faded baggy jeans, Lounge set pants and hoodie, Trail fleece hoodie, Crewneck with chest stitch, Oversized boxy tee, Heavyweight tee, Boxy long sleeve, Reversible boa fleece.
+
+## Added to the shop on 2026-10-30 (weekly update)
+Space buns (Look, 400), Cornrows (Look, 900), Shag cut (Look, 500), Ruby studs (Look, 800), Star drops (Look, 1,400), Big gold hoops (Look, 2,200), Seaside boardwalk (Backgrounds, 2,000), North London '04 away kit (Retros, 11,000). No new requests came in this week, and the '04 home kit was already in the shop, so the away kit is its partner.
+
+# Catalog ideas for next week (added 2026-10-30)
+
+Nothing below is in the shop yet. These wait for Ragavan's yes or no.
+
+1. Cosmic night sky background. Backgrounds shop, about 1,500 coins. Backgrounds are still the thinnest shop, and a starry sky fills the gap between 1,000 and 2,000.
+2. Wolf cut hair. Look shop, about 300 coins. A popular layered cut that sits nicely between the shag and the curls.
+3. Rain jacket in bright yellow. Casual shop, about 900 coins. Casual still has few real jackets, and winter weather is coming.

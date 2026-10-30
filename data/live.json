@@ -27,7 +27,7 @@
       }
     ],
     "deal": {
-      "itemId": "trapper",
+      "itemId": "rectglasses",
       "pct": 20
     }
   },
@@ -59,12 +59,12 @@
       }
     ],
     "featured": [
-      "v85shadow",
-      "lights",
-      "hightop",
-      "chore",
-      "locker",
-      "fullleg"
+      "bowtie",
+      "rink",
+      "elbowblack",
+      "crewsweat",
+      "court",
+      "fullsleeve"
     ],
     "note": ""
   }
