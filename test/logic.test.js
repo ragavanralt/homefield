@@ -1129,4 +1129,33 @@ t('cash out: cashed bets are not bragging rights', () => {
   } finally { globalThis.fetch = realFetch; }
 }
 
+// NBA Cup: games are tagged from the feed's note, and the group tables come from finished group games
+{
+  const { cupTables } = await import('../js/espn.js');
+  const ev = (id, away, home, as, hs, headline, state = 'post') => ({ id, date: '2026-11-04T00:00Z', name: `${away} at ${home}`, season: { type: 2 }, competitions: [{ notes: [{ type: 'event', headline }], status: { type: { state, completed: state === 'post' } }, competitors: [{ homeAway: 'home', score: String(hs), team: { id: '1', displayName: home } }, { homeAway: 'away', score: String(as), team: { id: '2', displayName: away } }] }] });
+  const a = normEvent(ev('1', 'Chicago Bulls', 'Boston Celtics', 100, 110, 'NBA Cup - Group Play'), 'nba');
+  const q = normEvent(ev('2', 'Chicago Bulls', 'Boston Celtics', 100, 110, 'NBA Cup - Quarterfinals'), 'nba');
+  const r = normEvent(ev('3', 'Chicago Bulls', 'Boston Celtics', 100, 110, 'East Finals'), 'nba');
+  t('nba cup: the note marks a game as Cup and names the round', () => { assert.equal(a.cup, true); assert.equal(a.cupRound, 'Group Play'); assert.equal(q.cupRound, 'Quarterfinals'); assert.equal(q.playoff, false); assert.equal(r.cup, false); assert.equal(r.playoff, true); });
+  const tabs = cupTables([a, normEvent(ev('4', 'Atlanta Hawks', 'Chicago Bulls', 90, 99, 'NBA Cup - Group Play'), 'nba'), normEvent(ev('5', 'Detroit Pistons', 'Boston Celtics', 90, 99, 'NBA Cup - Group Play'), 'nba'), q]);
+  const c = tabs.find((x) => x.name === 'East Group C').rows;
+  t('nba cup: group table counts finished group games only, ranked by wins then point differential', () => {
+    assert.equal(tabs.length, 6); assert.equal(c[0].team.name, 'Boston Celtics'); assert.equal(c[0].w, 1); assert.equal(c[0].pd, 10);
+    assert.equal(c.find((x) => x.team.name === 'Chicago Bulls').w, 1); assert.equal(c.find((x) => x.team.name === 'Chicago Bulls').l, 1);
+    assert.equal(c.find((x) => x.team.name === 'Atlanta Hawks').l, 1);
+  });
+}
+
+{
+  const { lookOf } = await import('../js/gamelook.js');
+  t('game looks: cup, europe, playoffs and the finals get their own theme; a regular game gets none', () => {
+    assert.equal(lookOf({ league: 'nba', cup: true, cupRound: 'Group Play' }).cls, 'look-cup');
+    assert.equal(lookOf({ league: 'uefa.champions' }).cls, 'look-ucl');
+    assert.equal(lookOf({ league: 'nba', playoff: true, series: 'Series tied 2-2' }).label, 'NBA Playoffs');
+    assert.equal(lookOf({ league: 'mlb', playoff: true, seriesTitle: 'World Series' }).cls, 'look-ws');
+    assert.equal(lookOf({ league: 'nfl', playoff: true, note: 'Super Bowl LXI' }).cls, 'look-sb');
+    assert.equal(lookOf({ league: 'nba' }), null); assert.equal(lookOf({ league: 'eng.1' }), null);
+  });
+}
+
 console.log(`\n${passed} checks passed`);

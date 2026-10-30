@@ -222,6 +222,7 @@ text = await visit('#/league/nba', { wait: 300 }); assert.ok(w.document.querySel
 w.document.getElementById('view-playoffs').click(); await sleep(300); ok('playoffs view opens');
 w.document.querySelectorAll('.seg-b').forEach((b) => { if (b.textContent === 'Standings') b.click(); }); await sleep(300);
 assert.ok(w.document.getElementById('st-picture')); ok('standings has playoff picture toggle');
+assert.ok(w.document.getElementById('st-cup')); w.document.getElementById('st-cup').click(); await sleep(400); assert.ok(/NBA Cup/.test(app().textContent), 'cup view'); ok('NBA standings have an NBA Cup tab');
 store.toggleHidden('nba');
 text = await visit('#/league/nhl', { wait: 250 }); assert.ok(!/\b3\b.*\b2\b/.test('') ); ok('league in spoiler mode');
 store.setSetting('spoilerFree', false);

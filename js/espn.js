@@ -136,7 +136,9 @@ export function normEvent(ev, league) {
     note: (comp.notes && comp.notes[0] && comp.notes[0].headline) || '',
     seriesTitle: comp.series?.title || '',
     seriesDone: !!comp.series?.completed,
-    playoff: ev.season?.type === 3 || /playoff|final|quarter|semi/i.test((comp.notes && comp.notes[0] && comp.notes[0].headline) || ''),
+    cup: /NBA Cup/i.test((comp.notes && comp.notes[0] && comp.notes[0].headline) || ''),
+    cupRound: ((((comp.notes && comp.notes[0] && comp.notes[0].headline) || '').match(/NBA Cup\s*[-–:]\s*(.+)$/i) || [])[1] || '').trim(),
+    playoff: ev.season?.type === 3 || (!/NBA Cup/i.test((comp.notes && comp.notes[0] && comp.notes[0].headline) || '') && /playoff|final|quarter|semi/i.test((comp.notes && comp.notes[0] && comp.notes[0].headline) || '')),
     odds: parseOdds(comp.odds && comp.odds[0]),
     lastPlay: comp.situation?.lastPlay?.text || '',
     home, away,
@@ -614,4 +616,44 @@ export async function getPlayoffGames(league, now = new Date()) {
   const j = await getJSON(url, win.live ? 120000 : 3600000);
   const games = (j.events || []).map((e) => normEvent(e, league)).filter((g) => g.playoff);
   return { games, win };
+}
+
+/* ---------- NBA Cup ---------- */
+// The 2026 Cup groups (the feed tags the games but does not hand out the groups).
+export const NBA_CUP_GROUPS = {
+  'East Group A': ['Detroit Pistons', 'Toronto Raptors', 'Orlando Magic', 'Milwaukee Bucks', 'Brooklyn Nets'],
+  'East Group B': ['New York Knicks', 'Cleveland Cavaliers', 'Philadelphia 76ers', 'Miami Heat', 'Indiana Pacers'],
+  'East Group C': ['Boston Celtics', 'Atlanta Hawks', 'Charlotte Hornets', 'Chicago Bulls', 'Washington Wizards'],
+  'West Group A': ['Denver Nuggets', 'Houston Rockets', 'Phoenix Suns', 'Dallas Mavericks', 'Utah Jazz'],
+  'West Group B': ['Oklahoma City Thunder', 'Minnesota Timberwolves', 'LA Clippers', 'New Orleans Pelicans', 'Memphis Grizzlies'],
+  'West Group C': ['San Antonio Spurs', 'Los Angeles Lakers', 'Portland Trail Blazers', 'Golden State Warriors', 'Sacramento Kings'],
+};
+
+/** Every NBA Cup game of this season (group play and knockouts), from one range lookup. */
+export async function getCupGames(now = new Date()) {
+  const y = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  const url = `${base('nba')}/scoreboard?dates=${y}1020-${y}1231&limit=1000`;
+  const j = await getJSON(url, 120000);
+  return (j.events || []).map((e) => normEvent(e, 'nba')).filter((g) => g.cup);
+}
+
+/** Group tables worked out from the finished group-play games. Returns [{ name, rows: [{ team, w, l, pf, pa, pd, gp }] }]. */
+export function cupTables(games, groups = NBA_CUP_GROUPS) {
+  const key = (n) => String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const where = new Map();
+  for (const [gname, teams] of Object.entries(groups)) for (const t of teams) where.set(key(t), gname);
+  const tables = new Map(Object.entries(groups).map(([g, teams]) => [g, new Map(teams.map((t) => [key(t), { team: { name: t, abbr: '', logo: '', id: '' }, w: 0, l: 0, pf: 0, pa: 0, pd: 0, gp: 0 }]))]));
+  const fill = (row, t) => { if (t.logo && !row.team.logo) row.team = { ...row.team, logo: t.logo, abbr: t.abbr || row.team.abbr, id: t.id || row.team.id, color: t.color, alt: t.alt }; };
+  for (const g of games) {
+    if (!/group/i.test(g.cupRound)) continue;
+    const gh = where.get(key(g.home.name)), ga = where.get(key(g.away.name));
+    if (!gh || gh !== ga) continue;
+    const rh = tables.get(gh).get(key(g.home.name)), ra = tables.get(gh).get(key(g.away.name));
+    fill(rh, g.home); fill(ra, g.away);
+    if (g.state !== 'post' || g.void) continue;
+    const hs = g.home.score ?? 0, as = g.away.score ?? 0;
+    rh.gp++; ra.gp++; rh.pf += hs; rh.pa += as; ra.pf += as; ra.pa += hs;
+    if (hs > as) { rh.w++; ra.l++; } else if (as > hs) { ra.w++; rh.l++; }
+  }
+  return [...tables].map(([name, m]) => ({ name, rows: [...m.values()].map((r) => ({ ...r, pd: r.pf - r.pa })).sort((a, b) => b.w - a.w || b.pd - a.pd || b.pf - a.pf || a.team.name.localeCompare(b.team.name)) }));
 }

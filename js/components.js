@@ -6,6 +6,7 @@ import { BACKGROUNDS, ACCENTS, DEFAULT_APPEARANCE, applyTheme, resolveMode } fro
 import { watchScore, watchLabel, watchReason } from './winprob.js';
 import { fmtDay, fmtTime, sameDay } from './util.js';
 import { rememberGame } from './espn.js';
+import { lookOf } from './gamelook.js';
 import { themeMatch, repaintBrand, onBrandChange, chooseTheme } from './brand.js';
 
 export const pageHead = (title, sub) => h('div', { class: 'page-head' }, h('h1', null, title), sub ? h('p', null, sub) : null);
@@ -34,11 +35,13 @@ export function gameCard(g, { team = null, showLeague = false } = {}) {
   };
   const ws = isHidden(g) ? null : watchScore(g);
   const meta = [showLeague ? leagueLabel(g.league) : '', g.venue, g.broadcast].filter(Boolean).join(' · ');
-  const card = h('a', { class: `gcard ${g.state}${team ? ' mine' : ''}`, href: `#/game/${g.league}/${g.id}`, onclick: () => rememberGame(g) },
+  const look = lookOf(g);
+  const card = h('a', { class: `gcard ${g.state}${team ? ' mine' : ''}${look ? ' looked ' + look.cls : ''}`, href: `#/game/${g.league}/${g.id}`, onclick: () => rememberGame(g) },
     h('div', { class: 'g-main' },
       h('div', { class: 'g-teams' }, order.map(row)),
       h('div', { class: 'g-stat' }, h('span', { class: 'st ' + st.cls }, st.cls === 'live' ? h('i', { class: 'ldot' }) : null, st.text), st.sub ? h('small', null, st.sub) : null),
     ),
+    look ? h('div', { class: 'g-look' }, h('span', { class: 'look-tag' }, look.label), look.sub ? h('span', { class: 'look-sub' }, look.sub) : null) : null,
     meta ? h('div', { class: 'g-meta' }, meta) : null,
     ws != null ? h('div', { class: 'g-watch' },
       h('div', { class: 'wbar' }, h('i', { style: { width: ws + '%' } })),

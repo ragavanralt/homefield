@@ -35,7 +35,7 @@ export async function render(root, { id }) {
       h('button', { type: 'button', class: 'seg-b' + (view === 'standings' ? ' on' : ''), onclick: () => { view = 'standings'; drawControls(); load(); } }, 'Standings'),
       hasPlayoffs(league) ? h('button', { type: 'button', class: 'seg-b' + (view === 'playoffs' ? ' on' : ''), id: 'view-playoffs', onclick: () => { view = 'playoffs'; drawControls(); load(); } }, 'Playoffs') : null));
     if (view === 'standings' && hasPicture(league)) {
-      controls.append(h('div', { class: 'seg' }, [['picture', 'Playoff picture'], ['tables', 'Divisions']].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (stMode === k ? ' on' : ''), id: 'st-' + k, onclick: () => { stMode = k; drawControls(); load(); } }, l))));
+      controls.append(h('div', { class: 'seg' }, [['picture', 'Playoff picture'], ['tables', 'Divisions'], ...(league === 'nba' ? [['cup', 'NBA Cup']] : [])].map(([k, l]) => h('button', { type: 'button', class: 'seg-b' + (stMode === k ? ' on' : ''), id: 'st-' + k, onclick: () => { stMode = k; drawControls(); load(); } }, l))));
     }
     if (view === 'games') {
       const iso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;

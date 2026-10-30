@@ -15,6 +15,7 @@ import { wpChart } from '../chart.js';
 import { buildICS, googleUrl } from '../ics.js';
 import { shareRecap } from '../share.js';
 import { fmtDay, fmtTime, fmtDateTime, skinFromColors, colorDistance } from '../util.js';
+import { lookOf } from '../gamelook.js';
 
 const titleCase = (s) => String(s || '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
 
@@ -44,7 +45,8 @@ export async function render(root, { league, id }) {
     const my = myTeamIn(g);
     const c = my || g.home;
     const st = statusInfo(g);
-    const head = h('div', { class: 'ghead tex-' + groupOf(league).texture });
+    const look = lookOf(g);
+    const head = h('div', { class: 'ghead tex-' + groupOf(league).texture + (look ? ' looked ' + look.cls : '') });
     applySkin(head, c.color, c.alt);
 
     const teamBlock = (side) => {
@@ -71,6 +73,7 @@ export async function render(root, { league, id }) {
       h('div', { class: 'gh-top' },
         h('button', { type: 'button', class: 'back', onclick: () => (history.length > 1 ? history.back() : (location.hash = '#/')) }, '‹ Back'),
         h('span', { class: 'gh-league' }, leagueLabel(league) + (g.series ? ' · ' + g.series : ''))),
+      look ? h('div', { class: 'g-look gh-look' }, h('span', { class: 'look-tag' }, look.label), look.sub ? h('span', { class: 'look-sub' }, look.sub) : null) : null,
       h('div', { class: 'gh-main' }, teamBlock(sides[0]), mid, teamBlock(sides[1])),
       h('div', { class: 'gh-meta' }, [g.venue, g.city, g.broadcast ? 'TV ' + g.broadcast : ''].filter(Boolean).join(' · ')),
       actions,
