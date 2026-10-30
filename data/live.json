@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-10-29",
+  "updated": "2026-10-30",
   "daily": {
-    "date": "2026-10-29",
+    "date": "2026-10-30",
     "quests": [
       {
-        "id": "d2026-10-29-1",
+        "id": "d2026-10-30-1",
         "metric": "shop_visits",
         "target": 1,
         "coins": 10,
         "title": "Check out the shop"
       },
       {
-        "id": "d2026-10-29-2",
-        "metric": "games_marked",
+        "id": "d2026-10-30-2",
+        "metric": "bets_placed",
         "target": 1,
         "coins": 20,
-        "title": "Mark a game as watched"
+        "title": "Place a bet"
       },
       {
-        "id": "d2026-10-29-3",
+        "id": "d2026-10-30-3",
         "metric": "bets_won",
         "target": 1,
         "coins": 45,
@@ -27,44 +27,44 @@
       }
     ],
     "deal": {
-      "itemId": "cap",
-      "pct": 25
+      "itemId": "trapper",
+      "pct": 20
     }
   },
   "weekly": {
-    "week": "2026-10-23",
-    "endsBefore": "2026-10-30",
+    "week": "2026-10-30",
+    "endsBefore": "2026-11-06",
     "quests": [
       {
-        "id": "w2026-10-23-1",
-        "metric": "games_marked",
-        "target": 5,
+        "id": "w2026-10-30-1",
+        "metric": "games_opened",
+        "target": 15,
         "coins": 105,
-        "title": "Mark 5 games as watched"
+        "title": "Open 15 different games"
       },
       {
-        "id": "w2026-10-23-2",
+        "id": "w2026-10-30-2",
         "metric": "outfit_changed",
         "target": 5,
         "coins": 75,
         "title": "Change your fit 5 times"
       },
       {
-        "id": "w2026-10-23-3",
+        "id": "w2026-10-30-3",
         "metric": "bets_won",
         "target": 5,
         "coins": 210,
         "title": "Win 5 bets",
-        "item": "bowtie"
+        "item": "graphic"
       }
     ],
     "featured": [
-      "rt_tear",
-      "grin",
-      "city",
-      "patent",
-      "workjacket",
-      "denim"
+      "v85shadow",
+      "lights",
+      "hightop",
+      "chore",
+      "locker",
+      "fullleg"
     ],
     "note": ""
   }
