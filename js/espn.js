@@ -356,6 +356,7 @@ export function normSummary(j, league, id) {
     const prev = recallGame(game.key);
     if (prev) { // the scoreboard carries odds and probable pitchers that the summary header lacks
       if (!game.odds && prev.odds) game.odds = prev.odds;
+      if (!game.cup && prev.cup) { game.cup = true; game.cupRound = prev.cupRound; if (!game.series) game.series = prev.series; if (!game.note) game.note = prev.note; } // the summary header drops the Cup note
       if (!game.home.probable && prev.home.probable) game.home.probable = prev.home.probable;
       if (!game.away.probable && prev.away.probable) game.away.probable = prev.away.probable;
       if (!game.broadcast && prev.broadcast) game.broadcast = prev.broadcast;

@@ -903,23 +903,24 @@ a.bk-main { display: block; color: inherit; text-decoration: none; }
 .yo-pane[hidden] { display: none; }
 @media (max-width: 420px) { .yo-stage { width: 92px; height: 92px; } .yo-stage .avatar { width: 92px; } }
 
-/* Looks for the big games: NBA Cup, European nights and each league's playoffs. Original colours and patterns. */
-.looked { --lk-a: #c8962e; --lk-b: #1b1405; --lk-ink: #1b1405; --lk-pat: none; }
-.look-cup { --lk-a: #19c37d; --lk-b: #07281c; --lk-ink: #04170f; --lk-hi: #f2c14e; --lk-pat: repeating-linear-gradient(90deg, transparent 0 22px, rgba(242,193,78,.10) 22px 24px), radial-gradient(circle at 100% 0, rgba(242,193,78,.28), transparent 55%); }
-.look-ucl { --lk-a: #7aa7ff; --lk-b: #0a1238; --lk-ink: #06102e; --lk-hi: #dfe8ff; --lk-pat: radial-gradient(circle, rgba(223,232,255,.30) 1.2px, transparent 1.6px) 0 0/26px 26px, radial-gradient(circle, rgba(122,167,255,.18) 1px, transparent 1.4px) 13px 13px/26px 26px, linear-gradient(160deg, #101c52, #070c26); }
-.look-uel { --lk-a: #ff8a2b; --lk-b: #2a1304; --lk-ink: #231003; --lk-hi: #ffd2a6; --lk-pat: repeating-linear-gradient(135deg, rgba(255,138,43,.12) 0 8px, transparent 8px 20px); }
-.look-nba { --lk-a: #ff5a36; --lk-b: #1c0905; --lk-ink: #1c0905; --lk-hi: #ffc34d; --lk-pat: radial-gradient(ellipse at 50% 120%, rgba(255,90,54,.45), transparent 65%), repeating-linear-gradient(0deg, transparent 0 11px, rgba(255,195,77,.07) 11px 12px); }
-.look-nfl { --lk-a: #5aa0ff; --lk-b: #0b1330; --lk-ink: #070d22; --lk-hi: #ffffff; --lk-pat: repeating-linear-gradient(0deg, transparent 0 14px, rgba(255,255,255,.07) 14px 16px), linear-gradient(90deg, rgba(220,50,60,.22), transparent 40%); }
-.look-sb { --lk-a: #ffd24a; --lk-b: #14112a; --lk-ink: #14112a; --lk-hi: #fff2b8; --lk-pat: radial-gradient(circle at 85% 20%, rgba(255,210,74,.45), transparent 45%), repeating-linear-gradient(0deg, transparent 0 14px, rgba(255,255,255,.06) 14px 16px); }
-.look-nhl { --lk-a: #8fd6ff; --lk-b: #06202f; --lk-ink: #04161f; --lk-hi: #e8f8ff; --lk-pat: repeating-linear-gradient(120deg, rgba(232,248,255,.10) 0 2px, transparent 2px 18px), linear-gradient(180deg, rgba(143,214,255,.14), transparent 60%); }
-.look-mlb { --lk-a: #ff7a1a; --lk-b: #1f0d05; --lk-ink: #1f0d05; --lk-hi: #ffd9b0; --lk-pat: radial-gradient(circle at 0 100%, rgba(255,122,26,.40), transparent 55%), repeating-linear-gradient(45deg, rgba(255,217,176,.06) 0 6px, transparent 6px 14px); }
-.look-ws { --lk-a: #ffc94a; --lk-b: #1a0a0a; --lk-ink: #1a0a0a; --lk-hi: #fff0c2; --lk-pat: radial-gradient(circle at 100% 0, rgba(255,201,74,.45), transparent 50%), repeating-linear-gradient(45deg, rgba(200,40,50,.18) 0 6px, transparent 6px 14px); }
-.look-mls { --lk-a: #c9a2ff; --lk-b: #150b28; --lk-ink: #0f0720; --lk-hi: #efe3ff; --lk-pat: repeating-linear-gradient(90deg, rgba(201,162,255,.10) 0 10px, transparent 10px 20px); }
-.gcard.looked { --fg: #F3F5FC; --muted: #b9c1dc; --line: rgba(255,255,255,.14); color: var(--fg); border-color: var(--lk-a); background: var(--lk-pat), linear-gradient(160deg, var(--lk-b), color-mix(in srgb, var(--lk-b) 55%, #000)); box-shadow: inset 0 3px 0 var(--lk-a); }
-.gcard.looked.mine { box-shadow: inset 0 3px 0 var(--lk-a), inset 4px 0 0 var(--t1); }
-.gcard.looked.in { box-shadow: inset 0 3px 0 var(--lk-a), inset 0 0 0 1.5px var(--hot); }
+/* Looks for the big games: NBA Cup, European nights and each league's playoffs. Lists stay neutral (just a small tag);
+   inside a game the header keeps the team colours and gets the competition's pattern on top. Original patterns only. */
+.look-cup { --lk-shape: repeating-linear-gradient(90deg, transparent 0 22px, rgba(255,255,255,.13) 22px 24px); }
+.look-ucl { --lk-shape: radial-gradient(circle, rgba(255,255,255,.36) 1.2px, transparent 1.7px) 0 0/26px 26px, radial-gradient(circle, rgba(255,255,255,.2) 1px, transparent 1.4px) 13px 13px/26px 26px; }
+.look-uel { --lk-shape: repeating-linear-gradient(135deg, rgba(255,255,255,.13) 0 8px, transparent 8px 20px); }
+.look-nba { --lk-shape: repeating-linear-gradient(0deg, transparent 0 11px, rgba(255,255,255,.12) 11px 12px), radial-gradient(ellipse at 50% 120%, rgba(255,255,255,.22), transparent 65%); }
+.look-nfl { --lk-shape: repeating-linear-gradient(0deg, transparent 0 14px, rgba(255,255,255,.12) 14px 16px); }
+.look-sb { --lk-shape: radial-gradient(circle at 85% 20%, rgba(255,230,140,.5), transparent 45%), repeating-linear-gradient(0deg, transparent 0 14px, rgba(255,255,255,.1) 14px 16px); }
+.look-nhl { --lk-shape: repeating-linear-gradient(120deg, rgba(255,255,255,.14) 0 2px, transparent 2px 18px); }
+.look-mlb { --lk-shape: repeating-linear-gradient(45deg, rgba(255,255,255,.1) 0 6px, transparent 6px 14px); }
+.look-ws { --lk-shape: radial-gradient(circle at 100% 0, rgba(255,215,120,.5), transparent 50%), repeating-linear-gradient(45deg, rgba(255,255,255,.1) 0 6px, transparent 6px 14px); }
+.look-mls { --lk-shape: repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 10px, transparent 10px 20px); }
 .g-look { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; }
-.look-tag { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--lk-a); color: var(--lk-ink); font-weight: 800; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
-.look-sub { color: var(--lk-hi, var(--muted)); opacity: .9; }
-.ghead.looked { background-image: var(--lk-pat), linear-gradient(160deg, var(--lk-b), color-mix(in srgb, var(--lk-b) 55%, #000)); --fg: #F3F5FC; --muted: #b9c1dc; color: var(--fg); box-shadow: inset 0 4px 0 var(--lk-a); }
+.look-tag { display: inline-block; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); font-weight: 800; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.look-sub { color: var(--muted); }
+.ghead.looked { position: relative; }
+.ghead.looked::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--lk-shape); pointer-events: none; opacity: .9; }
+.ghead.looked > * { position: relative; z-index: 1; }
 .gh-look { justify-content: center; margin: 4px 0 0; }
+.gh-look .look-tag { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.45); color: #fff; }
+.gh-look .look-sub { color: rgba(255,255,255,.85); }

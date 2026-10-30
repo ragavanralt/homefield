@@ -53,6 +53,7 @@ async function visit(hash, { wait = 120 } = {}) {
   w.location.hash = hash;
   await route();
   await sleep(wait);
+  { const tx = app().textContent; const m = tx.match(/.{0,30}(\bnull\b|undefined|NaN|\[object).{0,30}/); assert.ok(!m, 'stray text on ' + hash + ': ' + (m && m[0])); }
   return app().textContent;
 }
 let n = 0;
@@ -90,7 +91,7 @@ for (const [lg, id] of [['nfl', 2], ['mlb', 5]]) { await visit(`#/team/${lg}/${i
 const games = [['nhl', 1001], ['nhl', 1002], ['nhl', 1003], ['nba', 1002], ['nfl', 1002], ['mlb', 1002], ['mlb', 1001], ['eng.1', 1002], ['uefa.champions', 1001], ['usa.1', 1003]];
 for (const [lg, id] of games) {
   text = await visit(`#/game/${lg}/${id}`, { wait: 350 });
-  if (!app().querySelector('.ghead')) console.log(text.slice(0,300), calls.slice(-3)); assert.ok(app().querySelector('.ghead'), `${lg}/${id} header`);
+  if (!app().querySelector('.ghead')) console.log(text.slice(0,300), calls.slice(-3)); assert.ok(app().querySelector('.ghead'), `${lg}/${id} header`); assert.ok(!/\bnull\b|undefined|NaN/.test(app().querySelector('.ghead').textContent), `${lg}/${id} header text is clean`);
   const tabs = [...app().querySelectorAll('.tab2')];
   for (const t of tabs) { t.click(); await sleep(60); assert.ok(app().querySelector('.gbody, .view'), 'tab body'); }
   ok(`game ${lg}/${id} (${tabs.length} tabs)`);

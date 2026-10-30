@@ -72,8 +72,8 @@ export async function render(root, { league, id }) {
     head.append(
       h('div', { class: 'gh-top' },
         h('button', { type: 'button', class: 'back', onclick: () => (history.length > 1 ? history.back() : (location.hash = '#/')) }, '‹ Back'),
-        h('span', { class: 'gh-league' }, leagueLabel(league) + (g.series ? ' · ' + g.series : ''))),
-      look ? h('div', { class: 'g-look gh-look' }, h('span', { class: 'look-tag' }, look.label), look.sub ? h('span', { class: 'look-sub' }, look.sub) : null) : null,
+        h('span', { class: 'gh-league' }, leagueLabel(league) + (g.series && !look ? ' · ' + g.series : ''))),
+      ...(look ? [h('div', { class: 'g-look gh-look' }, h('span', { class: 'look-tag' }, look.label), look.sub ? h('span', { class: 'look-sub' }, look.sub) : null)] : []),
       h('div', { class: 'gh-main' }, teamBlock(sides[0]), mid, teamBlock(sides[1])),
       h('div', { class: 'gh-meta' }, [g.venue, g.city, g.broadcast ? 'TV ' + g.broadcast : ''].filter(Boolean).join(' · ')),
       actions,
