@@ -438,6 +438,16 @@ ART.bottom.tshorts = pants({ one: true, main: (p) => p.t1, end: 256, grow: 8, ba
 ART.bottom.trackp = pants({ main: (p) => p.t2, grow: 4.5, legDetail: (P, g, side, J, c, R, main) => { stripe((p) => p.t1, 5)(P, g, side, J, c, R, main); const q = J.map(([x, y, ww]) => [x + side * (ww / 2 - 7.2), y]); P.stroke(curve(q), c.pal.tink, 1.1); }, fly: false, band: (p, m) => dk(m, 0.15) });
 // a five-point star centred on x, y
 const star = (x, y, r) => poly(Array.from({ length: 10 }, (_, i) => { const t = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; return [x + Math.cos(t) * rr, y + Math.sin(t) * rr]; }));
+// a point partway down a leg: x, y and width at t (0 top, 1 hem)
+const legAt = (J, t) => { const f = t * (J.length - 1), i = Math.min(J.length - 2, Math.floor(f)), u = f - i; return J[i].map((v, k) => v + (J[i + 1][k] - v) * u); };
+// one-off graphics that make each pair of court shorts its own design, not just a recolour
+const motifOn = (P, J, side, kind, a, b) => {
+  const at = (t, k = 0) => { const [x, y, w] = legAt(J, t); return [x + side * (w / 2 - 4 - k * w * 0.22), y]; };
+  if (kind === 'zig') { const pts = []; for (let i = 0; i <= 10; i++) { const [x, y] = at(0.1 + i * 0.085); pts.push([x + (i % 2 ? 5 : -5), y]); } P.stroke(curve(pts), b, 2.6); }
+  if (kind === 'chev') [0.22, 0.36, 0.5, 0.64, 0.78].forEach((t) => { const [x, y] = at(t, 0.5); P.stroke(`M${(x - 6.5).toFixed(1)} ${(y - 3.5).toFixed(1)} L${x.toFixed(1)} ${(y + 3).toFixed(1)} L${(x + 6.5).toFixed(1)} ${(y - 3.5).toFixed(1)}`, b, 2.4); });
+  if (kind === 'diam') for (let r = 0; r < 4; r++) for (let q = 0; q < 2; q++) { const [x, y, w] = legAt(J, 0.2 + r * 0.17), cx = x - w / 2 + 10 + q * 12 + (r % 2) * 6; P.fill(poly([[cx - 4, y], [cx, y - 5], [cx + 4, y], [cx, y + 5]]), b); }
+  if (kind === 'block') { const [x, y, w] = legAt(J, 0.5), [, y2, w2] = J[J.length - 1]; P.fill(poly([[x - w / 2 - 1, y + 4], [x + w / 2 + 1, y - 6], [x + w2 / 2 + 1, y2 - 1], [x - w2 / 2 - 1, y2 - 1]]), a); }
+};
 // retro mesh shorts: long and loose, past the knee, a wide side panel. o = { pipe, pin, stars }
 const courtside = (a, b, o = {}) => pants({ one: true, main: (p, col) => col || a, end: 268, grow: 13, bag: { hem: 1.14, out: 3 }, fly: false, band: () => b,
   legDetail: (P, g, side, J, c, R, main) => {
@@ -445,6 +455,7 @@ const courtside = (a, b, o = {}) => pants({ one: true, main: (p, col) => col || 
     P.stroke(curve(J.map(([x, y, w]) => [x + side * (w / 2 - 4), y])), b, 7);
     if (o.pipe) P.stroke(curve(J.map(([x, y, w]) => [x + side * (w / 2 - 8.2), y])), o.pipe, 1.3);
     if (o.stars) [0.3, 0.55, 0.8].forEach((t) => { const i = Math.min(J.length - 1, Math.round(t * (J.length - 1))); const [x, y, w] = J[i]; P.fill(star(x + side * (w / 2 - 4), y, 2.8), '#F4F1EA'); });
+    if (o.motif) motifOn(P, J, side, o.motif, o.mc || b, o.pipe || '#F4F1EA');
     hemLine(P, J, R);
   } });
 // retro tank jerseys in fixed colours. o = { pin, stars, num }
@@ -461,14 +472,14 @@ const retroTank = (main, trim, ink0, inkLine, o = {}) => top({ main: (p, col) =>
   collar: (P, c, R, m) => { const nk = c.B.nk, ink = fv(ink0, m); P.stroke(curve([[CX - nk - 2, 112], [CX - nk + 2, 122], [CX, 127], [CX + nk - 2, 122], [CX + nk + 2, 112]]), trim, 3.4); P.stroke(curve([[CX - nk + 0.5, 114], [CX - nk + 3.5, 121], [CX, 124.5], [CX + nk - 3.5, 121], [CX + nk - 0.5, 114]]), ink, 1.1); },
 });
 const pinFor = (m) => (rgbL(m) > 0.6 ? '#141418' : '#2E6FD0');
-ART.bottom.cs_red = courtside('#B3202A', '#16161A');
-ART.bottom.cs_purple = courtside('#552583', '#FDB927', { pipe: '#F4F1EA' });
+ART.bottom.cs_red = courtside('#B3202A', '#16161A', { motif: 'zig', pipe: '#F4F1EA' });
+ART.bottom.cs_purple = courtside('#552583', '#FDB927', { pipe: '#F4F1EA', motif: 'chev' });
 ART.bottom.cs_stars = courtside('#141418', '#2E6FD0', { pin: pinFor, pipe: '#F4F1EA', stars: '#F4F1EA' });
 ART.top.rj_purple = retroTank('#552583', '#FDB927', '#FDB927', '#F4F1EA', { num: '9' });
 const inkFor = (m) => (rgbL(m) > 0.6 ? '#141418' : '#F4F1EA');
 ART.top.rj_stars = retroTank('#141418', '#2E6FD0', inkFor, '#2E6FD0', { pin: pinFor, stars: inkFor, num: '5' });
-ART.bottom.cs_green = courtside('#0E7A3E', '#F2F1EC');
-ART.bottom.cs_royal = courtside('#1D428A', '#F2F1EC');
+ART.bottom.cs_green = courtside('#0E7A3E', '#F2F1EC', { motif: 'diam' });
+ART.bottom.cs_royal = courtside('#1D428A', '#F2F1EC', { motif: 'block', mc: '#D7263D' });
 
 /* ============================================================ SHOES */
 const swoosh = (colr) => (P, c, R, main, ax, ay, side, tx) => P.stroke(curve([[tx - 9 * side, ay + 13], [tx + 2 * side, ay + 12], [tx + 11 * side, ay + 6]]), colr, 2.2);
@@ -867,23 +878,31 @@ ART.top.rt_tor93 = top({
 });
 
 // luxury court shorts: long mesh, a wide side panel with piping, a thick gold waistband
-const lux = (main, side, pipe) => pants({ one: true, main: () => main, end: 268, grow: 13, bag: { hem: 1.14, out: 3 }, fly: false, band: () => '#C9A23A',
+const lux = (main, side, pipe, emblem) => pants({ one: true, main: () => main, end: 268, grow: 13, bag: { hem: 1.14, out: 3 }, fly: false, band: () => '#C9A23A',
   legDetail: (P, g, sd, J, c, R) => {
     for (let k = 0; k < 40; k++) { const j = J[1 + (k % (J.length - 2))]; P.dot(j[0] + ((k * 7) % 13 - 6) * j[2] / 16, j[1] + ((k * 5) % 9 - 4), 0.5, R.deep, 0.5); }
     P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 - 4.5), y])), side, 9);
     P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 - 9.6), y])), pipe, 1.4);
     P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 - 1), y])), pipe, 1.2);
+    // studs down the panel and an emblem on the thigh
+    [0.2, 0.34, 0.48, 0.62, 0.76].forEach((t) => { const [x, y, w] = legAt(J, t); P.dot(x + sd * (w / 2 - 4.5), y, 1.1, '#E8C85A'); });
+    if (emblem && sd === -1) { const [x, y, w] = legAt(J, 0.42), ex = x - sd * w * 0.12;
+      if (emblem === 'bolt') P.fill(poly([[ex + 4, y - 15], [ex - 6, y + 2], [ex - 1, y + 2], [ex - 5, y + 15], [ex + 8, y - 4], [ex + 2, y - 4]]), pipe);
+      if (emblem === 'burst') P.fill(star(ex, y, 13), '#FDB927');
+      if (emblem === 'clover') [[-4.6, 0], [4.6, 0], [0, -4.6], [0, 4.6]].forEach(([dx, dy]) => P.ell(ex + dx, y + dy, 4.6, 4.6, pipe));
+      if (emblem === 'gem') P.fill(poly([[ex, y - 13], [ex + 9, y], [ex, y + 13], [ex - 9, y]]), pipe);
+      P.shape(`M${(ex - 10).toFixed(1)} ${(y + 17).toFixed(1)} h20`, 'none', { line: pipe, w: 1.3 }); }
     hemLine(P, J, R);
   },
   detail: (P, c, R, m, w) => { for (let x = CX - w + 3; x < CX + w - 3; x += 4) P.stroke(`M${x} 192.6 l2 1.8 l2 -1.8`, '#7A5E14', 0.8, 0.9); P.ell(CX, 194, 3.4, 2.2, '#16161A', { line: '#7A5E14', w: 0.8 }); },
 });
-ART.bottom.rt_lux_chi = lux('#CE1141', '#16161A', '#F4F1EA');
-ART.bottom.rt_lux_la = lux('#552583', '#FDB927', '#F4F1EA');
-ART.bottom.rt_lux_bos = lux('#007A33', '#F4F1EA', '#BA9653');
-ART.bottom.rt_lux_cha = lux('#00788C', '#1D1160', '#F4F1EA');
-const kitShorts = (main, stripe) => pants({ one: true, main: () => main, end: 252, grow: 9, bag: { hem: 1.08, out: 2 }, fly: false, band: () => main, legDetail: (P, g, sd, J, c, R) => { P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 - 2.5), y])), stripe, 2.2); hemLine(P, J, R); } });
-ART.bottom.rt_blau_sh = kitShorts('#1A2A5C', '#F2C230');
-ART.bottom.rt_bra_sh = kitShorts('#1F4CA8', '#F4F1EA');
+ART.bottom.rt_lux_chi = lux('#CE1141', '#16161A', '#F4F1EA', 'bolt');
+ART.bottom.rt_lux_la = lux('#552583', '#FDB927', '#F4F1EA', 'burst');
+ART.bottom.rt_lux_bos = lux('#007A33', '#F4F1EA', '#BA9653', 'clover');
+ART.bottom.rt_lux_cha = lux('#00788C', '#1D1160', '#F4F1EA', 'gem');
+const kitShorts = (main, stripe, num) => pants({ one: true, main: () => main, end: 252, grow: 9, bag: { hem: 1.08, out: 2 }, fly: false, band: () => main, legDetail: (P, g, sd, J, c, R) => { P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 - 2.5), y])), stripe, 2.2); const [hx, hy, hw] = J[J.length - 1]; P.stroke(curve([[hx - hw / 2, hy - 7], [hx + hw / 2, hy - 7]]), stripe, 1.6); P.stroke(curve([[hx - hw / 2, hy - 10], [hx + hw / 2, hy - 10]]), stripe, 0.8); if (num) { const [nx, ny, nw] = legAt(J, 0.42); digits(P, num, nx - sd * nw * 0.12, ny + 5, 9, stripe, 'none', 'block'); } hemLine(P, J, R); } });
+ART.bottom.rt_blau_sh = kitShorts('#1A2A5C', '#F2C230', '9');
+ART.bottom.rt_bra_sh = kitShorts('#1F4CA8', '#F4F1EA', '9');
 ART.bottom.rt_tear = pants({ main: () => '#16161A', grow: 6, straight: 0.95, fly: false, band: () => '#16161A', legDetail: (P, g, sd, J, c, R) => {
   [-6.8, -4.4, -2].forEach((o) => P.stroke(curve(J.map(([x, y, w]) => [x + sd * (w / 2 + o), y])), '#F4F1EA', 1.2));
   J.slice(1).forEach(([x, y, w]) => P.dot(x + sd * (w / 2 - 4.4), y, 1.3, SILVER));

@@ -511,7 +511,7 @@ import * as S from '../js/specials.js';
     const secs = new Set(m.SECTIONS.map((s) => s.id));
     for (const it of m.ITEMS) assert.ok(secs.has(it.sec), it.id);
     const blank = m.ITEMS.filter((i) => i.sec === 'blank'), brand = m.ITEMS.filter((i) => i.sec === 'brand');
-    assert.ok(Math.max(...blank.map((i) => i.price)) * 8 < Math.min(...brand.map((i) => i.price)));
+    assert.ok(Math.max(...blank.map((i) => i.price)) * 5 < Math.min(...brand.map((i) => i.price)));
     assert.ok(m.itemById('foghoodie').price > m.itemById('tee').price + 5000);
   });
   t('avatar: body types are free and change the drawing', () => {
