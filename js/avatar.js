@@ -58,11 +58,11 @@ export function priceMult(base) {
   for (let i = 1; i < c.length; i++) if (base <= c[i][0]) { const [x0, y0] = c[i - 1], [x1, y1] = c[i]; return y0 + (y1 - y0) * (Math.log(base / x0) / Math.log(x1 / x0)); }
   return c[c.length - 1][1];
 }
-// nothing sells for pocket change: the cheapest pieces start at 150 and ease into the curve by 240
+// nothing sells for pocket change: the cheapest pieces start at 150, and the lift fades out by about 630 so prices stay spread out
 export const priceFor = (base) => {
   if (!base) return 0;
-  const p = base * priceMult(base);
-  return Math.round((p < 240 ? 150 + (Math.max(p, 30) - 30) * (90 / 210) : p) / 10) * 10;
+  const p = Math.max(base * priceMult(base), 30);
+  return Math.round((p + 120 * Math.max(0, 1 - (p - 30) / 600)) / 10) * 10;
 };
 const tierOf = (price, ach) => (ach ? 'earned' : price === 0 ? 'free' : price < 400 ? 'common' : price < 2000 ? 'rare' : price < 8000 ? 'epic' : 'legend');
 const I = (id, slot, name, sec, base, extra = {}) => ({ id, slot, name, sec, price: priceFor(base), base, tier: tierOf(base, extra.ach), ...extra });
