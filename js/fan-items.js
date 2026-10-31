@@ -802,7 +802,7 @@ const nbaTank = (o) => top({
     if (o.pattern) P.clip(d, o.pattern);
     if (o.side) P.clip(d, [-1, 1].map((sd) => `<path d="${poly([[CX + sd * (B.ch - 1), 138], [CX + sd * (B.ch + 22), 138], [CX + sd * (B.hp + B.be + 22), 212], [CX + sd * (B.wa + B.be + 1), 212]])}" fill="${o.side}"/>`).join(''));
     if (o.side2) both((sd) => P.stroke(curve([[CX + sd * (B.ch - 1), 138], [CX + sd * (B.wa + B.be + 1), 207]]), o.side2, 1.8));
-    if (o.city) arch(P, o.city, 152, o.citySize || 10, 46, o.ink, o.out, o.cityFont || o.font, 5);
+    if (o.city) arch(P, o.city, 153, o.citySize || 10, 40, o.ink, o.out, o.cityFont || o.font, 5);
     digits(P, o.num, CX, 184, 34, o.ink, o.out, o.font, o.skew);
   },
   collar: (P, c) => { const nk = c.B.nk; P.stroke(curve([[CX - nk - 2, 112], [CX - nk + 2, 122], [CX, 127], [CX + nk - 2, 122], [CX + nk + 2, 112]]), o.trim, 3.6); if (o.trim2) P.stroke(curve([[CX - nk + 0.6, 114], [CX - nk + 3.6, 121], [CX, 124.4], [CX + nk - 3.6, 121], [CX + nk - 0.6, 114]]), o.trim2, 1.2); armholes(P, c, 4, o.trim, 3.2); },
@@ -1042,7 +1042,7 @@ ART.top.rt_tur97 = kit({ main: '#16161A', stripes: [[W2, '#16161A'], 11, CX - 93
 ART.top.rt_jpn98 = kit({ main: '#1C3F94', collar: W2, cuff: W2, badge: { shape: 'roundel', ring: '#1C3F94', field: ['#F4F1EA'], motif: 'disc', motifCol: '#D21034' }, sleeveArt: sleeveFlames(['#D21034', W2]) });
 ART.top.rt_cmr02 = kit({ main: '#007A3D', tank: true, collar: '#F2C230', cuff: '#CE1126', badge: { shape: 'shield', ring: '#F2C230', field: ['#007A3D', '#CE1126', '#FCD116'], n: 3, stars: 1, starCol: '#FCD116' } });
 
-ART.top.rt_van96 = nbaTank({ font: 'mono', citySize: 7.5, main: '#00B2A9', trim: '#7A4A2E', trim2: '#CE1141', ink: W2, out: '#16161A', num: '50', city: 'VANCOUVER', side: '#7A4A2E', side2: '#CE1141' });
+ART.top.rt_van96 = nbaTank({ font: 'cond', cityFont: 'cond', citySize: 9, main: '#00B2A9', trim: '#7A4A2E', trim2: '#CE1141', ink: W2, out: '#16161A', num: '50', city: 'VANCOUVER', side: '#7A4A2E', side2: '#CE1141' });
 ART.top.rt_hou95 = nbaTank({ font: 'round', main: '#CE1141', trim: '#002D62', trim2: '#C4CED4', ink: W2, out: '#002D62', num: '34', city: 'HOUSTON', pin: '#002D62' });
 ART.top.rt_det98 = nbaTank({ font: 'tech', skew: -8, main: '#00788C', trim: '#16161A', trim2: '#CE1141', ink: W2, out: '#16161A', num: '33', city: 'DETROIT', pattern: Array.from({ length: 7 }, (_, i) => `<path d="M${CX - 66 + i * 22} 212 Q${CX - 60 + i * 22} 190 ${CX - 54 + i * 22} ${180 - (i % 2) * 12} Q${CX - 50 + i * 22} 196 ${CX - 44 + i * 22} 212Z" fill="${i % 2 ? '#CE1141' : '#F2C230'}"/>`).join('') });
 ART.top.rt_uta97 = nbaTank({ font: 'tall', cityFont: 'cond', main: '#4B2A7B', trim: '#00A3AD', trim2: W2, ink: W2, out: '#16161A', num: '12', city: 'UTAH', pattern: `<path d="${poly([[CX - 90, 208], [CX - 50, 196], [CX - 30, 203], [CX - 4, 192], [CX + 20, 202], [CX + 44, 195], [CX + 90, 207], [CX + 90, 230], [CX - 90, 230]])}" fill="#B5651D"/><path d="${poly([[CX - 90, 216], [CX - 46, 207], [CX - 20, 213], [CX + 12, 205], [CX + 50, 214], [CX + 90, 209], [CX + 90, 230], [CX - 90, 230]])}" fill="#00A3AD"/>` });
