@@ -44,14 +44,23 @@ export const TIERS = { free: { label: 'Free' }, common: { label: 'Common' }, rar
 // team: the item picks up the colours of the team you chose for your character.
 // ach: cannot be bought; it unlocks by doing something. Prices run from free to 140,000 coins.
 //
-// PRICE_MULT scales every price at once, so items that cost the same still cost the same. Item prices below are the BASE prices
-// (what they were when a day of play paid about a quarter of what it does now). Tiers and the sale and prize pools are worked out
-// from the base price, so they keep the same items. How it was chosen, with a play of about 890 coins a day (daily bonus ~480,
-// daily quests ~260, weekly quests ~150): a common item takes about a day, a rare about 3, an epic about 3 weeks and a
-// legendary about 2 months. A casual player (~400 a day) takes about 2.3 times as long.
-export const PRICE_MULT = 2;
+// Prices are base price times priceMult(base). The multiplier is not flat: small things cost a bit less than their base price, so the
+// first pieces come quickly and collecting feels good, and it climbs through the epic and legendary range, so the big pieces stay
+// something you work toward. Tiers and the sale and prize pools are worked out from the base price, so they keep the same items.
+// How it was chosen (a simulation of solo and crew players over 120 days, see data/ideas.md): a regular player earns about 350 coins a day
+// (daily bonus ~160, quests ~175, the Daily Five ~25, bets about even), a casual one about 190, a sharp one or a crew grinder 370 to 470.
+// A common item takes about half a day, a rare 2 to 5 days, an epic 2 to 5 weeks and a legendary 1.5 to 3 months for a regular player;
+// a casual player takes about 1.8 times as long.
+const PRICE_CURVE = [[300, 0.8], [600, 1.0], [1000, 1.15], [3000, 1.5], [8000, 2.1], [20000, 2.8], [35000, 3.2]]; // [base price, multiplier], smooth in between
+export function priceMult(base) {
+  const c = PRICE_CURVE;
+  if (base <= c[0][0]) return c[0][1];
+  for (let i = 1; i < c.length; i++) if (base <= c[i][0]) { const [x0, y0] = c[i - 1], [x1, y1] = c[i]; return y0 + (y1 - y0) * (Math.log(base / x0) / Math.log(x1 / x0)); }
+  return c[c.length - 1][1];
+}
+export const priceFor = (base) => (base ? Math.round((base * priceMult(base)) / 10) * 10 : 0);
 const tierOf = (price, ach) => (ach ? 'earned' : price === 0 ? 'free' : price < 400 ? 'common' : price < 2000 ? 'rare' : price < 8000 ? 'epic' : 'legend');
-const I = (id, slot, name, sec, base, extra = {}) => ({ id, slot, name, sec, price: base ? Math.round((base * PRICE_MULT) / 10) * 10 : 0, base, tier: tierOf(base, extra.ach), ...extra });
+const I = (id, slot, name, sec, base, extra = {}) => ({ id, slot, name, sec, price: priceFor(base), base, tier: tierOf(base, extra.ach), ...extra });
 const T = { team: true };
 export const ITEMS = [
   // ---- Look: expressions, hair, face, beards, ears

@@ -8,21 +8,21 @@
         "id": "d2026-10-30-1",
         "metric": "shop_visits",
         "target": 1,
-        "coins": 10,
+        "coins": 25,
         "title": "Check out the shop"
       },
       {
         "id": "d2026-10-30-2",
         "metric": "bets_placed",
         "target": 1,
-        "coins": 20,
+        "coins": 40,
         "title": "Place a bet"
       },
       {
         "id": "d2026-10-30-3",
         "metric": "bets_won",
         "target": 1,
-        "coins": 45,
+        "coins": 90,
         "title": "Win a bet"
       }
     ],

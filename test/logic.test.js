@@ -996,21 +996,22 @@ t('cash out: cashed bets are not bragging rights', () => {
 
 /* ---------- economy: one multiplier on every price ---------- */
 {
-  const { ITEMS, PRICE_MULT, dealFor, itemById } = await import('../js/avatar.js');
+  const { ITEMS, priceMult, priceFor, dealFor, itemById } = await import('../js/avatar.js');
   const { genWeekly, genDaily } = await import('../js/live-gen.js');
   const { dailyBonus } = await import('../js/economy.js');
-  t('prices: every buyable item is its base price times one multiplier, so equal prices stay equal', () => {
-    assert.ok(PRICE_MULT >= 1);
+  t('prices: every buyable item is its base price times the curve, so equal base prices stay equal and dearer items never get cheaper', () => {
+    assert.ok(priceMult(100) < 1 && priceMult(1000) > 1 && priceMult(35000) > priceMult(8000) && priceMult(8000) > priceMult(1000));
+    for (let b = 40; b < 35000; b += 37) assert.ok(priceFor(b + 37) >= priceFor(b), 'price never drops as the base rises: ' + b);
     const buy = ITEMS.filter((i) => i.price > 0 && !i.ach);
     assert.ok(buy.length > 200);
-    for (const i of buy) assert.equal(i.price, Math.round((i.base * PRICE_MULT) / 10) * 10, i.id);
+    for (const i of buy) assert.equal(i.price, priceFor(i.base), i.id);
     const byBase = new Map();
     for (const i of buy) { const p = byBase.get(i.base); if (p != null) assert.equal(p, i.price, 'same base, same price'); else byBase.set(i.base, i.price); }
     assert.ok(ITEMS.filter((i) => !i.base).every((i) => i.price === 0), 'free and earned items stay free');
   });
   t('prices: tiers follow the base price, so the shop sorts the same as before', () => {
     for (const i of ITEMS.filter((x) => x.price > 0 && !x.ach)) assert.equal(i.tier, i.base < 400 ? 'common' : i.base < 2000 ? 'rare' : i.base < 8000 ? 'epic' : 'legend', i.id);
-    assert.equal(Math.max(...ITEMS.map((i) => i.price)), 35000 * PRICE_MULT);
+    assert.equal(Math.max(...ITEMS.map((i) => i.price)), priceFor(35000));
   });
   t('prices: weekly prizes are worth one to three days of play and the daily deal comes from the same pool as before', () => {
     const d0 = new Date(Date.UTC(2026, 9, 23));
@@ -1035,12 +1036,13 @@ t('cash out: cashed bets are not bragging rights', () => {
       if (i % 7 === 0) { const w = genWeekly(day).quests; q += w[0].coins + w[1].coins + 0.5 * w[2].coins; }
     }
     const perDay = (bonus + q) / 28;
-    assert.ok(perDay > 180 && perDay < 280, 'income per day ' + perDay);
+    assert.ok(perDay > 330 && perDay < 480, 'income per day ' + perDay);
     assert.ok(bonus / 28 < perDay * 0.6, 'the daily bonus is under 60% of what play without betting pays');
-    assert.equal(dailyBonus(1), 42); assert.equal(dailyBonus(7), 114); assert.equal(dailyBonus(30), 114);
+    assert.equal(dailyBonus(1), 80); assert.equal(dailyBonus(7), 200); assert.equal(dailyBonus(30), 200);
     const med = (a) => a.sort((x, y) => x - y)[Math.floor(a.length / 2)];
     const tier = (name) => med(ITEMS.filter((i) => i.tier === name && i.price > 0).map((i) => i.price));
-    assert.ok(tier('common') / perDay < 3 && tier('rare') / perDay > 4 && tier('rare') / perDay < 9 && tier('epic') / perDay > 25 && tier('epic') / perDay < 55 && tier('legend') / perDay > 90 && tier('legend') / perDay < 160, 'days to afford a typical item in each tier');
+    const d = (n) => tier(n) / perDay;
+    assert.ok(d('common') < 1 && d('rare') > 1 && d('rare') < 4 && d('epic') > 10 && d('epic') < 30 && d('legend') > 60 && d('legend') < 120, `days to afford a typical piece: common ${d('common').toFixed(1)}, rare ${d('rare').toFixed(1)}, epic ${d('epic').toFixed(1)}, legendary ${d('legend').toFixed(1)}`);
   });
 }
 
