@@ -200,6 +200,9 @@ export function mergeFan(local, remote) {
   out.claims = mergeClaimSets(local.claims, remote.claims);
   const la = local.avatar || {}, ra = remote.avatar || {};
   out.avatar = { ...(useLocal ? ra : la), ...(useLocal ? la : ra), owned: [...new Set([...(la.owned || []), ...(ra.owned || [])])], gone: mergeGone(la.gone, ra.gone) };
+  // colours bought on either device; a copy from before colour unlocks keeps every colour
+  out.avatar.colOwned = {}; for (const o of [la.colOwned || {}, ra.colOwned || {}]) for (const [k, v] of Object.entries(o)) out.avatar.colOwned[k] = [...new Set([...(out.avatar.colOwned[k] || []), ...v])];
+  if (!la.colV || !ra.colV) delete out.avatar.colV;
   out.avatar.fits = mergeFits(la.fits, ra.fits).filter((f) => !out.avatar.gone.includes(f.id));
   if (!out.avatar.gone.length) delete out.avatar.gone;
   return out;

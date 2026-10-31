@@ -520,12 +520,24 @@ import * as S from '../js/specials.js';
     assert.notEqual(lean, built);
     assert.equal(st.getState().avatar.body, 1);
   });
+  t('colours: extra colours are bought one at a time, saves from before keep everything, away flips the team colours', () => {
+    const tee = m.itemById('tee'); const av = st.getState().avatar; const lockedIdx = tee.colors.findIndex((c, i) => !m.freeColour(tee, i));
+    assert.ok(lockedIdx > 0 && !m.ownsColour(av, tee, lockedIdx), 'a fresh fan does not own every colour');
+    assert.ok(m.ownsColour({ owned: [] }, tee, lockedIdx), 'a save without colV keeps all colours');
+    const coins0 = st.getBank().coins, price = m.colourPrice(tee);
+    st.update((s) => { s.bank.coins = 5000; });
+    assert.ok(m.buyColourOf('tee', lockedIdx).ok); assert.equal(st.getBank().coins, 5000 - price);
+    assert.ok(m.setColour('tee', lockedIdx)); m.setColour('tee', 0);
+    const home = m.palette({ league: 'nba', id: '1', name: 'Test Reds', color: 'CC0000', alt: '111111' }), away = m.palette({ league: 'nba', id: '1', name: 'Test Reds', color: 'CC0000', alt: '111111' }, true);
+    assert.notEqual(home.t1, away.t1); assert.equal(home.t1, away.t2 === home.t1 ? away.t2 : home.t1);
+  });
   t('colours: free and owned items switch colour; unowned cannot; drawing changes', () => {
     const eq = { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' };
     const before = m.avatarSvg({ skin: 2, hairColor: 0, eq }, null);
     const black = m.avatarSvg({ skin: 2, hairColor: 0, eq, col: { tee: 2 } }, null);
     assert.notEqual(before, black); assert.ok(black.toLowerCase().includes('#1c1c21'));
-    assert.ok(m.setColour('tee', 1)); assert.equal(m.colourIndex(st.getState().avatar, 'tee'), 1);
+    assert.ok(m.setColour('tee', 0));
+    const tee = m.itemById('tee'); const still = tee.colors.findIndex((c, i) => !m.ownsColour(st.getState().avatar, tee, i)); assert.ok(still > 0); assert.equal(m.setColour('tee', still), false, 'a colour that is not free or bought stays locked'); const freeIdx = tee.colors.findIndex((c, i) => i > 0 && m.freeColour(tee, i)); if (freeIdx > 0) assert.ok(m.setColour('tee', freeIdx), 'black and white come with the item');
     assert.equal(m.setColour('foghoodie', 1), false);
     assert.equal(m.setColour('tee', 99), false);
     assert.ok(m.ITEMS.filter((i) => i.sec === 'blank' && i.slot !== 'hand' && i.slot !== 'face' && i.id !== 'runners').every((i) => i.colors && i.colors.length >= 3));

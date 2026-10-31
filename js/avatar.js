@@ -1,6 +1,6 @@
 // Your fan character: a full-body figure with shading and outlines, the item catalog, and the shop rules.
 // Everything here is cosmetic. Nothing changes odds or payouts.
-import { getState, myTeams, buyItem, grantItem, setAvatar, track } from './store.js';
+import { getState, myTeams, buyItem, buyColour, grantItem, setAvatar, track } from './store.js';
 import { betStats } from './bets.js';
 import { skinFromColors, contrast, luminance, colorDistance, darken } from './util.js';
 import { teamColours } from './team-colors.js';
@@ -412,10 +412,20 @@ export function setSide(id, v) {
   return true;
 }
 export const colourIndex = (av, id) => (av.col && av.col[id]) || 0;
+// the first colour, black and white come with an item; every other colour is bought on its own
+export const freeColour = (it, i) => i === 0 || /^(black|white)$/i.test(((it.colors || [])[i] || {}).n || '');
+export const colourPrice = (it) => Math.max(80, Math.min(1500, Math.round((priceOf(it) * 0.2) / 10) * 10));
+export const ownsColour = (av, it, i) => !av.colV || freeColour(it, i) || ((av.colOwned || {})[it.id] || []).includes(i);
+export function buyColourOf(id, i) {
+  const it = itemById(id);
+  if (!it || !it.colors || !it.colors[i] || !getState().avatar.owned.includes(id)) return { ok: false, why: 'item' };
+  if (ownsColour(getState().avatar, it, i)) return { ok: true };
+  return buyColour(id, i, colourPrice(it));
+}
 export function setColour(id, i) {
   const it = itemById(id);
   const a = getState().avatar;
-  if (!it || !it.colors || !it.colors[i] || !a.owned.includes(id)) return false;
+  if (!it || !it.colors || !it.colors[i] || !a.owned.includes(id) || !ownsColour(a, it, i)) return false;
   setAvatar((av) => { av.col = av.col || {}; av.col[id] = i; av.eq[it.slot] = id; });
   return true;
 }
@@ -486,7 +496,7 @@ export function unequip(slot) {
 
 // Saved fits: a named snapshot of the whole look (body, skin, hair colour, team, colours, worn items).
 export const MAX_FITS = 12;
-const snap = (a) => ({ skin: a.skin, hairColor: a.hairColor, body: a.body, team: a.team || '', col: { ...(a.col || {}) }, side: { ...(a.side || {}) }, eq: { ...a.eq } });
+const snap = (a) => ({ skin: a.skin, hairColor: a.hairColor, body: a.body, team: a.team || '', away: !!a.away, col: { ...(a.col || {}) }, side: { ...(a.side || {}) }, eq: { ...a.eq } });
 export function fitsList() { return getState().avatar.fits || []; }
 export function saveFit(name) {
   const fits = fitsList();
@@ -524,7 +534,7 @@ export function wearFit(id) {
   setAvatar((a) => {
     const eq = {};
     for (const [slot, item] of Object.entries(fit.eq || {})) if (a.owned.includes(item)) eq[slot] = item; // skip anything no longer owned
-    a.skin = fit.skin; a.hairColor = fit.hairColor; a.body = fit.body; a.team = fit.team || ''; a.col = { ...(fit.col || {}) }; a.side = { ...(fit.side || {}) };
+    a.skin = fit.skin; a.hairColor = fit.hairColor; a.body = fit.body; a.team = fit.team || ''; a.away = !!fit.away; a.col = { ...(fit.col || {}) }; a.side = { ...(fit.side || {}) };
     a.eq = { ...a.eq, ...eq };
     for (const slot of Object.keys(a.eq)) if (!(slot in eq) && !ALWAYS_ON.includes(slot)) delete a.eq[slot];
   });
@@ -551,7 +561,7 @@ export function cityOf(team) {
   else if (out.length > 11) out = out.split(/[\s-]+/)[0].slice(0, 11);
   return out;
 }
-export function palette(team) {
+export function palette(team, away) {
   if (!team) return NEUTRAL;
   const hex = (x) => (x ? (String(x).startsWith('#') ? String(x) : '#' + x) : '');
   let cs = teamColours(team);
@@ -560,6 +570,7 @@ export function palette(team) {
     const c2 = a && colorDistance(a, sk.t1) > 60 ? a : sk.t2;
     cs = [sk.t1, c2, luminance(sk.t1) < 0.3 ? '#FFFFFF' : '#111111'];
   }
+  if (away) cs = [cs[1] || cs[0], cs[0], cs[2] || cs[0]]; // away kit: the trim colour becomes the main colour
   const [t1, c2, c3] = cs, W = '#FFFFFF', D = '#0B1220';
   const far = (x, y) => colorDistance(x, y) > 60;
   const t2 = far(c2, t1) ? c2 : far(c3, t1) ? c3 : darken(t1, 0.42);
@@ -582,7 +593,7 @@ const cache = new Map();
 /** Returns the SVG markup for a character. vb overrides the view box (shop previews and busts). */
 export function avatarSvg(av, team, vb) {
   const eq = av.eq || {};
-  const pal = palette(team);
+  const pal = palette(team, av.away);
   const body = BODIES[av.body ?? 1] || BODIES[1];
   const key = JSON.stringify([av.skin, av.hairColor, av.body, av.col, av.side, eq, pal, vb]);
   if (cache.has(key)) return cache.get(key);

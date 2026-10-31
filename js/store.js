@@ -29,12 +29,13 @@ const fresh = () => ({
   soccerLeague: 'uefa.champions',
   lastMode: 'classic',
   quests: { day: '', week: '', daily: { n: {}, once: {}, claimed: [] }, weekly: { n: {}, once: {}, claimed: [] } },
-  avatar: { skin: 2, hairColor: 0, body: 1, team: '', col: {}, eq: { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' }, owned: ['short', 'buzz', 'curls', 'smile', 'smirk', 'tee', 'jeans', 'sneakers', 'night', 'dusk'], spent: 0 },
+  avatar: { skin: 2, hairColor: 0, body: 1, team: '', colV: 1, colOwned: {}, away: false, col: {}, eq: { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' }, owned: ['short', 'buzz', 'curls', 'smile', 'smirk', 'tee', 'jeans', 'sneakers', 'night', 'dusk'], spent: 0 },
 });
 
 function mergeAvatar(d, a) {
-  a = a || {};
-  return { ...d, ...a, col: { ...(a.col || {}) }, eq: { ...d.eq, ...(a.eq || {}) }, owned: [...new Set([...d.owned, ...(Array.isArray(a.owned) ? a.owned : [])])] };
+  const had = !!a; a = a || {};
+  // saves from before colours were unlocked one by one (no colV) keep every colour they already had
+  return { ...d, ...a, colV: had ? a.colV : d.colV, colOwned: { ...(a.colOwned || {}) }, col: { ...(a.col || {}) }, eq: { ...d.eq, ...(a.eq || {}) }, owned: [...new Set([...d.owned, ...(Array.isArray(a.owned) ? a.owned : [])])] };
 }
 
 let state = load();
@@ -307,6 +308,13 @@ export function buyItem(id, price) {
   if (st.bank.coins < price) return { ok: false, why: 'coins' };
   update((s) => { s.bank.coins -= price; s.avatar.owned.push(id); s.avatar.spent = (s.avatar.spent || 0) + price; }, { k: 'shop', note: id });
   track('items_bought');
+  ping(); return { ok: true };
+}
+/** Extra colours are bought one at a time. The first colour, black and white come with the item. */
+export function buyColour(id, i, price) {
+  const st = state;
+  if (st.bank.coins < price) return { ok: false, why: 'coins' };
+  update((s) => { s.bank.coins -= price; const o = s.avatar.colOwned = s.avatar.colOwned || {}; o[id] = [...new Set([...(o[id] || []), i])]; s.avatar.spent = (s.avatar.spent || 0) + price; }, { k: 'shop', note: `${id} colour` });
   ping(); return { ok: true };
 }
 export function grantItem(id) { if (state.avatar.owned.includes(id)) return false; update((s) => { s.avatar.owned.push(id); }); ping(); return true; }

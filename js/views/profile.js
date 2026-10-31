@@ -4,7 +4,7 @@ import { getState, getBank, myTeams, setAvatar, onSlipChange, track } from '../s
 import { ensureLive } from '../live.js';
 import { pageHead } from '../components.js';
 import { levelFor, rankFor, betStats } from '../bets.js';
-import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, setSide, sideOf, saveFit, wearFit, deleteFit, MAX_FITS, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex } from '../avatar.js';
+import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, setSide, sideOf, saveFit, wearFit, deleteFit, MAX_FITS, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex, ownsColour, freeColour, colourPrice, buyColourOf } from '../avatar.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
@@ -20,6 +20,7 @@ export async function render(root, params = {}) {
   let only = false;
   let naming = false; // the save-fit name box is open
   let picking = null; // item id whose colour menu is open
+  let csi = null; // colour being looked at in that menu
   let confirming = null, confirmCi = 0; // item waiting for a confirmed buy, and the colour being tried
   const host = h('div', { class: 'profile' });
   root.append(shop ? pageHead('Shop', 'Spend the coins you win on clothes and gear. Looks only. Nothing here changes your odds.') : pageHead('Your fan', 'Your character and everything you own. Changing your look is free.'), host);
@@ -54,6 +55,7 @@ export async function render(root, params = {}) {
       h('div', { class: 'pf-row' }, h('small', null, 'Body type (free)'), h('div', { class: 'seg pf-body' }, BODIES.map((b, i) => h('button', { type: 'button', class: 'seg-b' + ((av.body ?? 1) === i ? ' on' : ''), 'data-body': b.id, onclick: () => { setAvatar((a) => { a.body = i; }); draw(); } }, b.label)))),
       h('div', { class: 'pf-row' }, h('small', null, 'Skin'), h('div', { class: 'swatches' }, SKINS.map((c, i) => h('button', { type: 'button', class: 'sw' + (av.skin === i ? ' on' : ''), style: { background: c }, 'aria-label': `Skin ${i + 1}`, onclick: () => { setAvatar((a) => { a.skin = i; }); draw(); } })))),
       h('div', { class: 'pf-row' }, h('small', null, 'Hair colour'), h('div', { class: 'swatches' }, HAIR_COLORS.map((c, i) => h('button', { type: 'button', class: 'sw' + (av.hairColor === i ? ' on' : ''), style: { background: c }, 'aria-label': `Hair colour ${i + 1}`, onclick: () => { setAvatar((a) => { a.hairColor = i; }); draw(); } })))),
+      teams.length ? h('div', { class: 'pf-row' }, h('small', null, 'Kit'), h('div', { class: 'seg pf-kit', role: 'group', 'aria-label': 'Home or away kit' }, [['home', 'Home'], ['away', 'Away']].map(([v, label]) => h('button', { type: 'button', class: 'seg-b' + ((v === 'away') === !!av.away ? ' on' : ''), 'data-kit': v, 'aria-pressed': (v === 'away') === !!av.away ? 'true' : 'false', onclick: () => { setAvatar((a) => { a.away = v === 'away'; }); draw(); } }, label)))) : null,
       teams.length ? h('div', { class: 'pf-row' }, h('small', null, 'Team colours'),
         h('select', { id: 'pf-team', onchange: (e) => { setAvatar((a) => { a.team = e.target.value; }); draw(); } },
           teams.map((t) => h('option', { value: `${t.league}:${t.id}`, selected: team && t.league === team.league && t.id === team.id ? '' : null }, t.name)))) : h('small', { class: 'pf-hint' }, 'Follow a team in Settings and your jersey and gear turn into its colours.'),
@@ -113,7 +115,7 @@ export async function render(root, params = {}) {
     }));
     return h('section', { class: 'card pf-wide pf-fits' }, head, fits.length ? grid : h('p', { class: 'muted' }, 'Dress how you like, then save it. Switch between your fits in one tap.'));
   }
-  const snapOf = (a) => ({ s: a.skin, h: a.hairColor, b: a.body, t: a.team || '', c: a.col || {}, d: a.side || {}, e: a.eq });
+  const snapOf = (a) => ({ w: !!a.away, s: a.skin, h: a.hairColor, b: a.body, t: a.team || '', c: a.col || {}, d: a.side || {}, e: a.eq });
 
   function itemCard(it, av, bank, team, deal) {
     const owned = av.owned.includes(it.id);
@@ -155,7 +157,7 @@ export async function render(root, params = {}) {
     const shown = it.colors.slice(0, 5);
     return h('div', { class: 'it-cols' + (owned ? ' can' : '') },
       shown.map((col, i) => owned
-        ? h('button', { type: 'button', class: 'dot' + (i === cur ? ' on' : ''), style: { background: col.k }, title: col.n, 'aria-label': `${it.name} in ${col.n}`, onclick: () => { setColour(it.id, i); draw(); } })
+        ? h('button', { type: 'button', class: 'dot' + (i === cur ? ' on' : '') + (ownsColour(av, it, i) ? '' : ' lock'), style: { background: col.k }, title: ownsColour(av, it, i) ? col.n : `${col.n} (locked)`, 'aria-label': `${it.name} in ${col.n}`, onclick: () => { if (ownsColour(av, it, i)) { setColour(it.id, i); draw(); } else { picking = it.id; csi = i; draw(); } } })
         : h('i', { class: 'dot', style: { background: col.k }, title: col.n })),
       owned ? h('button', { type: 'button', class: 'dot more', 'aria-label': `All colours for ${it.name}`, onclick: () => { picking = it.id; draw(); } }, '+')
         : h('small', null, `${it.colors.length} colours`));
@@ -178,29 +180,33 @@ export async function render(root, params = {}) {
       h('div', { class: 'cs-panel', role: 'dialog', 'aria-label': `Buy ${it.name}` },
         h('div', { class: 'cs-h' }, h('div', null, h('small', null, 'Try it on'), h('div', { class: 'cs-n' }, it.name)), h('button', { type: 'button', class: 'btn small', id: 'buy-cancel', onclick: close }, 'Cancel')),
         pv,
-        it.colors ? h('div', { class: 'cs-grid' }, it.colors.map((col, i) => h('button', { type: 'button', class: 'cs-sw' + (i === confirmCi ? ' on' : ''), 'data-ci': i, onclick: () => { confirmCi = i; draw(); } },
-          h('i', { style: { background: col.k } }), h('small', null, col.n)))) : null,
+        it.colors ? h('div', { class: 'cs-grid' }, it.colors.map((col, i) => freeColour(it, i) ? h('button', { type: 'button', class: 'cs-sw' + (i === confirmCi ? ' on' : ''), 'data-ci': i, onclick: () => { confirmCi = i; draw(); } },
+          h('i', { style: { background: col.k } }), h('small', null, col.n)) : null)) : null,
         h('div', { class: 'buy-sum' },
           h('div', null, h('small', null, 'Price'), h('div', null, h('i', { class: 'coin' }), fmt(price))),
           h('div', null, h('small', null, 'You have'), h('div', null, fmt(bank.coins))),
           h('div', null, h('small', null, 'After'), h('div', { class: after < 0 ? 'neg' : '' }, after < 0 ? `${fmt(-after)} short` : fmt(after)))),
-        it.colors ? h('small', { class: 'muted' }, 'All colours come with it. This just picks the one you start in.') : null,
+        it.colors && it.colors.some((c, i) => !freeColour(it, i)) ? h('small', { class: 'muted' }, `Comes in ${it.colors.filter((c, i) => freeColour(it, i)).map((c) => c.n.toLowerCase()).join(' or ')}. ${it.colors.filter((c, i) => !freeColour(it, i)).length} more colours unlock for ${fmt(colourPrice(it))} coins each.`) : null,
         h('button', { type: 'button', class: 'btn main big', id: 'confirm-buy', disabled: after < 0 ? '' : null, onclick: yes }, after < 0 ? 'Not enough coins' : `Buy for ${fmt(price)} coins`)));
   }
 
   // The colour menu: opens after you buy something that comes in colours, or from the + on a card.
   function colourSheet(it, av, team) {
     const cur = colourIndex(av, it.id);
-    const close = () => { picking = null; draw(); };
+    const sel = csi != null && it.colors[csi] ? csi : cur;
+    const close = () => { picking = null; csi = null; draw(); };
     const pv = document.createElement('span');
-    pv.className = 'avatar cs-pv'; pv.innerHTML = previewSvg(it, av, team, cur);
+    pv.className = 'avatar cs-pv'; pv.innerHTML = previewSvg(it, av, team, sel);
+    const owns = ownsColour(av, it, sel), price = colourPrice(it), coins = getState().bank.coins;
+    const unlock = () => { const r = buyColourOf(it.id, sel); if (r.ok) { setColour(it.id, sel); toast(`Unlocked ${it.colors[sel].n.toLowerCase()}`); } else toast(r.why === 'coins' ? 'Not enough coins yet' : 'Cannot unlock that'); csi = null; draw(); };
     return h('div', { class: 'cs-back', onclick: (e) => { if (e.target === e.currentTarget) close(); } },
       h('div', { class: 'cs-panel', role: 'dialog', 'aria-label': `Colours for ${it.name}` },
         h('div', { class: 'cs-h' }, h('div', null, h('small', null, 'Pick a colour'), h('div', { class: 'cs-n' }, it.name)), h('button', { type: 'button', class: 'btn small', id: 'cs-done', onclick: close }, 'Done')),
         pv,
-        h('div', { class: 'cs-grid' }, it.colors.map((col, i) => h('button', { type: 'button', class: 'cs-sw' + (i === cur ? ' on' : ''), 'data-ci': i, onclick: () => { setColour(it.id, i); draw(); } },
-          h('i', { style: { background: col.k } }), h('small', null, col.n)))),
-        h('small', { class: 'muted' }, 'Every colour is included. Switch any time.')));
+        h('div', { class: 'cs-grid' }, it.colors.map((col, i) => h('button', { type: 'button', class: 'cs-sw' + (i === sel ? ' on' : '') + (ownsColour(av, it, i) ? '' : ' lock'), 'data-ci': i, onclick: () => { if (ownsColour(av, it, i)) { csi = null; setColour(it.id, i); } else csi = i; draw(); } },
+          h('i', { style: { background: col.k } }), h('small', null, ownsColour(av, it, i) ? col.n : `${col.n} · ${fmt(price)}`)))),
+        owns ? h('small', { class: 'muted' }, 'Switch any time.')
+          : h('button', { type: 'button', class: 'btn main big', id: 'colour-buy', disabled: coins < price ? '' : null, onclick: unlock }, coins < price ? `Not enough coins (${fmt(price)})` : `Unlock ${it.colors[sel].n.toLowerCase()} for ${fmt(price)} coins`)));
   }
 
   draw();

@@ -245,6 +245,7 @@ assert.ok(store.getBank().coins < coinsBefore && store.getState().avatar.owned.i
 assert.ok(app().querySelector('.pf-me svg').innerHTML.toLowerCase().includes('#002868'), 'team colours'); ok('cap wears followed team colours (from the team colour table)');
 // colour menu: from the closet on the fan page, open the + on the free tee, pick black
 text = await visit('#/profile', { wait: 200 });
+{ const before = app().querySelector('.pf-me svg').innerHTML; const away = app().querySelector('[data-kit="away"]'); assert.ok(away, 'home/away switch'); away.click(); await sleep(30); assert.notEqual(app().querySelector('.pf-me svg').innerHTML, before, 'away kit swaps the team colours'); app().querySelector('[data-kit="home"]').click(); await sleep(30); ok('home and away kit flip the team colours'); }
 const teeMore = app().querySelector('[data-item="tee"] .dot.more'); assert.ok(teeMore, 'tee colour button'); teeMore.click(); await sleep(30);
 assert.ok(app().querySelector('.cs-panel'), 'colour menu'); app().querySelector('.cs-sw[data-ci="2"]').click(); await sleep(30);
 assert.equal(store.getState().avatar.col.tee, 2); app().querySelector('#cs-done').click(); await sleep(30);
