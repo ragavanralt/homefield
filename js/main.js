@@ -8,6 +8,7 @@ import { settleAll } from './settle.js';
 import { applyTheme, watchSystem, bindSettings } from './themes.js';
 import { startBrand, setContextTeam, teamForRoute } from './brand.js';
 import { enabled as socialOn, startSocial, queueSync } from './social.js';
+import { bindJump } from './jump.js';
 
 const ROUTES = [
   { re: /^\/?$/, view: () => import('./views/home.js'), nav: 'home', params: () => ({}) },
@@ -127,6 +128,9 @@ function drawNav(nav, active) {
   shown().forEach((S) => nav.append(item(S, 'nav-i')));
   const bar = document.getElementById('tabbar');
   if (bar) { clear(bar); bar.hidden = hide; shown().forEach((S) => bar.append(item(S, 'tb-i'))); }
+  const find = document.getElementById('find');
+  if (find) find.hidden = hide;
+  document.body.dataset.sec = hide ? '' : sec;
   const gear = document.getElementById('gear');
   if (gear) { gear.hidden = hide; gear.classList.toggle('on', active === 'settings'); }
   const sub = document.getElementById('subnav');
@@ -146,6 +150,7 @@ function measureTop() {
 
 export function start() {
   bindSettings(() => getState().settings);
+  bindJump();
   applyTheme(getState().settings);
   watchSystem(() => getState().settings);
   window.addEventListener('hashchange', route);

@@ -286,5 +286,11 @@ if (errors.length) { console.error('ERRORS:', errors); process.exit(1); }
   assert.deepEqual(noLegs, [], 'shorts show bare legs: ' + noLegs.join(','));
   ok('tops and bottoms are clean on all four body types, lettering fits, shorts show legs');
 }
+{ const J = await import('../js/jump.js'); const labels = J.destinations().map((d) => d.label);
+  for (const need of ['Home', 'NBA', "Pick'em", 'Live picks', 'Quests', 'Shop', 'Your fan', 'Coin log', 'Settings']) assert.ok(labels.includes(need), 'find lists ' + need);
+  assert.ok(J.filterDestinations(J.destinations(), 'standings').some((d) => d.label === 'NBA'), 'typing standings finds the leagues');
+  assert.ok(J.filterDestinations(J.destinations(), 'zzzz').length === 0);
+  J.openJump(); await sleep(50); assert.ok(document.querySelector('.jump-panel') && document.querySelectorAll('.jump-i').length >= 9, 'find sheet opens with every page');
+  J.closeJump(); assert.ok(!document.querySelector('.jump-panel')); ok('find anything lists every page, filters as you type, opens and closes'); }
 console.log(`\n${n} render checks passed`);
 process.exit(0);
