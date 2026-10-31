@@ -292,5 +292,6 @@ if (errors.length) { console.error('ERRORS:', errors); process.exit(1); }
   assert.ok(J.filterDestinations(J.destinations(), 'zzzz').length === 0);
   J.openJump(); await sleep(50); assert.ok(document.querySelector('.jump-panel') && document.querySelectorAll('.jump-i').length >= 9, 'find sheet opens with every page');
   J.closeJump(); assert.ok(!document.querySelector('.jump-panel')); ok('find anything lists every page, filters as you type, opens and closes'); }
+{ const text2 = await visit('#/you', { wait: 200 }); const hrefs = [...app().querySelectorAll('.hub .hub-t')].map((a) => a.getAttribute('href')); assert.deepEqual(hrefs, ['#/shop', '#/profile', '#/quests', '#/coins'], 'You opens with four big tiles'); ok('You page has shop, fan, quests and coin log tiles on top'); }
 console.log(`\n${n} render checks passed`);
 process.exit(0);

@@ -2,7 +2,7 @@
 // crew (#/crew/u/handle), built from the stats they publish, so you can see their open tickets and how they stack up against you.
 import { h, clear, crest, applySkin, toast } from '../ui.js';
 import { pageHead } from '../components.js';
-import { getState, getBank } from '../store.js';
+import { getState, getBank, dailyReady } from '../store.js';
 import * as soc from '../social.js';
 import { renderAvatar, avatarTeam, copyLook } from '../avatar.js';
 import { levelFor, xpForLevel, rankFor, badges, fmtX, american } from '../bets.js';
@@ -210,9 +210,20 @@ function page(m) {
   return [hero(m), bar, body, m.me ? mineExtras() : null];
 }
 
+// Big tiles for the four places people look for first, so none of them is more than one tap away.
+function hub() {
+  const tile = (href, title, sub, cls, badge) => h('a', { class: 'hub-t ' + cls, href }, badge ? h('span', { class: 'hub-badge' }, badge) : null, h('b', null, title), h('small', null, sub));
+  return h('nav', { class: 'hub', 'aria-label': 'Places to go' },
+    tile('#/shop', 'Shop', 'Clothes, kits, gear', 'hub-shop'),
+    tile('#/profile', 'Your fan', 'Dress up, home or away', 'hub-fan'),
+    tile('#/quests', 'Quests', 'Daily and weekly coins', 'hub-quests', dailyReady() ? 'Ready' : null),
+    tile('#/coins', 'Coin log', 'Where your coins went', 'hub-coins'));
+}
+
 export async function render(root, params = {}) {
   if (!params.handle) {
     root.append(pageHead('You', 'Your record, your wins and losses, your teams and your trophies.'));
+    root.append(hub());
     const host = h('div', { class: 'stack yo' });
     root.append(host);
     add(host, page(mineModel()));
