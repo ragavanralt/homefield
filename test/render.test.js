@@ -272,5 +272,18 @@ assert.ok(app().querySelector('.checklist'), 'check ran'); ok('data check runs')
 text = await visit('#/nope', { wait: 50 }); assert.equal(w.location.hash, '#/'); ok('unknown route goes home');
 
 if (errors.length) { console.error('ERRORS:', errors); process.exit(1); }
+{
+  const A = await import('../js/avatar.js'); const S = await import('../js/store.js'); const base = S.getState().avatar; const bad = [];
+  for (const b of A.BODIES) for (const it of A.ITEMS) {
+    if (it.slot !== 'top' && it.slot !== 'bottom') continue;
+    let svg = ''; try { svg = A.previewSvg(it, { ...base, body: b.id }); } catch (e) { bad.push(`${it.id}/${b.id} throws`); continue; }
+    if (/\bnull\b|undefined|NaN|Infinity/.test(svg)) bad.push(`${it.id}/${b.id} null`);
+    for (const m of svg.matchAll(/textLength="([\d.]+)"/g)) if (+m[1] > 50) bad.push(`${it.id} lettering ${m[1]} wide`);
+  }
+  assert.deepEqual([...new Set(bad)], [], 'tops and bottoms draw cleanly on all four body types, lettering fits the chest: ' + [...new Set(bad)].join(','));
+  const noLegs = A.ITEMS.filter((i) => i.slot === 'bottom' && /shorts$|jorts$/.test(i.id) && !i.short).map((i) => i.id);
+  assert.deepEqual(noLegs, [], 'shorts show bare legs: ' + noLegs.join(','));
+  ok('tops and bottoms are clean on all four body types, lettering fits, shorts show legs');
+}
 console.log(`\n${n} render checks passed`);
 process.exit(0);

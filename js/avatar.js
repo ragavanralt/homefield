@@ -395,7 +395,7 @@ const SHADES = {
   leather: { '#0F0F15': 0.3 }, dressshirt: { '#FAFAF7': -0.3 }, turtleneck: { '#16161A': 0.2 }, blazer: { '#30343B': 0.15 }, suit: { '#18233B': 0.15 }, overcoat: { '#A57A4A': 0.12 },
   foghoodie: { '#7D8085': 0.12, '#878A8F': 0.05, '#666A70': 0.3 }, fogsweats: { '#7D8085': 0.12 }, techhood: { '#6F747B': 0.18 }, techjog: { '#6F747B': 0.18 }, sixhood: { '#0E0E12': 0.25 },
 };
-for (const id of ['shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal', 'cs_stars', 'rt_lux_chi', 'rt_lux_la', 'rt_lux_bos', 'rt_lux_cha', 'rt_blau_sh', 'rt_bra_sh', 'meshshorts', 'cargoshorts']) ITEMS.find((i) => i.id === id).short = true;
+for (const id of ['shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal', 'cs_stars', 'rt_lux_chi', 'rt_lux_la', 'rt_lux_bos', 'rt_lux_cha', 'rt_blau_sh', 'rt_bra_sh', 'meshshorts', 'cargoshorts', 'bermuda', 'bikeshorts', 'sweatshorts', 'pleatshorts', 'baggyjorts']) ITEMS.find((i) => i.id === id).short = true;
 for (const it of ITEMS) if (COLS[it.id]) { it.colors = COLS[it.id].map(([n, k]) => ({ n, k })); it.shades = SHADES[it.id] || {}; }
 
 /** Darken (amt > 0) or lighten (amt < 0) a #rrggbb colour. */
