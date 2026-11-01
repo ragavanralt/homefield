@@ -56,7 +56,7 @@ const SECTIONS = [
   // Crew: your friends and the games you play against them (only when the server is set up)
   { id: 'crew', label: 'Crew', href: () => '#/crew', show: () => socialOn(), subs: [{ id: 'crew', label: 'Crew', href: '#/crew' }, { id: 'duels', label: 'Duels', href: '#/duels' }, { id: 'survivor', label: 'Survivor', href: '#/survivor' }, { id: 'cap', label: 'Cap Night', href: '#/cap' }] },
   // You: your page, quests, your look and the shop. The coin log lives in Settings.
-  { id: 'you', label: 'You', href: () => '#/you', subs: [{ id: 'you', label: 'You', href: '#/you' }, { id: 'quests', label: 'Quests', href: '#/quests' }, { id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }] },
+  { id: 'you', label: 'You', href: () => '#/you', subs: [{ id: 'you', label: 'Record', href: '#/you' }, { id: 'quests', label: 'Quests', href: '#/quests' }, { id: 'profile', label: 'Your fan', href: '#/profile' }, { id: 'shop', label: 'Shop', href: '#/shop' }] },
 ];
 const shown = () => SECTIONS.filter((S) => !S.show || S.show());
 const sectionOf = (navId) => (TABS.some((t) => t.id === navId) ? 'sports' : (SECTIONS.find((S) => S.subs.some((x) => x.id === navId)) || {}).id || navId);

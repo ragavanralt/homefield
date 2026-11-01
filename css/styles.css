@@ -73,7 +73,8 @@ main { max-width: 880px; margin: 0 auto; padding: 8px 16px calc(48px + env(safe-
 .select, .search, .date-in { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 42px; }
 .check { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); }
 .datebar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.date-l { font-weight: 700; flex: 1 1 140px; text-align: center; }
+.date-l { position: relative; font-weight: 700; flex: 1 1 140px; text-align: center; padding: 10px 0; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); cursor: pointer; }
+.date-l .date-in { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .toggle { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
 .toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
 .tg-l { font-weight: 600; }
@@ -968,10 +969,5 @@ header.top { border-top: 3px solid var(--sec); }
 .jump-none { padding: 22px 8px; color: var(--muted); text-align: center; }
 body.jump-open { overflow: hidden; }
 
-/* the four big tiles at the top of You */
-.hub { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 14px; }
-.hub-t { position: relative; display: flex; flex-direction: column; gap: 3px; justify-content: flex-end; min-height: 88px; padding: 14px; border-radius: 18px; color: var(--fg); border: 1px solid var(--line); background: var(--surface); border-left: 6px solid var(--sec); }
-.hub-t b { font-size: 18px; } .hub-t small { color: var(--muted); font-size: 13px; }
-.hub-t:hover, .hub-t:focus-visible { background: var(--surface-2); }
-.hub-shop { border-left-color: #E3B341; } .hub-fan { border-left-color: #B38CFF; } .hub-quests { border-left-color: #35C47C; } .hub-coins { border-left-color: #4C9BFF; }
-.hub-badge { position: absolute; top: 10px; right: 10px; padding: 3px 9px; border-radius: 999px; background: #35C47C; color: #06210F; font-size: 12px; font-weight: 800; }
+/* pages that have a chip row skip their own big title: the chip already says where you are */
+body.has-sub .page-head { display: none; }

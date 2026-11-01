@@ -41,9 +41,8 @@ export async function render(root, { id }) {
       const iso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
       controls.append(h('div', { class: 'datebar' },
         h('button', { type: 'button', class: 'btn icon', 'aria-label': 'Previous day', onclick: () => { date = addDays(date, -1); drawControls(); load(); } }, '‹'),
-        h('div', { class: 'date-l' }, sameDay(date, new Date()) ? 'Today' : fmtDayLong(date)),
+        h('label', { class: 'date-l' }, (sameDay(date, new Date()) ? 'Today' : fmtDayLong(date)) + ' ▾', h('input', { class: 'date-in', type: 'date', id: 'pick-date', value: iso, 'aria-label': 'Jump to date', onchange: (e) => { const [y, m, d] = e.target.value.split('-').map(Number); if (y) { date = new Date(y, m - 1, d); drawControls(); load(); } } })),
         h('button', { type: 'button', class: 'btn icon', 'aria-label': 'Next day', onclick: () => { date = addDays(date, 1); drawControls(); load(); } }, '›'),
-        h('input', { class: 'date-in', type: 'date', id: 'pick-date', value: iso, 'aria-label': 'Jump to date', onchange: (e) => { const [y, m, d] = e.target.value.split('-').map(Number); if (y) { date = new Date(y, m - 1, d); drawControls(); load(); } } }),
         sameDay(date, new Date()) ? null : h('button', { type: 'button', class: 'btn small', onclick: () => { date = new Date(); drawControls(); load(); } }, 'Today'),
         getState().teams.length ? h('label', { class: 'check' }, h('input', { type: 'checkbox', id: 'only-mine', checked: onlyMine, onchange: (e) => { onlyMine = e.target.checked; load(); } }), 'My teams only') : null,
       ));
