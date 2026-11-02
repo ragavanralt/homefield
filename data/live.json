@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-11-01",
+  "updated": "2026-11-02",
   "daily": {
-    "date": "2026-11-01",
+    "date": "2026-11-02",
     "quests": [
       {
-        "id": "d2026-11-01-1",
+        "id": "d2026-11-02-1",
         "metric": "daily_claimed",
         "target": 1,
         "coins": 30,
         "title": "Claim your daily bonus"
       },
       {
-        "id": "d2026-11-01-2",
+        "id": "d2026-11-02-2",
         "metric": "games_marked",
         "target": 1,
         "coins": 35,
         "title": "Mark a game as watched"
       },
       {
-        "id": "d2026-11-01-3",
+        "id": "d2026-11-02-3",
         "metric": "bets_won",
         "target": 2,
         "coins": 180,
@@ -27,7 +27,7 @@
       }
     ],
     "deal": {
-      "itemId": "chunky",
+      "itemId": "meshshorts",
       "pct": 30
     }
   },
