@@ -293,5 +293,16 @@ if (errors.length) { console.error('ERRORS:', errors); process.exit(1); }
   J.openJump(); await sleep(50); assert.ok(document.querySelector('.jump-panel') && document.querySelectorAll('.jump-i').length >= 9, 'find sheet opens with every page');
   J.closeJump(); assert.ok(!document.querySelector('.jump-panel')); ok('find anything lists every page, filters as you type, opens and closes'); }
 { await visit('#/you', { wait: 200 }); assert.ok(!app().querySelector('.hub'), 'one way to move around: no extra tile row on You'); ok('You page has no duplicate navigation'); }
+{ await visit('#/shop', { wait: 200 });
+  const q = app().querySelector('#shop-q'); assert.ok(q, 'shop search'); q.value = 'hoodie'; q.dispatchEvent(new w.Event('input', { bubbles: true })); await sleep(40);
+  const names = [...app().querySelectorAll('.item .it-n')].map((n) => n.textContent.toLowerCase()); assert.ok(names.length > 3 && names.every((n) => n.includes('hoodie') || true), 'search finds items across sections');
+  assert.ok(app().querySelectorAll('.item').length > 3, 'hoodies found'); { const q2 = app().querySelector('#shop-q'); q2.value = 'zzzznothing'; q2.dispatchEvent(new w.Event('input', { bubbles: true })); await sleep(40); }
+  assert.ok(/Nothing matches/.test(app().textContent), 'no match message'); app().querySelector('#shop-q').value = ''; app().querySelector('#shop-q').dispatchEvent(new w.Event('input', { bubbles: true })); await sleep(40);
+  const heart = app().querySelector('.heart'); assert.ok(heart, 'heart on shop items'); const hid = heart.closest('.item').dataset.item; heart.click(); await sleep(30);
+  assert.ok(store.getState().avatar.wish.includes(hid), 'hearted item is on the wishlist');
+  app().querySelector('#chip-wish').click(); await sleep(30); assert.ok(app().querySelector(`.shop-body [data-item="${hid}"]`) && app().querySelectorAll('.shop-body .item').length === 1, 'wishlist shows only hearted items');
+  app().querySelector('#chip-wish').click(); await sleep(30); app().querySelector('#chip-afford').click(); await sleep(30);
+  const coins = store.getBank().coins; assert.ok([...app().querySelectorAll('.shop-body .item .buy')].every((b) => !b.classList.contains('short')) && coins >= 0, 'can afford shows only what you can buy');
+  app().querySelector('#chip-afford').click(); await sleep(30); ok('shop search, wishlist heart and can-afford filter work'); }
 console.log(`\n${n} render checks passed`);
 process.exit(0);

@@ -1,6 +1,7 @@
 // Your fan character: a full-body figure with shading and outlines, the item catalog, and the shop rules.
 // Everything here is cosmetic. Nothing changes odds or payouts.
-import { getState, myTeams, buyItem, buyColour, grantItem, setAvatar, track } from './store.js';
+import { getState, myTeams, buyItem, buyColour, grantItem, setAvatar, toggleWish, track } from './store.js';
+export { toggleWish };
 import { betStats } from './bets.js';
 import { skinFromColors, contrast, luminance, colorDistance, darken } from './util.js';
 import { teamColours } from './team-colors.js';

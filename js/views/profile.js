@@ -4,7 +4,7 @@ import { getState, getBank, myTeams, setAvatar, onSlipChange, track } from '../s
 import { ensureLive } from '../live.js';
 import { pageHead } from '../components.js';
 import { levelFor, rankFor, betStats } from '../bets.js';
-import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, setSide, sideOf, saveFit, wearFit, deleteFit, MAX_FITS, renderAvatar, avatarTeam, previewSvg, setColour, colourIndex, ownsColour, freeColour, colourPrice, buyColourOf } from '../avatar.js';
+import { SKINS, HAIR_COLORS, BODIES, SLOTS, SECTIONS, ALWAYS_ON, ITEMS, TIERS, itemById, buy, equip, unequip, priceOf, dealToday, dealInfo, syncUnlocks, setSide, sideOf, saveFit, wearFit, deleteFit, MAX_FITS, renderAvatar, avatarTeam, previewSvg, toggleWish, setColour, colourIndex, ownsColour, freeColour, colourPrice, buyColourOf } from '../avatar.js';
 
 const fmt = (n) => Math.round(n).toLocaleString();
 
@@ -18,6 +18,9 @@ export async function render(root, params = {}) {
   let sec = 'team';
   let closetTab = 'fit'; // closet: your outfit or your backgrounds
   let only = false;
+  let wishOnly = false; // shop: just the hearted items
+  let canBuy = false; // shop: just what you can afford right now
+  let query = ''; // shop: search across every section
   let naming = false; // the save-fit name box is open
   let picking = null; // item id whose colour menu is open
   let csi = null; // colour being looked at in that menu
@@ -25,6 +28,9 @@ export async function render(root, params = {}) {
   const host = h('div', { class: 'profile' });
   root.append(shop ? pageHead('Shop', 'Spend the coins you win on clothes and gear. Looks only. Nothing here changes your odds.') : pageHead('Your fan', 'Your character and everything you own. Changing your look is free.'), host);
   host.classList.toggle('is-shop', shop);
+
+  // typing in the search box rebuilds the list, so put the cursor back where it was
+  function drawKeep() { draw(); const i = document.getElementById('shop-q'); if (i) { i.focus(); const n = i.value.length; try { i.setSelectionRange(n, n); } catch (e) { /* not a text box */ } } }
 
   // Rebuilding the page must not move it: pin the height and scroll across the rebuild.
   function draw() {
@@ -64,7 +70,11 @@ export async function render(root, params = {}) {
     // right: shop
     const tabs = h('div', { class: 'seg pf-tabs', role: 'tablist' }, SECTIONS.map((s) => h('button', { type: 'button', role: 'tab', class: 'seg-b' + (sec === s.id ? ' on' : ''), 'aria-selected': sec === s.id ? 'true' : 'false', onclick: () => { sec = s.id; draw(); } }, s.label)));
     const cur = SECTIONS.find((s) => s.id === sec);
-    const items = shop ? ITEMS.filter((i) => i.sec === sec && !i.ach && (!only || av.owned.includes(i.id))) : ITEMS.filter((i) => av.owned.includes(i.id) && (closetTab === 'bg') === (i.slot === 'bg'));
+    const wish = av.wish || [];
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    const hit = (i) => { const hay = `${i.name} ${i.id} ${(SLOTS.find((s) => s.id === i.slot) || {}).label || ''} ${TIERS[i.tier].label} ${(i.colors || []).map((c) => c.n).join(' ')}`.toLowerCase(); return words.every((w) => hay.includes(w)); };
+    const searching = shop && (words.length || wishOnly || canBuy);
+    const items = shop ? ITEMS.filter((i) => !i.ach && (searching ? true : i.sec === sec) && (!only || av.owned.includes(i.id)) && (!words.length || hit(i)) && (!wishOnly || wish.includes(i.id)) && (!canBuy || (!av.owned.includes(i.id) && priceOf(i) <= bank.coins))) : ITEMS.filter((i) => av.owned.includes(i.id) && (closetTab === 'bg') === (i.slot === 'bg'));
     const closetTabs = h('div', { class: 'seg pf-tabs', role: 'tablist' }, [['fit', 'Outfit'], ['bg', 'Backgrounds']].map(([id, label]) => h('button', { type: 'button', role: 'tab', class: 'seg-b' + (closetTab === id ? ' on' : ''), 'aria-selected': closetTab === id ? 'true' : 'false', onclick: () => { closetTab = id; draw(); } }, label)));
     const body = h('div', { class: 'shop-body' });
     for (const s of SLOTS) {
@@ -72,7 +82,7 @@ export async function render(root, params = {}) {
       if (!list.length) continue;
       body.append(h('h3', { class: 'shop-slot' }, s.label, h('small', null, String(list.length))), h('div', { class: 'shop-grid' }, list.map((it) => itemCard(it, av, bank, team, deal))));
     }
-    if (!items.length) body.append(h('p', { class: 'muted' }, shop ? 'You do not own anything here yet.' : 'Nothing yet.'));
+    if (!items.length) body.append(h('p', { class: 'muted' }, shop ? (searching ? (wishOnly && !words.length ? 'Tap the heart on anything you want and it waits here.' : 'Nothing matches. Try fewer words.') : 'You do not own anything here yet.') : 'Nothing yet.'));
     const dealSec = deal && SECTIONS.find((s) => s.id === deal.sec);
     const featured = (live.weekly.featured || []).map(itemById).filter(Boolean);
     const right = !shop ? h('section', { class: 'card pf-shop pf-closet' },
@@ -81,9 +91,14 @@ export async function render(root, params = {}) {
       : h('section', { class: 'card pf-shop' },
       h('div', { class: 'pf-shop-h' }, h('h2', { class: 'card-h' }, 'Shop'),
         h('label', { class: 'pf-only' }, h('input', { type: 'checkbox', id: 'pf-owned', checked: only ? '' : null, onchange: (e) => { only = e.target.checked; draw(); } }), ' Owned only')),
+      h('div', { class: 'shop-find' },
+        h('input', { type: 'search', id: 'shop-q', class: 'shop-q', value: query, placeholder: 'Search the shop: hoodie, red, Atelier...', 'aria-label': 'Search the shop', autocomplete: 'off', oninput: (e) => { query = e.target.value; drawKeep(); } }),
+        h('div', { class: 'shop-chips' },
+          h('button', { type: 'button', id: 'chip-afford', class: 'chip-b' + (canBuy ? ' on' : ''), 'aria-pressed': canBuy ? 'true' : 'false', onclick: () => { canBuy = !canBuy; draw(); } }, 'I can afford'),
+          h('button', { type: 'button', id: 'chip-wish', class: 'chip-b' + (wishOnly ? ' on' : ''), 'aria-pressed': wishOnly ? 'true' : 'false', onclick: () => { wishOnly = !wishOnly; draw(); } }, `♥ Wishlist${wish.length ? ' ' + wish.length : ''}`))),
       deal ? h('div', { class: 'deal' }, h('i', null, 'Today only:'), ` ${deal.name} is ${dealInfo().pct}% off (${fmt(priceOf(deal))} coins, normally ${fmt(deal.price)}). It is in ${dealSec ? dealSec.label : 'the shop'}.`) : null,
       featured.length ? h('div', { class: 'featured' }, h('h3', { class: 'shop-slot' }, 'Featured this week', h('small', null, 'changes every Friday')), h('div', { class: 'shop-grid' }, featured.map((it) => itemCard(it, av, bank, team, deal)))) : null,
-      tabs, h('p', { class: 'muted pf-blurb' }, cur.blurb), body);
+      searching ? h('p', { class: 'muted pf-blurb' }, `${items.length} ${items.length === 1 ? 'item' : 'items'} across every section`) : tabs, searching ? null : h('p', { class: 'muted pf-blurb' }, cur.blurb), body);
 
     host.append(left, right);
     if (!shop) host.append(fitsCard(av));
@@ -129,13 +144,17 @@ export async function render(root, params = {}) {
     else if (owned) act = h('button', { type: 'button', class: 'btn small wear', onclick: () => { equip(it.id); draw(); } }, 'Wear');
     else if (it.ach) act = h('small', null, it.ach);
     else act = h('button', { type: 'button', class: 'btn small main buy' + (bank.coins < price ? ' short' : ''), 'data-id': it.id, onclick: () => { confirming = it.id; confirmCi = 0; draw(); } }, h('i', { class: 'coin' }), sale ? h('s', null, fmt(it.price)) : null, ' ' + fmt(price));
+    const wished = (av.wish || []).includes(it.id);
+    const heart = !owned && !it.ach ? h('button', { type: 'button', class: 'heart' + (wished ? ' on' : ''), 'aria-label': wished ? `Remove ${it.name} from wishlist` : `Add ${it.name} to wishlist`, 'aria-pressed': wished ? 'true' : 'false', onclick: () => { toggleWish(it.id); draw(); } }, wished ? '♥' : '♡') : null;
+    const need = wished && !owned && bank.coins < price ? h('small', { class: 'need' }, `${fmt(price - bank.coins)} more coins`) : null;
     return h('article', { class: `item t-${it.tier}` + (worn ? ' worn' : '') + (owned ? ' owned' : ''), 'data-item': it.id },
-      svg,
+      heart, svg,
       h('div', { class: 'it-n' }, it.name),
       h('small', { class: 'it-t' }, TIERS[it.tier].label),
       it.colors ? colourDots(it, av, owned) : null,
       it.sided && owned ? sideToggle(it, av) : null,
       it.zip && owned ? zipToggle(it, av) : null,
+      need,
       act);
   }
 

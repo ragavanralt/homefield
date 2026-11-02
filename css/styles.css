@@ -971,3 +971,14 @@ body.jump-open { overflow: hidden; }
 
 /* pages that have a chip row skip their own big title: the chip already says where you are */
 body.has-sub .page-head { display: none; }
+
+/* shop search, filters and wishlist */
+.shop-find { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; }
+.shop-q { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: inherit; font-size: 16px; }
+.shop-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip-b { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+.chip-b.on { color: var(--fg); border-color: var(--sec, var(--accent)); background: color-mix(in srgb, var(--sec, var(--accent)) 22%, var(--surface)); }
+.item { position: relative; }
+.heart { position: absolute; top: 6px; right: 6px; z-index: 2; width: 34px; height: 34px; border-radius: 50%; border: 0; background: color-mix(in srgb, var(--bg) 70%, transparent); color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
+.heart.on { color: #FF5C7A; }
+.item .need { color: var(--muted); font-size: 12px; text-align: center; }

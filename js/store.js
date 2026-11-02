@@ -29,13 +29,13 @@ const fresh = () => ({
   soccerLeague: 'uefa.champions',
   lastMode: 'classic',
   quests: { day: '', week: '', daily: { n: {}, once: {}, claimed: [] }, weekly: { n: {}, once: {}, claimed: [] } },
-  avatar: { skin: 2, hairColor: 0, body: 1, team: '', colV: 1, colOwned: {}, away: false, col: {}, eq: { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' }, owned: ['short', 'buzz', 'curls', 'smile', 'smirk', 'tee', 'jeans', 'sneakers', 'night', 'dusk'], spent: 0 },
+  avatar: { skin: 2, hairColor: 0, body: 1, team: '', colV: 1, colOwned: {}, wish: [], away: false, col: {}, eq: { hair: 'short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' }, owned: ['short', 'buzz', 'curls', 'smile', 'smirk', 'tee', 'jeans', 'sneakers', 'night', 'dusk'], spent: 0 },
 });
 
 function mergeAvatar(d, a) {
   const had = !!a; a = a || {};
   // saves from before colours were unlocked one by one (no colV) keep every colour they already had
-  return { ...d, ...a, colV: had ? a.colV : d.colV, colOwned: { ...(a.colOwned || {}) }, col: { ...(a.col || {}) }, eq: { ...d.eq, ...(a.eq || {}) }, owned: [...new Set([...d.owned, ...(Array.isArray(a.owned) ? a.owned : [])])] };
+  return { ...d, ...a, colV: had ? a.colV : d.colV, colOwned: { ...(a.colOwned || {}) }, wish: [...new Set(Array.isArray(a.wish) ? a.wish : [])], col: { ...(a.col || {}) }, eq: { ...d.eq, ...(a.eq || {}) }, owned: [...new Set([...d.owned, ...(Array.isArray(a.owned) ? a.owned : [])])] };
 }
 
 let state = load();
@@ -316,6 +316,11 @@ export function buyColour(id, i, price) {
   if (st.bank.coins < price) return { ok: false, why: 'coins' };
   update((s) => { s.bank.coins -= price; const o = s.avatar.colOwned = s.avatar.colOwned || {}; o[id] = [...new Set([...(o[id] || []), i])]; s.avatar.spent = (s.avatar.spent || 0) + price; }, { k: 'shop', note: `${id} colour` });
   ping(); return { ok: true };
+}
+/** A heart on an item you want. Shows up in the shop under Wishlist with how many coins you still need. */
+export function toggleWish(id) {
+  update((s) => { const w = new Set(s.avatar.wish || []); w.has(id) ? w.delete(id) : w.add(id); s.avatar.wish = [...w]; });
+  ping(); return state.avatar.wish.includes(id);
 }
 export function grantItem(id) { if (state.avatar.owned.includes(id)) return false; update((s) => { s.avatar.owned.push(id); }); ping(); return true; }
 export function setAvatar(fn) { update((s) => fn(s.avatar)); ping(); }
