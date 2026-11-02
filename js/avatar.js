@@ -9,6 +9,7 @@ import { dayKey, seeded } from './period.js';
 import { drawFan } from './fan.js';
 import './fan-items.js';
 import './fan-items-oct26.js';
+import { NEW_ITEMS, NEW_COLS } from './fan-items-nov02.js';
 import './fan-bgs.js';
 
 export const SKINS = ['#E3B85B', '#F0D3B5', '#DDAE86', '#C58B5E', '#A06A44', '#7A4A2E', '#523320'];
@@ -201,6 +202,8 @@ export const ITEMS = [
   I('silverhoops', 'ear', 'Silver hoops', 'look', 450), I('pearlstuds', 'ear', 'Pearl studs', 'look', 350), I('goldbars', 'ear', 'Gold drop bars', 'look', 900),
   I('cableknit', 'top', 'Cable-knit sweater', 'casual', 550),
   I('rt_lon04', 'top', "North London '04 home kit", 'retro', 5500),
+  // ---- November 2026 drop: 100 pieces (art lives in fan-items-nov02.js)
+  ...NEW_ITEMS.map(({ id, slot, name, sec, base, ...x }) => I(id, slot, name, sec, base, x)),
   // ---- October 2026 drop, part 1: shoes, hats, neck, wrist, hand
   I('terrace', 'shoes', 'Terrace trainers', 'street', 700), I('skatelow', 'shoes', 'Skate lows', 'street', 450), I('retrorun', 'shoes', 'Retro runners', 'street', 900), I('combat', 'shoes', 'Combat boots', 'street', 1100),
   I('hikers', 'shoes', 'Hiking boots', 'street', 1000), I('balletflat', 'shoes', 'Ballet flats', 'formal', 700), I('chelsea', 'shoes', 'Chelsea boots', 'formal', 1600), I('desert', 'shoes', 'Desert boots', 'formal', 900),
@@ -389,6 +392,7 @@ const COLS = {
   pleated: [['Brown', '#4A4038'], ['Grey', '#6B6B70'], ['Black', BK], ['Cream', CR]],
   bigcoat: [['Charcoal', '#2C2C30'], ['Camel', '#B98B58'], ['Black', '#141416']],
 };
+Object.assign(COLS, NEW_COLS);
 const SHADES = {
   carpenter: { '#66492E': 0.14 }, bagcargo: { '#4A5235': 0.14 }, flannel: { '#7A2222': 0.25 },
   joggers: { '#2B3445': 0.35 }, cargo: { '#877748': 0.12, '#6B5E3C': 0.3 }, shorts: { '#4F73AD': 0.2 }, boots: { '#5A3516': 0.25 }, plaincap: { '#141418': 0.25 },
@@ -396,7 +400,7 @@ const SHADES = {
   leather: { '#0F0F15': 0.3 }, dressshirt: { '#FAFAF7': -0.3 }, turtleneck: { '#16161A': 0.2 }, blazer: { '#30343B': 0.15 }, suit: { '#18233B': 0.15 }, overcoat: { '#A57A4A': 0.12 },
   foghoodie: { '#7D8085': 0.12, '#878A8F': 0.05, '#666A70': 0.3 }, fogsweats: { '#7D8085': 0.12 }, techhood: { '#6F747B': 0.18 }, techjog: { '#6F747B': 0.18 }, sixhood: { '#0E0E12': 0.25 },
 };
-for (const id of ['shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal', 'cs_stars', 'rt_lux_chi', 'rt_lux_la', 'rt_lux_bos', 'rt_lux_cha', 'rt_blau_sh', 'rt_bra_sh', 'meshshorts', 'cargoshorts', 'bermuda', 'bikeshorts', 'sweatshorts', 'pleatshorts', 'baggyjorts']) ITEMS.find((i) => i.id === id).short = true;
+for (const id of ['cordshorts', 'hoopshorts', 'carpentershorts', 'satinshorts', 'cutoffs', 'chinoshorts', 'shorts', 'tshorts', 'jorts', 'cs_red', 'cs_purple', 'cs_green', 'cs_royal', 'cs_stars', 'rt_lux_chi', 'rt_lux_la', 'rt_lux_bos', 'rt_lux_cha', 'rt_blau_sh', 'rt_bra_sh', 'meshshorts', 'cargoshorts', 'bermuda', 'bikeshorts', 'sweatshorts', 'pleatshorts', 'baggyjorts']) ITEMS.find((i) => i.id === id).short = true;
 for (const it of ITEMS) if (COLS[it.id]) { it.colors = COLS[it.id].map(([n, k]) => ({ n, k })); it.shades = SHADES[it.id] || {}; }
 
 /** Darken (amt > 0) or lighten (amt < 0) a #rrggbb colour. */
