@@ -347,6 +347,8 @@ export function drawHead(P, sk, hairCol, opts = {}) {
 // the head (and everything worn on it) is drawn in its own space and scaled down about the chin for a better head-to-body ratio
 export const HEAD_SCALE = 0.87;
 const HEADG = `<g transform="translate(100 109) scale(${HEAD_SCALE}) translate(-100 -107)">`; // sits 2 lower, so the neck is short and never floats
+// lettering and numbers scale with the chest of the build being drawn (1 = athletic)
+export const LETTER = { s: 1 };
 export const ART = { expr: {}, hair: {}, hat: {}, face: {}, beard: {}, ear: {}, top: {}, outer: {}, scarf: {}, chain: {}, wrist: {}, bottom: {}, shoes: {}, back: {}, hand: {}, bg: {}, armwear: {}, legwear: {} };
 
 /** Draw the whole fan. ctx: { skin, hair, eq, colourOf(id), pal, build } -> svg inner markup */
@@ -358,7 +360,7 @@ export function drawFan(ctx) {
   const sk = ramp(ctx.skin, { hs: 0.25 });
   sk.line = adj(ctx.skin, -0.5, -8, -0.08);
   const c = { skin: ctx.skin, sk, hair: ctx.hair, pal: ctx.pal, B, g };
-  const item = (slot) => { const id = ctx.eq[slot]; const f = id && ART[slot][id]; return f ? { f, col: ctx.colourOf(id), id } : null; };
+  const item = (slot) => { const id = ctx.eq[slot]; const f = id && ART[slot][id]; return f ? { f: (...a) => { LETTER.s = Math.max(0.8, Math.min(1.15, B.ch / 33)); return f(...a); }, col: ctx.colourOf(id), id } : null; };
   const run = (slot, phase) => { const it = item(slot); if (it) { c.side = ctx.sideOf ? ctx.sideOf(it.id) : 'both'; it.f(P, g, it.col, phase, c); } };
 
   if (ctx.bg) run('bg', 'bg');

@@ -1,7 +1,7 @@
 // Every wearable as a small SVG recipe drawn on the shared body (fan.js). A recipe is
 // (P, g, col, phase, c): P the pen, g the body geometry, col the chosen colour (or undefined), phase the
 // layer being drawn, c = { skin, sk, hair, pal, B, g }. Team gear reads c.pal (t1, t2, tink, tacc).
-import { ART, Pen, tubeD, CX, OW, ramp, adj, mix, dk, lt, tube, cutJ, cutF, curve, blob, poly, torsoD, torsoPts, halfD, segs, pt } from './fan.js';
+import { ART, LETTER, Pen, tubeD, CX, OW, ramp, adj, mix, dk, lt, tube, cutJ, cutF, curve, blob, poly, torsoD, torsoPts, halfD, segs, pt } from './fan.js';
 
 const GOLD = '#E8B93A', GOLD2 = '#A87A1A', GOLDHI = '#FFE9A0', SILVER = '#CDD3DC', SILVER2 = '#8E96A3', INK = '#16131A';
 const colOf = (o, c, col) => (o.main ? o.main(c.pal, col) : col || o.def || '#888888');
@@ -213,18 +213,18 @@ const FONT = {
   tall: "Teko, Oswald, 'Arial Narrow', sans-serif", script: "Yellowtail, 'Brush Script MT', cursive", cond: "Oswald, 'Arial Narrow', sans-serif",
 };
 const WEIGHT = { athletic: 800, tall: 600, cond: 700 };
-const digits = (P, n, x, y, s, fill, line, font, skew) => { const f = FONT[font] ? font : 'block'; P.add(`<text x="${x}" y="${y}" font-family="${FONT[f]}" font-weight="${WEIGHT[f] || 400}" font-size="${s * (f === 'tall' ? 1.25 : f === 'athletic' ? 1.12 : 1)}" text-anchor="middle" fill="${fill}" stroke="${line}" stroke-width="${f === 'tall' || f === 'athletic' || f === 'block' ? 1.3 : 1.8}" paint-order="stroke"${skew ? ` transform="skewX(${skew}) translate(${(-y * Math.tan((skew * Math.PI) / 180)).toFixed(1)} 0)"` : ''}>${n}</text>`); };
+const digits = (P, n, x, y, s0, fill, line, font, skew) => { const s = s0 * LETTER.s, f = FONT[font] ? font : 'block'; P.add(`<text x="${x}" y="${y}" font-family="${FONT[f]}" font-weight="${WEIGHT[f] || 400}" font-size="${s * (f === 'tall' ? 1.25 : f === 'athletic' ? 1.12 : 1)}" text-anchor="middle" fill="${fill}" stroke="${line}" stroke-width="${f === 'tall' || f === 'athletic' || f === 'block' ? 1.3 : 1.8}" paint-order="stroke"${skew ? ` transform="skewX(${skew}) translate(${(-y * Math.tan((skew * Math.PI) / 180)).toFixed(1)} 0)"` : ''}>${n}</text>`); };
 // city lettering arched over the number, the way real jerseys set it
 let archN = 0;
-const arch = (P, t, y, size, maxW, fill, line, font, lift = 6) => {
-  const f = FONT[font] ? font : 'block', id = 'ar' + (++archN) + Math.random().toString(36).slice(2, 5), half = maxW / 2 + 4;
+const arch = (P, t, y, size0, maxW0, fill, line, font, lift = 6) => {
+  const size = size0 * LETTER.s, maxW = maxW0 * LETTER.s, f = FONT[font] ? font : 'block', id = 'ar' + (++archN) + Math.random().toString(36).slice(2, 5), half = maxW / 2 + 4;
   const est = t.length * size * (f === 'tall' || f === 'cond' || f === 'athletic' ? 0.5 : f === 'mono' || f === 'bungee' ? 0.85 : 0.7), fit = ` textLength="${Math.min(est, maxW).toFixed(1)}" lengthAdjust="spacingAndGlyphs"`;
   P.add(`<defs><path id="${id}" d="M${CX - half} ${y} Q${CX} ${y - lift * 2} ${CX + half} ${y}"/></defs><text font-family="${FONT[f]}" font-weight="${WEIGHT[f] || 400}" font-size="${size}" fill="${fill}"${line ? ` stroke="${line}" stroke-width="0.9" paint-order="stroke"` : ''} letter-spacing="0.3"><textPath href="#${id}" startOffset="50%" text-anchor="middle"${fit}>${t.replace(/&/g, '&amp;')}</textPath></text>`);
 };
 
 // the team's city across the chest, squeezed to fit when the name is long
-const cityText = (P, c, y, size, maxW, fill, line, lw = 1.4) => {
-  const t = c.pal.city || 'HOME', est = t.length * size * 0.74, fit = ` textLength="${Math.min(est, maxW).toFixed(1)}" lengthAdjust="spacingAndGlyphs"`;
+const cityText = (P, c, y, size0, maxW0, fill, line, lw = 1.4) => {
+  const size = size0 * LETTER.s, maxW = maxW0 * LETTER.s, t = c.pal.city || 'HOME', est = t.length * size * 0.74, fit = ` textLength="${Math.min(est, maxW).toFixed(1)}" lengthAdjust="spacingAndGlyphs"`;
   P.add(`<text x="${CX}" y="${y}" font-family="${FONT.athletic}" font-weight="800" font-size="${size * 1.15}" text-anchor="middle" fill="${fill}"${line ? ` stroke="${line}" stroke-width="${lw}" paint-order="stroke"` : ''} letter-spacing="0.6"${fit}>${t.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`);
 };
 const tout = (c) => c.pal.tout || c.pal.t2;
