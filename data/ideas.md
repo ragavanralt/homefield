@@ -30,3 +30,14 @@ Simulated 200 players per type over 120 days (daily bonus, quests, Daily Five, b
 - v1 (flat prices x1, ~700 coins a day regular): epic 3,000 base in 4 days, legendary 8,000 in 11 days (too cheap at the top).
 - Last version (x2, ~200 a day): the same epic in 30 days, legendary in 80 (too slow, not fun).
 - New: daily bonus 80 to 200 (60 + 20 a day), quests x0.6, prices follow a curve (priceMult in avatar.js: x0.8 under 300 base, x1.0 at 600, x1.5 at 3,000, x2.1 at 8,000, x2.8 at 20,000, x3.2 at 35,000). Regular player ~350 a day, casual ~190, sharp or crew ~370 to 470.
+
+## Added to the shop on 2026-11-06 (weekly update)
+Wolf cut (Look, 250 base), Quiff (Look), Opal studs (Look), Gold ear cuffs (Look), Yellow rain jacket (Casual), Cosmic night sky (Backgrounds), Harvest field (Backgrounds). No new requests came in this week, and both '04 North London kits were already in the shop, so this drop fills thin spots: hair, earrings, a real Casual jacket and two more backgrounds. Featured this week: Cosmic night sky and Yellow rain jacket, plus four older pieces.
+
+# Catalog ideas for next week (added 2026-11-06)
+
+Nothing below is in the shop yet. These wait for Ragavan's yes or no.
+
+1. Winter wool beanie in team colours. Team shop, about 400 coins. The Team shop has few cold-weather pieces and the season is turning.
+2. Frozen lake background. Backgrounds shop, about 1,800 coins. It sits between the field and the city at night and suits the hockey season.
+3. Locs with beads. Look shop, about 500 coins. Fills the gap between twists and the pricey curly looks.

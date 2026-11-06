@@ -188,3 +188,27 @@ ART.bg.boardwalk = bg((P) => {
   for (let i = 0; i < 16; i++) P.add(rect(-200, 256 + i * 6, W, 1, '#4A3622', ' opacity="0.35"'));
   for (let i = 0; i < 10; i++) P.add(rect(-190 + i * 62, 250, 1.5, 100, '#4A3622', ' opacity="0.3"'));
 });
+
+// cosmic night sky: deep violet to blue, a pale band of stars, a few bright ones and a dark ridge
+ART.bg.cosmic = bg((P) => {
+  sky(P, [[0, '#07061A'], [0.4, '#1B1148'], [0.75, '#2C2478'], [1, '#12183A']]);
+  glow(P, 120, 100, 170, 50, '#8A6AE0', 0.35);
+  glow(P, 40, 170, 90, 40, '#E080C0', 0.18);
+  const r = rng(77);
+  for (let i = 0; i < 90; i++) P.add(`<circle cx="${(X0 + r() * W).toFixed(1)}" cy="${(Y0 + r() * 280).toFixed(1)}" r="${(0.5 + r() * 1.1).toFixed(2)}" fill="#FFFFFF" opacity="${(0.4 + r() * 0.6).toFixed(2)}"/>`);
+  for (const [x, y] of [[20, 40], [170, 70], [96, 20], [-40, 110]]) P.add(`<path d="M${x} ${y - 6} L${x + 1.4} ${y - 1.4} L${x + 6} ${y} L${x + 1.4} ${y + 1.4} L${x} ${y + 6} L${x - 1.4} ${y + 1.4} L${x - 6} ${y} L${x - 1.4} ${y - 1.4}Z" fill="#FFF6D0"/>`);
+  P.fill(`M${X0} 236 L-130 224 L-70 238 L-20 226 L40 240 L100 228 L160 240 L220 226 L280 238 L340 228 L${X0 + W} 236 L${X0 + W} ${Y0 + H} L${X0} ${Y0 + H}Z`, '#0B0A22');
+  floor(P, '#17163A', '#080716', 252);
+});
+
+// harvest field: warm autumn afternoon, rolling gold field, hay bales and a low sun
+ART.bg.harvest = bg((P) => {
+  sky(P, [[0, '#6FA8D8'], [0.5, '#F2D9A8'], [0.7, '#F6B870'], [1, '#F6B870']]);
+  glow(P, 150, 170, 80, 50, '#FFF0C0', 0.7);
+  P.fill(`M${X0} 214 Q-80 190 0 206 T160 202 T320 206 T${X0 + W} 200 L${X0 + W} ${Y0 + H} L${X0} ${Y0 + H}Z`, '#B88A3A');
+  P.fill(`M${X0} 232 Q-60 218 20 228 T200 226 T${X0 + W} 224 L${X0 + W} ${Y0 + H} L${X0} ${Y0 + H}Z`, '#D2A24A');
+  for (const [x, y] of [[-120, 238], [-30, 230], [230, 236], [300, 232]]) P.add(`<ellipse cx="${x}" cy="${y}" rx="20" ry="13" fill="#E6C06A" stroke="#8A6A28" stroke-width="1.2"/><path d="M${x - 14} ${y - 4} L${x + 14} ${y - 4} M${x - 16} ${y + 3} L${x + 16} ${y + 3}" stroke="#8A6A28" stroke-width="0.8"/>`);
+  floor(P, '#A47A32', '#5A4018', 252);
+  const r = rng(31);
+  for (let i = 0; i < 40; i++) P.add(rect((X0 + r() * W).toFixed(0), 256 + r() * 80, 1.5, 9, '#7A5A20', ' opacity="0.4"'));
+});

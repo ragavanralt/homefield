@@ -27,7 +27,7 @@
       }
     ],
     "deal": {
-      "itemId": "shacket",
+      "itemId": "quilted",
       "pct": 15
     }
   },
@@ -59,12 +59,12 @@
       }
     ],
     "featured": [
-      "dresswatch",
-      "sherpa",
-      "skipants",
-      "trapper",
-      "heartshades",
-      "argyle"
+      "patent",
+      "cosmic",
+      "quilted",
+      "rainjacket",
+      "chelsea",
+      "phonehand"
     ],
     "note": ""
   }
