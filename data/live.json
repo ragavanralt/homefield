@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "daily": {
-    "date": "2026-11-05",
+    "date": "2026-11-06",
     "quests": [
       {
-        "id": "d2026-11-05-1",
+        "id": "d2026-11-06-1",
         "metric": "shop_visits",
         "target": 1,
         "coins": 25,
         "title": "Check out the shop"
       },
       {
-        "id": "d2026-11-05-2",
-        "metric": "parlays_placed",
+        "id": "d2026-11-06-2",
+        "metric": "games_marked",
         "target": 1,
-        "coins": 70,
-        "title": "Build a parlay"
+        "coins": 35,
+        "title": "Mark a game as watched"
       },
       {
-        "id": "d2026-11-05-3",
+        "id": "d2026-11-06-3",
         "metric": "games_opened",
         "target": 6,
         "coins": 70,
@@ -27,44 +27,44 @@
       }
     ],
     "deal": {
-      "itemId": "hikers",
-      "pct": 25
+      "itemId": "shacket",
+      "pct": 15
     }
   },
   "weekly": {
-    "week": "2026-10-30",
-    "endsBefore": "2026-11-06",
+    "week": "2026-11-06",
+    "endsBefore": "2026-11-13",
     "quests": [
       {
-        "id": "w2026-10-30-1",
-        "metric": "games_opened",
-        "target": 15,
-        "coins": 105,
-        "title": "Open 15 different games"
-      },
-      {
-        "id": "w2026-10-30-2",
-        "metric": "outfit_changed",
+        "id": "w2026-11-06-1",
+        "metric": "daily_claimed",
         "target": 5,
-        "coins": 75,
-        "title": "Change your fit 5 times"
+        "coins": 240,
+        "title": "Claim the daily bonus 5 times"
       },
       {
-        "id": "w2026-10-30-3",
+        "id": "w2026-11-06-2",
+        "metric": "parlays_placed",
+        "target": 2,
+        "coins": 300,
+        "title": "Build 2 parlays"
+      },
+      {
+        "id": "w2026-11-06-3",
         "metric": "bets_won",
-        "target": 5,
-        "coins": 210,
-        "title": "Win 5 bets",
-        "item": "graphic"
+        "target": 3,
+        "coins": 300,
+        "title": "Win 3 bets",
+        "item": "flannel"
       }
     ],
     "featured": [
-      "bowtie",
-      "rink",
-      "elbowblack",
-      "crewsweat",
-      "court",
-      "fullsleeve"
+      "dresswatch",
+      "sherpa",
+      "skipants",
+      "trapper",
+      "heartshades",
+      "argyle"
     ],
     "note": ""
   }
