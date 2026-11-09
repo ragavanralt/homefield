@@ -1,33 +1,33 @@
 {
   "v": 1,
-  "updated": "2026-11-08",
+  "updated": "2026-11-09",
   "daily": {
-    "date": "2026-11-08",
+    "date": "2026-11-09",
     "quests": [
       {
-        "id": "d2026-11-08-1",
+        "id": "d2026-11-09-1",
         "metric": "daily_claimed",
         "target": 1,
         "coins": 30,
         "title": "Claim your daily bonus"
       },
       {
-        "id": "d2026-11-08-2",
+        "id": "d2026-11-09-2",
         "metric": "games_marked",
         "target": 1,
         "coins": 35,
         "title": "Mark a game as watched"
       },
       {
-        "id": "d2026-11-08-3",
+        "id": "d2026-11-09-3",
         "metric": "bets_won",
-        "target": 2,
-        "coins": 180,
-        "title": "Win 2 bets"
+        "target": 1,
+        "coins": 90,
+        "title": "Win a bet"
       }
     ],
     "deal": {
-      "itemId": "twists",
+      "itemId": "sweatervest",
       "pct": 20
     }
   },
