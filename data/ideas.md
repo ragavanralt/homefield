@@ -41,3 +41,14 @@ Nothing below is in the shop yet. These wait for Ragavan's yes or no.
 1. Winter wool beanie in team colours. Team shop, about 400 coins. The Team shop has few cold-weather pieces and the season is turning.
 2. Frozen lake background. Backgrounds shop, about 1,800 coins. It sits between the field and the city at night and suits the hockey season.
 3. Locs with beads. Look shop, about 500 coins. Fills the gap between twists and the pricey curly looks.
+
+## Added to the shop on 2026-11-13 (weekly update)
+Locs with beads (Look, 450 base), Sapphire studs (Look, 400), Triple hoops (Look, 650), Grey crewneck sweatshirt (Casual, 500), Olive chore coat (Casual, 900), Frozen lake (Backgrounds, 1,000), Neon arcade (Backgrounds, 800). No new requests came in this week, and both '04 North London kits were already in the shop, so this drop fills thin spots: more hair and earrings, two real Casual pieces and two more backgrounds. The weekly generator picks the six featured items by itself, so none of the new pieces were featured this week.
+
+# Catalog ideas for next week (added 2026-11-13)
+
+Nothing below is in the shop yet. These wait for Ragavan's yes or no.
+
+1. Winter wool beanie in team colours. Team shop, about 400 coins. Still the best gap: the Team shop has few cold-weather pieces and the season is turning.
+2. Snowy pine forest background. Backgrounds shop, about 1,400 coins. Pairs with the frozen lake and fills the space before the big 2,000 backgrounds.
+3. Pearl drop earrings. Look shop, about 550 coins. Sits between the studs and the gold hoops, and the Look shop is light on mid-priced earrings.

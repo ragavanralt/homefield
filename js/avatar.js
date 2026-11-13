@@ -244,6 +244,12 @@ export const ITEMS = [
   I('rainjacket', 'outer', 'Yellow rain jacket', 'casual', 600),
   I('cosmic', 'bg', 'Cosmic night sky', 'bg', 1200), I('harvest', 'bg', 'Harvest field', 'bg', 600),
 
+  // ---- Weekly drop, 2026-11-13
+  I('locsbeads', 'hair', 'Locs with beads', 'look', 450),
+  I('sapphirestuds', 'ear', 'Sapphire studs', 'look', 400), I('triplehoops', 'ear', 'Triple hoops', 'look', 650),
+  I('greycrew', 'top', 'Grey crewneck sweatshirt', 'casual', 500), I('chorecoat', 'outer', 'Olive chore coat', 'casual', 900),
+  I('frozenlake', 'bg', 'Frozen lake', 'bg', 1000), I('arcade', 'bg', 'Neon arcade', 'bg', 800),
+
   // ---- Earned
   I('ghost', 'top', 'Ghost sheet', 'team', 0, { ach: 'Get rescued with free coins once' }), I('goldscarf', 'scarf', 'Golden scarf', 'team', 0, { ach: 'Win 5 bets in a row' }), I('trophycape', 'back', 'Trophy cape', 'team', 0, { ach: 'Hit a parlay' }),
 ];

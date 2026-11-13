@@ -212,3 +212,30 @@ ART.bg.harvest = bg((P) => {
   const r = rng(31);
   for (let i = 0; i < 40; i++) P.add(rect((X0 + r() * W).toFixed(0), 256 + r() * 80, 1.5, 9, '#7A5A20', ' opacity="0.4"'));
 });
+
+// frozen lake: pale winter dusk, ice with cracks, bare pines on the far shore
+ART.bg.frozenlake = bg((P) => {
+  sky(P, [[0, '#6D86B8'], [0.5, '#BFD2E8'], [0.68, '#E8EEF6'], [1, '#E8EEF6']]);
+  glow(P, 60, 160, 70, 40, '#FFF1E0', 0.55);
+  P.fill(`M${X0} 190 L-120 176 L-60 192 L10 180 L90 194 L170 178 L250 192 L330 180 L${X0 + W} 190 L${X0 + W} ${Y0 + H} L${X0} ${Y0 + H}Z`, '#E4ECF6');
+  for (const x of [-150, -110, -70, 210, 260, 310, 350]) P.add(`<path d="M${x} 196 L${x - 9} 196 L${x} 168 L${x + 9} 196Z M${x} 180 L${x - 11} 186 L${x} 154 L${x + 11} 186Z" fill="#35506A"/>`);
+  floor(P, '#C4DBEC', '#8FB2CC', 220);
+  const r = rng(52);
+  for (let i = 0; i < 9; i++) { const x = X0 + r() * W, y = 230 + r() * 110; P.add(`<path d="M${x.toFixed(0)} ${y.toFixed(0)} l${(10 + r() * 24).toFixed(0)} ${(4 + r() * 8).toFixed(0)} l${(8 + r() * 14).toFixed(0)} ${(-6 + r() * 4).toFixed(0)}" fill="none" stroke="#FFFFFF" stroke-width="1.1" opacity="0.7"/>`); }
+  glow(P, 100, 300, 90, 20, '#FFFFFF', 0.4);
+});
+// neon arcade: dark hall, glowing cabinets and a pink and teal floor strip
+ART.bg.arcade = bg((P) => {
+  sky(P, [[0, '#120B2E'], [1, '#241450']]);
+  glow(P, 20, 150, 110, 90, '#E040B0', 0.28);
+  glow(P, 190, 150, 110, 90, '#20C8D8', 0.28);
+  for (const [x, c] of [[-170, '#E040B0'], [-110, '#20C8D8'], [-50, '#F2C21B'], [150, '#20C8D8'], [210, '#E040B0'], [270, '#F2C21B'], [330, '#20C8D8']]) {
+    P.add(rect(x, 130, 46, 120, '#1A1236', ' stroke="#0A0620" stroke-width="1.5"'));
+    P.add(rect(x + 5, 138, 36, 40, c, ' opacity="0.85"'));
+    P.add(rect(x + 5, 138, 36, 6, '#FFFFFF', ' opacity="0.25"'));
+    P.add(`<circle cx="${x + 14}" cy="196" r="3.4" fill="${c}"/><circle cx="${x + 30}" cy="198" r="2.6" fill="#FFFFFF" opacity="0.8"/>`);
+  }
+  P.add(rect(X0, 112, W, 4, '#E040B0')); P.add(rect(X0, 118, W, 2, '#20C8D8'));
+  floor(P, '#2A1858', '#0E0A28', 250);
+  for (let i = 0; i < 12; i++) P.add(rect(-200, 254 + i * 8, W, 1, i % 2 ? '#E040B0' : '#20C8D8', ' opacity="0.35"'));
+});

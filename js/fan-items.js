@@ -1214,5 +1214,21 @@ ART.ear.earcuffs = (P, g, col, ph) => { if (ph === 'face') both((s) => { const x
 // rain jacket: bright yellow, closed zip, storm flap and two flap pockets
 ART.outer.rainjacket = outer({ def: '#F2C21B', len: 214, grow: 8, closed: true, collar: ribCollar(), detail: (P, c, R, d, main, B, grow, hemY) => { P.clip(d, `<path d="M${CX - 52} 168 L${CX - 16} 168 L${CX - 16} 180 L${CX - 52} 180Z" fill="#D9A60F" opacity="0.9"/><path d="M${CX + 16} 168 L${CX + 52} 168 L${CX + 52} 180 L${CX + 16} 180Z" fill="#D9A60F" opacity="0.9"/><path d="M${CX - 8} 108 L${CX - 8} ${hemY} L${CX + 8} ${hemY} L${CX + 8} 108Z" fill="#E0AE12" opacity="0.7"/><rect x="20" y="236" width="170" height="3" fill="#FFF4B8" opacity="0.5"/>`); zip(102, hemY)(P); } });
 
+/* ---------- weekly drop, 2026-11-13 */
+// locs with beads: thick locs hanging past the ears, with gold and white beads at the tips
+ART.hair.locsbeads = hairOf((P, hc) => both((s) => { const X = (x) => CX + x * s; [[30, 156], [36, 146], [42, 134]].forEach(([x0, end], k) => { const pts = [[X(x0), 40], [X(x0 + 3), 80], [X(x0 + 5), 118], [X(x0 + 4), end]]; P.stroke(curve(pts), adj(hc, -0.25), 8); P.stroke(curve(pts), hc, 5.6); P.stroke(curve(pts.map(([x, y]) => [x - 1, y])), lt(hc, 0.12), 1.2, 0.8); P.dot(X(x0 + 4), end - 1, 3, k % 2 ? '#F4F1EA' : GOLD); P.dot(X(x0 + 4.4), end - 14, 2.4, k % 2 ? GOLD : '#F4F1EA'); }); }), (P, hc) => {
+  hairShape(P, blob([[66, 56], [63.5, 42], [66, 30], [76, 18], [90, 11.5], [106, 10.5], [121, 14], [131, 23], [136.5, 37], [136.5, 56], [130, 50], [120, 38], [100, 36], [80, 38], [70, 50]]), hc, { noHi: true });
+  [[76, 36, 62], [88, 34, 54], [100, 33, 50], [112, 34, 54], [124, 36, 62]].forEach(([x, y0, y1]) => { P.stroke(curve([[x, y0 - 6], [x - 1, y1]]), adj(hc, -0.25), 7); P.stroke(curve([[x, y0 - 6], [x - 1, y1]]), hc, 4.8); });
+});
+// sapphire studs: deep blue stones in gold settings
+ART.ear.sapphirestuds = (P, g, col, ph) => { if (ph === 'face') both((s) => { P.add(`<circle cx="${CX + s * 35.4}" cy="79.6" r="2.5" fill="#1F4FB8" stroke="${GOLD2}" stroke-width="1"/><circle cx="${CX + s * 34.8}" cy="78.9" r="0.9" fill="#9CC0FF" opacity="0.9"/>`); }); };
+// triple hoops: three small gold rings stacked up the ear
+ART.ear.triplehoops = (P, g, col, ph) => { if (ph === 'face') both((s) => { [74, 81, 88].forEach((y, i) => { const r = 3.4 - i * 0.3; P.add(`<ellipse cx="${CX + s * 35.6}" cy="${y}" rx="${r}" ry="${r + 1}" fill="none" stroke="${GOLD2}" stroke-width="2.2"/><ellipse cx="${CX + s * 35.6}" cy="${y}" rx="${r}" ry="${r + 1}" fill="none" stroke="${GOLD}" stroke-width="1.2"/>`); }); }); };
+// grey crewneck sweatshirt: soft marl grey, ribbed hem and cuffs
+ART.top.greycrew = top({ def: '#A7ABB3', sleeve: 'long', grow: 5, sgrow: 5.5, hem: 200, neck: 'crew', rib: true, detail: (P, c, R, d) => { hem(P, c.B, 5, 200, R); } });
+// olive chore coat: boxy work jacket with big chest and hip pockets
+ART.outer.chorecoat = outer({ def: '#6B7345', len: 208, grow: 6, collar: (P, c, R, main) => { const nk = c.B.nk; both((s) => P.shape(poly([[CX + s * (nk + 2), 106], [CX + s * (nk + 11), 112], [CX + s * (nk + 6), 124], [CX + s * 3, 120]]), lt(main, 0.04), { line: R.line, w: 1.4 })); },
+  detail: (P, c, R, d, main, B, grow, hemY) => { P.add([[CX - 44, 134], [CX + 24, 134], [CX - 50, 170], [CX + 28, 170]].map(([x, y]) => `<rect x="${x}" y="${y}" width="20" height="22" fill="none" stroke="${R.deep}" stroke-width="1.4"/><path d="M${x} ${y + 5} L${x + 20} ${y + 5}" stroke="${R.deep}" stroke-width="1"/>`).join('') + `<path d="M${CX} 112 L${CX} ${hemY}" stroke="${R.deep}" stroke-width="1.4"/>`); [124, 144, 164, 184].forEach((y) => P.dot(CX, y, 1.4, '#3F4526')); } });
+
 // Shared with the October 2026 drop (js/fan-items-oct26.js), which builds new pieces out of the same parts.
 export { top, outer, pants, shoes, hoodie, capOf, lapels, shirtCollar, ribCollar, buttons, zip, pockets2, drape, hemLine, knee, cargoPocket, pocketsJ, jeanDetail, shortsDetail, onWrist, wrapScarf, chain, lenses, EYES, held, rightHand, hood, pocket, hem, capDome, capBill, openGap, edges, GOLD, GOLD2, GOLDHI, SILVER, SILVER2, INK, both, mirror, colOf, bodyShade, swoosh, word, neckline };

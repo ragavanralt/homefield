@@ -27,7 +27,7 @@
       }
     ],
     "deal": {
-      "itemId": "suitp",
+      "itemId": "tuxp",
       "pct": 15
     }
   },
@@ -59,12 +59,12 @@
       }
     ],
     "featured": [
-      "heartshades",
-      "hikers",
-      "techjog",
-      "pendant",
-      "washed",
-      "anorak"
+      "soccerball",
+      "cosmic",
+      "coinhoop",
+      "dresswatch",
+      "track",
+      "hoops"
     ],
     "note": ""
   }
