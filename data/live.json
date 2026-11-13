@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-11-12",
+  "updated": "2026-11-13",
   "daily": {
-    "date": "2026-11-12",
+    "date": "2026-11-13",
     "quests": [
       {
-        "id": "d2026-11-12-1",
-        "metric": "daily_claimed",
+        "id": "d2026-11-13-1",
+        "metric": "shop_visits",
         "target": 1,
-        "coins": 30,
-        "title": "Claim your daily bonus"
+        "coins": 25,
+        "title": "Check out the shop"
       },
       {
-        "id": "d2026-11-12-2",
+        "id": "d2026-11-13-2",
         "metric": "bets_placed",
         "target": 1,
         "coins": 40,
         "title": "Place a bet"
       },
       {
-        "id": "d2026-11-12-3",
+        "id": "d2026-11-13-3",
         "metric": "bets_won",
         "target": 1,
         "coins": 90,
@@ -27,44 +27,44 @@
       }
     ],
     "deal": {
-      "itemId": "creamshawl",
-      "pct": 20
+      "itemId": "suitp",
+      "pct": 15
     }
   },
   "weekly": {
-    "week": "2026-11-06",
-    "endsBefore": "2026-11-13",
+    "week": "2026-11-13",
+    "endsBefore": "2026-11-20",
     "quests": [
       {
-        "id": "w2026-11-06-1",
-        "metric": "daily_claimed",
-        "target": 5,
-        "coins": 240,
-        "title": "Claim the daily bonus 5 times"
+        "id": "w2026-11-13-1",
+        "metric": "games_opened",
+        "target": 15,
+        "coins": 210,
+        "title": "Open 15 different games"
       },
       {
-        "id": "w2026-11-06-2",
+        "id": "w2026-11-13-2",
         "metric": "parlays_placed",
         "target": 2,
         "coins": 300,
         "title": "Build 2 parlays"
       },
       {
-        "id": "w2026-11-06-3",
+        "id": "w2026-11-13-3",
         "metric": "bets_won",
         "target": 3,
         "coins": 300,
         "title": "Win 3 bets",
-        "item": "flannel"
+        "item": "sunfade"
       }
     ],
     "featured": [
-      "patent",
-      "cosmic",
-      "quilted",
-      "rainjacket",
-      "chelsea",
-      "phonehand"
+      "heartshades",
+      "hikers",
+      "techjog",
+      "pendant",
+      "washed",
+      "anorak"
     ],
     "note": ""
   }
