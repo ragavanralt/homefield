@@ -1,34 +1,34 @@
 {
   "v": 1,
-  "updated": "2026-11-13",
+  "updated": "2026-11-14",
   "daily": {
-    "date": "2026-11-13",
+    "date": "2026-11-14",
     "quests": [
       {
-        "id": "d2026-11-13-1",
-        "metric": "shop_visits",
+        "id": "d2026-11-14-1",
+        "metric": "daily_claimed",
         "target": 1,
-        "coins": 25,
-        "title": "Check out the shop"
+        "coins": 30,
+        "title": "Claim your daily bonus"
       },
       {
-        "id": "d2026-11-13-2",
-        "metric": "bets_placed",
+        "id": "d2026-11-14-2",
+        "metric": "parlays_placed",
         "target": 1,
-        "coins": 40,
-        "title": "Place a bet"
+        "coins": 70,
+        "title": "Build a parlay"
       },
       {
-        "id": "d2026-11-13-3",
+        "id": "d2026-11-14-3",
         "metric": "bets_won",
-        "target": 1,
-        "coins": 90,
-        "title": "Win a bet"
+        "target": 2,
+        "coins": 180,
+        "title": "Win 2 bets"
       }
     ],
     "deal": {
-      "itemId": "tuxp",
-      "pct": 15
+      "itemId": "moccasin",
+      "pct": 20
     }
   },
   "weekly": {
