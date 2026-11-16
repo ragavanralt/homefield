@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-11-15",
+  "updated": "2026-11-16",
   "daily": {
-    "date": "2026-11-15",
+    "date": "2026-11-16",
     "quests": [
       {
-        "id": "d2026-11-15-1",
-        "metric": "daily_claimed",
-        "target": 1,
-        "coins": 30,
-        "title": "Claim your daily bonus"
+        "id": "d2026-11-16-1",
+        "metric": "games_opened",
+        "target": 3,
+        "coins": 35,
+        "title": "Open 3 different games"
       },
       {
-        "id": "d2026-11-15-2",
-        "metric": "parlays_placed",
-        "target": 1,
-        "coins": 70,
-        "title": "Build a parlay"
+        "id": "d2026-11-16-2",
+        "metric": "bets_placed",
+        "target": 3,
+        "coins": 85,
+        "title": "Place 3 bets"
       },
       {
-        "id": "d2026-11-15-3",
+        "id": "d2026-11-16-3",
         "metric": "bets_won",
         "target": 1,
         "coins": 90,
@@ -27,8 +27,8 @@
       }
     ],
     "deal": {
-      "itemId": "flannel",
-      "pct": 30
+      "itemId": "linenshirt",
+      "pct": 20
     }
   },
   "weekly": {
