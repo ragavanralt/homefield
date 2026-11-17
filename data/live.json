@@ -1,25 +1,25 @@
 {
   "v": 1,
-  "updated": "2026-11-16",
+  "updated": "2026-11-17",
   "daily": {
-    "date": "2026-11-16",
+    "date": "2026-11-17",
     "quests": [
       {
-        "id": "d2026-11-16-1",
+        "id": "d2026-11-17-1",
         "metric": "games_opened",
         "target": 3,
         "coins": 35,
         "title": "Open 3 different games"
       },
       {
-        "id": "d2026-11-16-2",
+        "id": "d2026-11-17-2",
         "metric": "bets_placed",
-        "target": 3,
-        "coins": 85,
-        "title": "Place 3 bets"
+        "target": 1,
+        "coins": 40,
+        "title": "Place a bet"
       },
       {
-        "id": "d2026-11-16-3",
+        "id": "d2026-11-17-3",
         "metric": "bets_won",
         "target": 1,
         "coins": 90,
@@ -27,8 +27,8 @@
       }
     ],
     "deal": {
-      "itemId": "linenshirt",
-      "pct": 20
+      "itemId": "labcoat",
+      "pct": 25
     }
   },
   "weekly": {
